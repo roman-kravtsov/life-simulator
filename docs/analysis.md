@@ -166,10 +166,52 @@ At each stage the world data constrains outcomes, and player choices shift proba
 
 ---
 
+## Decisions from Roman's review (2026-10-23)
+
+- **Real statistics**, not an invented world. Sources are in 1.7.
+- **Turn-based / event-based** pacing, no real-time clock.
+- **Sensitive content is in scope** (child death, suicide, war, violence), non-graphic, with a softening toggle and help resources.
+- **Tone:** reflective and literary, with an in-depth game feel (systems that reward understanding, not just a story).
+
+These override the "invented data" and "turn-based by default with optional timer" proposals above.
+
+---
+
+## 1.7 Where to get the real numbers
+
+Approach: a build-time **data pipeline** (a script in the repo) downloads the raw files from each source, picks the indicators we need, fills gaps with regional averages, and writes small versioned JSON files the game loads. Every value keeps its source and year, and an in-game "Sources" screen lists the attributions. We never copy the reference's data; we go to the primary publishers.
+
+Licence status: **Verified** = read on the publisher's page during this research. **To verify** = my understanding, to confirm before we ship.
+
+| Need in the game | Primary source | What we take | Licence | Status |
+|---|---|---|---|---|
+| Births per country (birth draw), population, life expectancy, life tables by age and sex (yearly death risk), fertility (siblings, own children), infant/child mortality | **UN World Population Prospects 2024** (UN DESA), [population.un.org/wpp](https://population.un.org/wpp/) | Abridged or single-age life tables (qx by age, sex), annual births, TFR, under-5 mortality | CC BY 3.0 IGO | To verify (the dataset page itself does not state it) |
+| Income distribution (family wealth at birth, adult income draws) | **World Bank Poverty and Inequality Platform, percentiles** ([data catalog](https://datacatalog.worldbank.org/search/dataset/0063646/poverty-and-inequality-platform-pip-percentiles)) | 100 percentiles of daily income/consumption per country, in PPP$ | CC BY 4.0 | Verified |
+| GDP per capita, poverty rate, urbanisation, health spending, out-of-pocket health costs, access to electricity/water, internet | **World Bank World Development Indicators** ([data.worldbank.org](https://data.worldbank.org)) | Country-year indicators | CC BY 4.0 | To verify (standard WDI terms) |
+| School enrolment, completion, literacy, years of schooling | **UNESCO Institute for Statistics** ([bulk download](https://databrowser.uis.unesco.org/documentation/bulk)), plus the same series mirrored in WDI | SDG 4 indicators by level and sex | CC BY-SA 3.0 IGO (UIS) / CC BY 4.0 via WDI | To verify; prefer the WDI mirror if share-alike is a problem |
+| Employment, unemployment, sector of work, informal work, child labour, wages | **ILOSTAT** ([bulk download](https://ilostat.ilo.org/data/bulk/)) | Labour-force rates by age and sex, employment by sector | CC BY 4.0 | To verify (bulk page states no licence) |
+| Causes of death by age, sex, region; disease incidence; suicide rates | **WHO Global Health Estimates / Global Health Observatory** ([terms](https://www.who.int/about/policies/publishing/data-policy/terms-and-conditions)) | Cause-of-death shares by age band and sex | WHO's own terms: free use **for public health purposes**, attribution required, not for promoting a commercial product | Verified (restrictive) |
+| Same, more detailed (cause, injury, disability, risk factors) | **IHME Global Burden of Disease** ([GHDx](https://ghdx.healthmetricsandevaluation.org/gbd-2021)) | Cause-specific death rates | **Non-commercial only** (IHME free-of-charge non-commercial agreement) | Verified (restrictive) |
+| Marriage age, share married, child marriage | **UN World Marriage Data** (UN DESA) and UNICEF child-marriage data | Mean age at first marriage, % married by 18 | UN DESA open terms; UNICEF data terms | To verify |
+| Armed conflict and conflict deaths by country and year | **UCDP** (Uppsala Conflict Data Program, [ucdp.uu.se](https://ucdp.uu.se)) | Conflict presence and intensity per country-year | CC BY 4.0 | To verify |
+| Migration (moving abroad) | **UN DESA International Migrant Stock** | Emigration shares and main destinations | UN open terms | To verify |
+| Life satisfaction | **World Happiness Report** country averages (data from Gallup World Poll) | Country-average life evaluation only | Gallup microdata is proprietary; published country averages need a terms check | To verify, possibly skip |
+| Convenience layer | **Our World in Data** ([ourworldindata.org](https://ourworldindata.org)) | Cleaned, merged series with documented provenance | CC BY 4.0 for OWID's own work; the underlying source's licence still applies | Use as a cross-check, not a source |
+
+### The licence issue to decide
+
+Everything except health causes-of-death has open, attribution-only licences. **Cause-of-death data is the problem:** WHO limits use to public-health purposes and bars commercial promotion, and IHME GBD is non-commercial only. That is fine for a free, non-commercial, educational game. If the game might ever earn money (ads, paid tier, store release), we should either ask WHO/IHME for permission or derive cause-of-death mixes from openly licensed sources (UN WPP gives overall mortality; cause mix could come from WHO only with permission).
+
+### Practical notes
+
+- **Coverage:** WPP covers ~237 countries and areas. Income percentiles and labour data are thinner, so we will need regional fallbacks and a "data year" per indicator. Start with a curated set of countries and widen later.
+- **Size:** keep the shipped data small (one compact JSON per country, loaded on demand) so the game stays fast on phones.
+- **Honesty in the game:** show the source and year when the game cites a number (for example "1 in 14 children here die before age 5, UN WPP 2024").
+- **Reproducibility:** the pipeline pins source versions and records download dates, so data updates are deliberate PRs.
+
+---
+
 ## Open questions for Roman
 
 1. Can you play 3 to 5 lives and share notes or screenshots so we can upgrade inferred rows to observed? (Ideal mix: one rich country, one poor, one auto-mode, one phone.)
-2. Real statistics or invented fictional world? Real data needs attribution and care; an invented world avoids both closeness to the reference and data licensing. I lean towards **fictional regions with realistic-feeling stats** for the MVP.
-3. Real-time clock, turn-based, or both?
-4. Is sensitive content (child death, suicide, war) in scope, with a softening toggle, or should we leave the hardest themes out entirely?
-5. Tone: reflective and literary, or lighter and more playful?
+2. Will the game stay free and non-commercial? This decides whether WHO/IHME cause-of-death data is usable as is.
