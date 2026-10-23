@@ -193,6 +193,8 @@ interface EventDef {
   chance: Chance;                     // how likely per eligible year
   once?: boolean;
   cooldownYears?: number;
+  zoom?: boolean;                     // true = this event zooms its year into quarters (3.1.1, trigger Z12)
+  tags?: ("crisis" | string)[];       // "crisis" events trigger zoom-in (Z8)
   sensitivity?: "none" | "difficult" | "severe";   // drives softening and help resources
   helpTopic?: "suicide" | "violence" | "abuse" | "grief" | "addiction";
   text: TextKey;                      // localisable string id, supports variables
@@ -247,8 +249,8 @@ interface SaveFile {
   dataVersion: string;      // world data used
   contentVersion: string;   // events and text used
   seed: string;             // e.g. "amber-river-4821"
-  settings: { softening: "off" | "on"; pace: "every-year" | "quiet-years" };
-  decisions: { year: number; eventId: string; choiceId: string }[];   // the full player input log
+  settings: { softening: "off" | "on"; pace: "every-year" | "quiet-years"; zoomIn: "on" | "keep-yearly" };
+  decisions: { year: number; quarter?: 1 | 2 | 3 | 4; eventId: string; choiceId: string }[];   // the full player input log
   snapshot: Person;         // latest state, so loading is instant
   createdAt: string; updatedAt: string;
 }
@@ -267,10 +269,53 @@ The engine is a pure TypeScript module with no DOM access, so it can be tested a
 - **One turn is one year.** Turn-based: nothing happens until the player acts.
 - **Event-driven pacing:** a year with no decision and no notable event is a "quiet year". With the default pace setting, quiet years are batched ("Three quiet years pass. You learn to read.") so the game moves fast through calm stretches and slows down at turning points. The player can switch to "every year".
 - **Life stages** group years into chapters: infancy (0 to 2), childhood (3 to 11), adolescence (12 to 17), youth (18 to 29), adulthood (30 to 49), midlife (50 to 64), elder (65+). Stage changes are natural reflection points.
+- **Zoom-in quarters** (decided 2026-10-23): a crisis or turning-point year splits into four quarterly turns (3.1.1). Everything else stays yearly.
+
+#### 3.1.1 Zoom-in quarters
+
+A zoomed year is played as four quarters (Q1 to Q4). In each quarter the player re-sets the focus plan and may face decisions, so a hard year is lived through step by step instead of resolved in one roll.
+
+**When a year zooms.** A year zooms if **any** trigger below holds, subject to the limits after the table. Triggers come in two kinds:
+
+- **Foreseeable triggers** are checked at the start of the year, before the plan is set. The year opens zoomed and the player is told why ("This year, the baby is due").
+- **Shock triggers** are checked when the year's events are rolled. The shock lands in a quarter drawn at random (`events` stream). Quarters before it resolve automatically with the current plan and are summarised in one line, and the year continues zoomed from the shock's quarter to Q4.
+
+| # | Trigger | Kind | Exact condition |
+|---|---|---|---|
+| Z1 | Serious illness | Shock | A condition with severity ≥ 2 (scale 1 to 3) is added this year |
+| Z2 | Ongoing illness under treatment | Foreseeable | A condition with severity ≥ 2 is active and the person chose treatment last year |
+| Z3 | Health collapse | Foreseeable | Health stat < 25 at the start of the year, and the previous year was not zoomed for Z3 |
+| Z4 | Childbirth | Foreseeable | The person or their partner is pregnant at the start of the year (birth falls this year) |
+| Z5 | Job loss | Shock | The person's job ends involuntarily this year, and savings cover less than 6 months of household costs |
+| Z6 | Migration | Foreseeable | The player chose to move abroad (or was displaced) and the move happens this year |
+| Z7 | War reaches you | Foreseeable or shock | The current country's conflict level becomes `war` this year (foreseeable if it was already `war` and the person is newly displaced) |
+| Z8 | Disaster | Shock | A major event tagged `crisis` fires (flood, drought, fire, epidemic) |
+| Z9 | Bereavement | Shock | A relationship with closeness ≥ 60 dies (parent, partner, child, close sibling) |
+| Z10 | Money crisis | Foreseeable | Debt > 12 months of household income, or savings < 0 with no income at the start of the year |
+| Z11 | Decisive school year | Foreseeable | Final year of a school level whose continuation is uncertain (continuation odds between 10% and 90%) |
+| Z12 | Authored | Either | An event declares `zoom: true` in its data and fires |
+
+**Limits** (so zoomed years stay special):
+- No zoom before age 6, when the yearly plan starts. Crises in early childhood are told at yearly scale.
+- At most **12 zoomed years per life**. When the cap is reached, only Z1, Z4, Z6 and Z7 can still zoom.
+- No two zoomed years in a row, unless the second one has a trigger from Z1, Z4, Z6 or Z7.
+- The age-related rise in death risk is **not** a trigger. Otherwise every year in old age would zoom.
+- Auto mode and the player's "keep it yearly" setting play zoomed years with the carried-over plan and no quarterly stops. The odds are identical, so a life replays the same either way.
+
+**How the numbers work in a quarter.** The data is yearly, so quarterly play must not change the overall odds:
+- Each yearly probability p becomes a quarterly probability `1 − (1 − p)^(1/4)`, rolled once per quarter. Over four quarters the total risk equals the yearly risk, and a choice made in Q2 can change the odds for Q3 and Q4.
+- Yearly stat changes, income and costs are split into quarters (a quarter of each).
+- Each quarter draws from its own RNG streams, derived from `hash(seed, stream, year, quarter)` (3.9).
+- Mortality is checked every quarter, so a death can happen mid-year and the summary shows the quarter.
+
+**What the player sees.** The year's ring is drawn in four segments. A zoomed year's summary line reads like a short chapter ("The year of the flood: spring, summer, autumn, winter").
 
 ### 3.2 Order of one year
 
+For a zoomed year (3.1.1), steps 2 to 8 run once per quarter with quarterly probabilities, and step 0 decides whether the year zooms.
+
 ```
+0. Check foreseeable zoom triggers (Z2, Z3, Z4, Z6, Z7, Z10, Z11, Z12 when scheduled).
 1. Age everyone by one year (person, family).
 2. Apply the year's plan (3.3): the focus points the player allocated.
 3. Baseline drift: stats move a little toward country- and age-dependent norms
@@ -383,6 +428,5 @@ tests/             engine tests, replay tests, calibration tests
 ## 7. Open questions for Roman
 
 1. **Name:** which of the round 2 ideas (1.1), if any?
-2. **Yearly plan:** focus points or one of the alternatives in 3.3? (My recommendation: focus points that carry over, which is option 1.)
 
-Decided 2026-10-23: the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1).
+Decided 2026-10-23: yearly input is **focus points** (3.3), played **yearly with zoom-in quarters** in crisis and turning-point years (3.1.1); the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1).
