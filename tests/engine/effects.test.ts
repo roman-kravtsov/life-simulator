@@ -12,20 +12,41 @@ describe("applyEffects", () => {
   });
 
   it("clamps stats to 0..100", () => {
-    const { state } = applyEffects(life(), [{ stat: "skills", add: 500 }, { stat: "bonds", add: -500 }], "choice");
+    const { state } = applyEffects(
+      life(),
+      [
+        { stat: "skills", add: 500 },
+        { stat: "bonds", add: -500 },
+      ],
+      "choice",
+    );
     expect(state.person.stats.skills).toBe(100);
     expect(state.person.stats.bonds).toBe(0);
   });
 
   it("sets flags", () => {
-    const { state } = applyEffects(life(), [{ set: "lost_sibling", value: true }, { set: "moves", value: 2 }], "circumstance");
+    const { state } = applyEffects(
+      life(),
+      [
+        { set: "lost_sibling", value: true },
+        { set: "moves", value: 2 },
+      ],
+      "circumstance",
+    );
     expect(state.person.flags).toMatchObject({ lost_sibling: true, moves: 2 });
   });
 
   it("does not mutate the input state", () => {
     const before = life();
     const snapshot = structuredClone(before);
-    applyEffects(before, [{ stat: "health", add: -10 }, { set: "x", value: true }], "chance");
+    applyEffects(
+      before,
+      [
+        { stat: "health", add: -10 },
+        { set: "x", value: true },
+      ],
+      "chance",
+    );
     expect(before).toEqual(snapshot);
   });
 
