@@ -214,4 +214,4 @@ Everything except health causes-of-death has open, attribution-only licences. **
 ## Open questions for Roman
 
 1. Can you play 3 to 5 lives and share notes or screenshots so we can upgrade inferred rows to observed? (Ideal mix: one rich country, one poor, one auto-mode, one phone.)
-2. Will the game stay free and non-commercial? This decides whether WHO/IHME cause-of-death data is usable as is.
+2. ~~Will the game stay free and non-commercial?~~ **Answered 2026-10-23: yes, free and non-commercial.** WHO GHE/GHO and IHME GBD cause-of-death data can be used under their non-commercial terms, with attribution, and with no WHO/IHME logos or implied endorsement.
