@@ -17,18 +17,13 @@ Decisions this design rests on (from Phase 1 review, 2026-10-23):
 
 | Name | Idea behind it |
 |---|---|
-"Driftwood" was declined (2026-10-23). Round 2 ideas:
+**Name: Birthright** (chosen by Roman, 2026-10-23). What you are handed at birth, fairly or not; the word names the game's central question.
 
-| Name | Idea behind it |
-|---|---|
-| **Heartwood** (recommended) | The dense core of a tree, built from every ring it ever grew: a life is what the years leave inside you. Ties directly to the growth-rings visual (1.3). |
-| **Birthright** | What you are handed at birth, fairly or not. Names the game's central question in one word. |
-| **The Drawn Lot** | Your life as a lot drawn from the world's distribution. Literary, a little old-fashioned, honest about chance. |
-| **Almanac** | A yearly book of weather, harvests and events; each life becomes one person's almanac. Calm and reflective. |
+Name check (2026-10-23): "Birthright" is also the name of a Dungeons & Dragons campaign setting from the 1990s (now owned by Wizards of the Coast) and of a 1996 Sierra PC game based on it, *Birthright: The Gorgon's Alliance*. Our game is free, non-commercial and unrelated in genre, so the risk of confusion is low. To keep it distinct, we use a descriptive subtitle in the page title and store listings, for example **"Birthright: a life simulation"**, and never use fantasy styling.
 
-Earlier ideas still on the table: **Growth Rings**, **The Long Year**, **Ledger of Days**, **Undertow**.
+Other ideas from the naming rounds, kept for reference: Heartwood, The Drawn Lot, Almanac, Growth Rings, The Long Year, Ledger of Days, Undertow (Driftwood declined).
 
-All are working titles. Before we commit, we search for existing games and trademarks with the chosen name. Until a name is chosen, code and storage keys use the neutral prefix `lifesim`.
+Code and storage keys use the prefix `birthright`.
 
 ### 1.2 Tone and voice
 
@@ -240,8 +235,8 @@ Each effect also records **why** it happened: `circumstance` (dealt by birth or 
 
 Two stores, both local to the browser:
 
-- **localStorage** `lifesim:current` holds the life in progress (small).
-- **IndexedDB** `lifesim` / `pastLives` holds finished lives (the archive can grow).
+- **localStorage** `birthright:current` holds the life in progress (small).
+- **IndexedDB** `birthright` / `pastLives` holds finished lives (the archive can grow).
 
 ```ts
 interface SaveFile {
@@ -425,8 +420,6 @@ tests/             engine tests, replay tests, calibration tests
 
 - **Data size target:** under 15 KB gzipped per country, loaded on demand.
 
-## 7. Open questions for Roman
+## 7. Decisions log
 
-1. **Name:** which of the round 2 ideas (1.1), if any?
-
-Decided 2026-10-23: yearly input is **focus points** (3.3), played **yearly with zoom-in quarters** in crisis and turning-point years (3.1.1); the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1).
+None. Decided 2026-10-23: the name is **Birthright** (1.1); yearly input is **focus points** (3.3), played **yearly with zoom-in quarters** in crisis and turning-point years (3.1.1); the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1).
