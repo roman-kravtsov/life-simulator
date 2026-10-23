@@ -17,13 +17,18 @@ Decisions this design rests on (from Phase 1 review, 2026-10-23):
 
 | Name | Idea behind it |
 |---|---|
-| **Driftwood** (recommended) | A life is carried by currents it did not choose (birthplace, family, history) and steered a little by the one riding it. Short, memorable, no numbers, nothing like the reference's framing. Pairs naturally with the visual idea of growth rings (1.3). |
-| **Growth Rings** | Every year leaves a ring; the finished life is a cross-section you can read. Very visual, slightly descriptive. |
-| **The Long Year** | Literary; each turn is a year, and a life is one long year seen from far away. |
-| **Ledger of Days** | A life as an account book of gains and losses; fits the money and odds mechanics, a bit colder. |
-| **Undertow** | Emphasises the hidden pull of circumstance; darker in tone. |
+"Driftwood" was declined (2026-10-23). Round 2 ideas:
 
-All five are working titles. Before we commit, we should do a quick search for existing games and trademarks with the chosen name.
+| Name | Idea behind it |
+|---|---|
+| **Heartwood** (recommended) | The dense core of a tree, built from every ring it ever grew: a life is what the years leave inside you. Ties directly to the growth-rings visual (1.3). |
+| **Birthright** | What you are handed at birth, fairly or not. Names the game's central question in one word. |
+| **The Drawn Lot** | Your life as a lot drawn from the world's distribution. Literary, a little old-fashioned, honest about chance. |
+| **Almanac** | A yearly book of weather, harvests and events; each life becomes one person's almanac. Calm and reflective. |
+
+Earlier ideas still on the table: **Growth Rings**, **The Long Year**, **Ledger of Days**, **Undertow**.
+
+All are working titles. Before we commit, we search for existing games and trademarks with the chosen name. Until a name is chosen, code and storage keys use the neutral prefix `lifesim`.
 
 ### 1.2 Tone and voice
 
@@ -51,6 +56,8 @@ TypeScript is the source of truth for types. Everything below is a sketch to be 
 ### 2.1 World data (built by the pipeline)
 
 One compact JSON file per country, plus a small index file. Every indicator carries its source and year.
+
+**Country coverage (decided 2026-10-23): every country with complete data is included.** "Complete" means the country has its own values for the **core indicators** that decide life and death: a UN WPP life table by sex, annual births, World Bank PIP income percentiles and a WHO/IHME cause-of-death mix. Countries missing any core indicator are left out, and the pipeline reports which ones and why. **Secondary indicators** (education, labour, marriage, migration, conflict) may be filled from the regional or income-group average when missing. Those values are flagged `estimated: true`, and the game never cites an estimated value as a fact about that country. The birth draw uses births per year across all included countries, so the excluded countries' share is redistributed, and the Sources screen says so.
 
 ```ts
 interface Sourced<T> { value: T; source: SourceId; year: number; estimated?: boolean }
@@ -231,8 +238,8 @@ Each effect also records **why** it happened: `circumstance` (dealt by birth or 
 
 Two stores, both local to the browser:
 
-- **localStorage** `driftwood:current` holds the life in progress (small).
-- **IndexedDB** `driftwood` / `pastLives` holds finished lives (the archive can grow).
+- **localStorage** `lifesim:current` holds the life in progress (small).
+- **IndexedDB** `lifesim` / `pastLives` holds finished lives (the archive can grow).
 
 ```ts
 interface SaveFile {
@@ -282,7 +289,20 @@ The engine is a pure TypeScript module with no DOM access, so it can be tested a
 
 This is where the "in-depth game feeling" comes from.
 
-- **Yearly plan.** From age 6, each year the player spends a small budget of focus points (three by default) across **Learn, Earn, Care (for others), Bond (relationships), Rest (health)**. Circumstances can take points away: a child who must work loses a point to Earn, a caregiver to Care, an ill person to Rest. That makes poverty and duty felt in play, not just described.
+- **Yearly plan.** From age 6, each year the player spends a small budget of focus points (three by default) across five areas:
+  - **Learn**: school, reading, training. Raises skills; affects education outcomes.
+  - **Earn**: work, trade, saving. Raises income and savings.
+  - **Health**: exercise, medical care, eating well, avoiding risk. Raises health; lowers illness and death risk.
+  - **Bond**: family, friends, partner, children, and caring for relatives. Raises bonds and relationship odds.
+  - **Rest**: play, leisure, faith, solitude. Raises wellbeing; buffers stress.
+
+  Each point is a nudge to that area's yearly change and to the odds of related events. Several points in one area give diminishing returns, so spreading is often wiser than stacking. Circumstances can take points away before the player chooses. A child who must work loses a point to Earn. Someone caring for a sick parent loses one to Bond. An ill person loses one to Health. Poverty and duty are therefore felt in play, not just described. The plan carries over to the next year unless the player changes it, so it costs no clicks when nothing has changed.
+- **Alternatives considered for yearly input** (for Roman's choice, see section 7):
+  1. **Focus points** (above). Medium depth, one quick screen per year, carries over by default.
+  2. **Single yearly focus**: pick one area per year. Lightest, but it is what the reference does, and it gives less room for trade-offs.
+  3. **Life priorities**: set a standing priority order (for example Health > Learn > Earn) that holds for years, and only revisit it at turning points. Very light and good for auto mode; less sense of yearly struggle.
+  4. **Time budget**: split a typical week's hours across school or work, family, rest and so on with sliders. The deepest and most realistic, but fiddly on phones and slow over 70+ turns.
+  5. **Situation cards**: each year draws three or four situation cards based on your life ("Harvest is late", "A cousin offers work in the city"), and you play two. The most game-like and the most varied, but needs much more written content.
 - **Decisions** at turning points (school, work, partner, children, migration, treatment, crises). Options can be hidden or locked by money, education or local conditions, and the game says why ("There is no secondary school within reach").
 - **The odds lens.** Before confirming a decision, the player can see roughly how each option shifts the odds of what matters ("Leaving for the city: steady work about 4 in 10, up from 2 in 10. Health risk higher."). Numbers are shown in plain words and in bands, not decimals. This is the main difference from the reference, where choices can feel cosmetic: here the player learns that choices shift odds, and how much the starting point limits that shift.
 
@@ -362,6 +382,7 @@ tests/             engine tests, replay tests, calibration tests
 
 ## 7. Open questions for Roman
 
-1. **Name:** do you like Driftwood, or one of the other four, or none?
-2. **Yearly plan:** is the focus-points system (3.3) the depth you want, or should yearly input be lighter?
-3. **Country set for the MVP:** all countries with complete data (likely 150+), or a curated 20 to 30 to start, with more content per country?
+1. **Name:** which of the round 2 ideas (1.1), if any?
+2. **Yearly plan:** focus points or one of the alternatives in 3.3? (My recommendation: focus points that carry over, which is option 1.)
+
+Decided 2026-10-23: the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1).
