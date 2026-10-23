@@ -17,12 +17,12 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| SIM-001 | Engine core | A pure TypeScript engine with no DOM access: `advance(state, input)` returns the new state and what to show. Done when the engine runs headless in tests and the UI only calls this API. | P0 | RNG-001 | M | MVP | not started |
+| SIM-001 | Engine core | A pure TypeScript engine with no DOM access: `advance(state, input)` returns the new state and what to show. Done when the engine runs headless in tests and the UI only calls this API. | P0 | RNG-001 | M | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | SIM-002 | Yearly turn order | Runs one year in the fixed order of design 3.2: ageing, plan, drift, statistical checks, events, decisions, effects, mortality, record. Done when a life runs from birth to death with no player input and every step is covered by a test. | P0 | SIM-001, SIM-005, SIM-006 | L | MVP | not started |
-| SIM-003 | Life stages | Groups years into infancy, childhood, adolescence, youth, adulthood, midlife and elder (3.1). Events and prompts can target stages. Done when every year has a stage and stage changes are recorded in history. | P0 | SIM-001 | S | MVP | not started |
+| SIM-003 | Life stages | Groups years into infancy, childhood, adolescence, youth, adulthood, midlife and elder (3.1). Events and prompts can target stages. Done when every year has a stage and stage changes are recorded in history. | P0 | SIM-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | SIM-004 | Baseline stat drift | Each year stats move a little towards age- and country-dependent norms (health declines with age, skills grow in school). Done when drift curves are data-driven and tested for each stage. | P0 | SIM-002, CHAR-004 | M | MVP | not started |
 | SIM-005 | Statistical checks | Rolls yearly probabilities taken straight from world data (marriage, childbirth, school continuation, job loss and so on). Done when each check reads its indicator from country data, uses its own RNG stream, and a batch test reproduces the source rate within tolerance. | P0 | WORLD-002, RNG-002 | L | MVP | not started |
-| SIM-006 | Effects engine | Applies effects (stats, money, flags, relationships, conditions, schedule, education, work) with clamping, and tags each with circumstance, choice or chance (2.3). Done when every effect type is tested and tags are stored in history. | P0 | SIM-001 | M | MVP | not started |
+| SIM-006 | Effects engine | Applies effects (stats, money, flags, relationships, conditions, schedule, education, work) with clamping, and tags each with circumstance, choice or chance (2.3). Done when every effect type is tested and tags are stored in history. | P0 | SIM-001 | M | MVP | in progress ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | SIM-007 | Calibration harness | Simulates thousands of lives per country headless and compares life expectancy, school completion, marriage age and income spread with the source data. Done when it runs in CI for a sample of countries and fails if life expectancy is off by more than 2 years. | P0 | SIM-002, HEALTH-002 | M | MVP | not started |
 | SIM-008 | Zoom-in quarters | Crisis and turning-point years split into four quarterly turns according to triggers Z1 to Z12 and their limits (3.1.1). Done when every trigger is tested, the limits hold, and yearly totals of risk match the unzoomed year within tolerance. | P1 | SIM-002, TIME-003 | L | post-MVP | not started |
 
@@ -33,7 +33,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | CHAR-001 | Person generation | Creates the person at birth: sex (from the country's sex ratio), name, birth year, country, rural or urban. Done when generation is seeded and deterministic and every field is shown on the birth screen. | P0 | WORLD-005, RNG-002, CHAR-002 | M | MVP | not started |
 | CHAR-002 | Name lists | Our own name lists per region and sex, written for the project, for the person and family. Done when every included country maps to a list with at least 40 names per sex. | P0 | WORLD-002 | M | MVP | not started |
 | CHAR-003 | Traits | Six hidden traits (temperament, curiosity, resilience, sociability, aptitude, constitution) rolled at birth, which shape drift, event weights and outcome odds. Done when every trait has at least one engine effect and tests show it changes outcomes. | P0 | CHAR-001 | M | MVP | not started |
-| CHAR-004 | Visible stats | Health, wellbeing, bonds and skills on a 0 to 100 scale (2.2). Done when they are clamped, recorded every year and shown on the life screen. | P0 | SIM-001 | S | MVP | not started |
+| CHAR-004 | Visible stats | Health, wellbeing, bonds and skills on a 0 to 100 scale (2.2). Done when they are clamped, recorded every year and shown on the life screen. | P0 | SIM-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | CHAR-005 | Trait reveal | Traits are revealed in words as the player sees them act ("You have always been quick to anger"). Done when each trait has reveal texts and a reveal is triggered by relevant events. | P2 | CHAR-003, EVENT-001 | M | post-MVP | not started |
 | CHAR-006 | Portrait | A simple, non-stereotyped abstract portrait or emblem per life. | P3 | UI-011 | M | post-MVP | not started |
 
@@ -163,11 +163,11 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| RNG-001 | Seeded PRNG | sfc32 (or similar) seeded by a cyrb128-style hash of the seed string. Done when known-answer tests pass. | P0 | none | S | MVP | not started |
-| RNG-002 | Independent streams | Separate streams per subsystem from `hash(seed, stream, year)` (3.9). Done when a test shows that adding an event does not change mortality draws. | P0 | RNG-001 | S | MVP | not started |
+| RNG-001 | Seeded PRNG | sfc32 (or similar) seeded by a cyrb128-style hash of the seed string. Done when known-answer tests pass. | P0 | none | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
+| RNG-002 | Independent streams | Separate streams per subsystem from `hash(seed, stream, year)` (3.9). Done when a test shows that adding an event does not change mortality draws. | P0 | RNG-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-003 | Readable seeds | Seeds like "amber-river-4821", shown on the summary. Done when every life has one. | P1 | RNG-001 | S | MVP | not started |
 | RNG-004 | Replay | Same seed, data version, content version and decision log give the same life. Done when a test replays many lives and compares full histories. | P0 | RNG-002, SAVE-001 | M | MVP | not started |
-| RNG-005 | No unseeded randomness | A lint rule forbids `Math.random()` in the engine. Done when CI fails on a violation. | P1 | BE-002 | S | MVP | not started |
+| RNG-005 | No unseeded randomness | A lint rule forbids `Math.random()` in the engine. Done when CI fails on a violation. | P1 | BE-002 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-006 | Play a given seed | Enter or open a seed to live that same starting life. | P2 | RNG-003 | S | post-MVP | not started |
 
 ## Time progression (TIME)
@@ -218,7 +218,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| UI-001 | App shell | Screens and navigation with no framework: start, birth, life, decision, summary, past lives, settings, sources. Done when every screen is reachable and back navigation behaves. | P0 | none | M | MVP | not started |
+| UI-001 | App shell | Screens and navigation with no framework: start, birth, life, decision, summary, past lives, settings, sources. Done when every screen is reachable and back navigation behaves. | P0 | none | M | MVP | in progress ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | UI-002 | Start screen | Title, a few lines of introduction, the content note, the softening option, and "Begin a life" / "Continue". Done when a first-time player can start in one tap after reading the note. | P0 | UI-001 | S | MVP | not started |
 | UI-003 | Birth screen | Reveals country, sex, name, family and household in prose, with the country panel. Done when it reads well for rich and poor births alike. | P0 | UI-001, CHAR-001 | S | MVP | not started |
 | UI-004 | Life screen | Header (name, age, country), stats panel, family list and the story log. Done on mobile and desktop. | P0 | UI-001, CHAR-004 | M | MVP | not started |
@@ -228,7 +228,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | UI-008 | Past lives screen | A list of finished lives with name, country, age at death and rings thumbnail. | P1 | SAVE-003, UI-001 | S | MVP | not started |
 | UI-009 | Settings screen | Softening, reduced motion, text size, theme, delete data. | P1 | UI-001 | S | MVP | not started |
 | UI-010 | Responsive layout | One column on phones, two on desktop. Done when the full loop works at 360 px and 1440 px widths. | P0 | UI-001 | M | MVP | not started |
-| UI-011 | Visual identity | Palette, type, light and dark themes as tokens (1.3). Done when all screens use the tokens. | P0 | UI-001 | M | MVP | not started |
+| UI-011 | Visual identity | Palette, type, light and dark themes as tokens (1.3). Done when all screens use the tokens. | P0 | UI-001 | M | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | UI-012 | Help resources | Calm help lines after sensitive events and an always-available "Need to talk?" link (4). Done when every event with a help topic shows it. | P0 | UI-001, EVENT-006 | S | MVP | not started |
 | UI-013 | Motion | Small transitions (a ring growing, a card settling). | P2 | UI-011, A11Y-004 | S | post-MVP | not started |
 | UI-014 | Installable and offline | Web app manifest and offline caching. | P2 | BE-002 | M | post-MVP | not started |
@@ -256,7 +256,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| L10N-001 | String keys | All player-facing text through `t(key, vars)`, English first. Done when a check finds no hard-coded strings in UI or content. | P0 | none | S | MVP | not started |
+| L10N-001 | String keys | All player-facing text through `t(key, vars)`, English first. Done when a check finds no hard-coded strings in UI or content. | P0 | none | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | L10N-002 | Country names | Country names from `Intl.DisplayNames`, with fallbacks. | P1 | L10N-001 | S | MVP | not started |
 | L10N-003 | Number formatting | Numbers and money formatted for the locale. | P1 | L10N-001 | S | MVP | not started |
 | L10N-004 | Second language | A full translation into a second language. | P2 | L10N-001 | L | post-MVP | not started |
@@ -281,7 +281,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| ANLT-001 | No tracking | The game sends no analytics or personal data; this is stated on the start screen. Done when the build contains no tracking code. | P0 | none | S | MVP | not started |
+| ANLT-001 | No tracking | The game sends no analytics or personal data; this is stated on the start screen. Done when the build contains no tracking code. | P0 | none | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | ANLT-002 | Your lives in numbers | Local-only statistics across your own lives. | P2 | SAVE-003 | S | post-MVP | not started |
 | ANLT-003 | Opt-in aggregate stats | Anonymous, opt-in counts to improve balance. Needs a backend and a privacy review. | P3 | BE-003 | M | post-MVP | not started |
 
@@ -289,8 +289,8 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| BE-001 | Static site | No server: the game is a static build with data files. Done when the built site runs from any static host. | P0 | none | S | MVP | not started |
-| BE-002 | CI and deploy | GitHub Actions: typecheck, lint, tests on every PR; deploy to GitHub Pages on merge to main. Done when a merge publishes the site. | P0 | BE-001 | S | MVP | not started |
+| BE-001 | Static site | No server: the game is a static build with data files. Done when the built site runs from any static host. | P0 | none | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
+| BE-002 | CI and deploy | GitHub Actions: typecheck, lint, tests on every PR; deploy to GitHub Pages on merge to main. Done when a merge publishes the site. | P0 | BE-001 | S | MVP | in progress ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | BE-003 | Shared memorials | Optional public sharing of finished lives. Needs moderation, privacy and a server. | P3 | SAVE-003 | XL | post-MVP | not started |
 
 ## Admin/content tooling (ADMIN)
