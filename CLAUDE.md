@@ -104,7 +104,7 @@ npm run e2e            # in the cloud sandbox: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-
 Before opening a PR, and before asking Roman to review, run an independent review pass. Skip it for changes that touch only docs or data files. Spawn the reviewers in parallel, each with fresh context. Give each one its inputs: the diff vs `main` (`git diff main...HEAD`), `CLAUDE.md`, and the `docs/features.md` rows (feature IDs and acceptance criteria) for the feature IDs in the PR.
 
 - **`surgeon-reviewer` (acceptance):** checks that each feature ID's acceptance criteria are met and tested. An unmet criterion is a blocker.
-- **`surgeon-reviewer` (React):** checks correctness, React patterns per `.claude/skills/vercel-react-best-practices`, and performance.
+- **`surgeon-reviewer` (React):** checks correctness, React patterns per `.claude/skills/vercel-react-best-practices` (its `SKILL.md` index plus the rule files it needs, in addition to the shared inputs), and performance.
 - **`surgeon-reviewer` (CSS), only if a `*.css` or `*.module.css` file or a design token (`src/styles.css`) is added, changed or deleted, or the markup of `src/ui/kit` changes:** checks token use, layout, responsiveness and dead styles.
 - **`accessibility-tester`, only if anything under `src/ui` changes.**
 
