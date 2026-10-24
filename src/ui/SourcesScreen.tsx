@@ -4,6 +4,7 @@ import type { CountryIndex } from "../engine/world/types";
 import { countryName, formatDate, formatNumber } from "../format";
 import { t } from "../i18n";
 import { Header } from "./Header";
+import { Button } from "./kit";
 import styles from "./SourcesScreen.module.css";
 import { useFocusOn } from "./useFocusOn";
 
@@ -48,15 +49,13 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
       {state.status === "error" && (
         <>
           <p role="alert">{t("sources.error")}</p>
-          <button type="button" className="primary" onClick={retry}>
+          <Button variant="primary" onPress={retry}>
             {t("sources.retry")}
-          </button>
+          </Button>
         </>
       )}
       {state.status === "ready" && <SourceList index={state.index} />}
-      <button type="button" className="ghost" onClick={onBack}>
-        {t("sources.back")}
-      </button>
+      <Button onPress={onBack}>{t("sources.back")}</Button>
     </section>
   );
 }

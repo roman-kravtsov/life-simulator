@@ -1,5 +1,6 @@
 import { t } from "../i18n";
 import { Header } from "./Header";
+import { Button } from "./kit";
 import { useFocusOn } from "./useFocusOn";
 
 export function StartScreen({ onBegin, onSources }: { onBegin: () => void; onSources: () => void }) {
@@ -19,9 +20,7 @@ export function StartScreen({ onBegin, onSources }: { onBegin: () => void; onSou
         {t("start.begin")}
       </button>
       <p className="small">{t("start.privacy")}</p>
-      <button type="button" className="ghost" onClick={onSources}>
-        {t("start.sources")}
-      </button>
+      <Button onPress={onSources}>{t("start.sources")}</Button>
       <p className="small">{t("start.preview")}</p>
     </section>
   );
