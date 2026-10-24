@@ -82,7 +82,7 @@ describe("App", () => {
   it("shows the four stats as meters and the family", async () => {
     const { user } = setup();
     await startLife(user);
-    for (const name of ["Health", "Wellbeing", "Bonds", "Skills"]) {
+    for (const name of ["Health", "Happiness", "Belonging", "Skills"]) {
       expect(screen.getByRole("meter", { name })).toBeInTheDocument();
     }
     expect(screen.getByRole("heading", { name: "Family" })).toBeInTheDocument();

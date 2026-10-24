@@ -43,7 +43,7 @@ export function generatePerson(seed: string, country: Country): Person {
     stage: "infancy",
     alive: true,
     traits,
-    stats: { health: 0, wellbeing: 65, bonds: 40 + 0.4 * parentCloseness, skills: 0 },
+    stats: { health: 0, happiness: 65, belonging: 40 + 0.4 * parentCloseness, skills: 0 },
     location,
     education: { level: "none", inSchool: false, years: 0 },
     work: { status: "child", yearsWorked: 0, attachment },

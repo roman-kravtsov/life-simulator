@@ -7,7 +7,7 @@ import { Button } from "./kit";
 import styles from "./LifeScreen.module.css";
 import { useFocusOn } from "./useFocusOn";
 
-const STATS: readonly StatId[] = ["health", "wellbeing", "bonds", "skills"];
+const STATS: readonly StatId[] = ["health", "happiness", "belonging", "skills"];
 
 interface Props {
   life: LifeState;

@@ -6,7 +6,7 @@ export type Sex = "female" | "male";
 
 export type LifeStage = "infancy" | "childhood" | "adolescence" | "youth" | "adulthood" | "midlife" | "elder";
 
-export type StatId = "health" | "wellbeing" | "bonds" | "skills";
+export type StatId = "health" | "happiness" | "belonging" | "skills";
 
 export type Stats = Record<StatId, number>;
 

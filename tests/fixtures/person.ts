@@ -21,7 +21,7 @@ export function makePerson(overrides: Partial<Person> = {}): Person {
     stage: "childhood",
     alive: true,
     traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: 0, constitution: 0 },
-    stats: { health: 70, wellbeing: 60, bonds: 60, skills: 20 },
+    stats: { health: 70, happiness: 60, belonging: 60, skills: 20 },
     location: "urban",
     education: { level: "none", inSchool: false, years: 0 },
     work: { status: "child", yearsWorked: 0, attachment: 0.5 },

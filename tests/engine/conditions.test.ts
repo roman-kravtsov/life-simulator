@@ -16,8 +16,8 @@ describe("stat conditions", () => {
   it("checks a closed range with between", () => {
     const c: Condition = { stat: "skills", op: "between", value: [10, 20] };
     expect(holds(c, ctx())).toBe(true);
-    expect(holds(c, ctx({ stats: { health: 70, wellbeing: 60, bonds: 60, skills: 21 } }))).toBe(false);
-    expect(holds(c, ctx({ stats: { health: 70, wellbeing: 60, bonds: 60, skills: 9 } }))).toBe(false);
+    expect(holds(c, ctx({ stats: { health: 70, happiness: 60, belonging: 60, skills: 21 } }))).toBe(false);
+    expect(holds(c, ctx({ stats: { health: 70, happiness: 60, belonging: 60, skills: 9 } }))).toBe(false);
   });
 });
 

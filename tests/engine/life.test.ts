@@ -71,7 +71,7 @@ describe("advance: the yearly turn (SIM-002, TIME-001)", () => {
   it("does not change the state it is given", () => {
     const state = deepFreeze(start("frozen"));
     expect(() =>
-      advance(state, input, country, createCatalog([event({ effects: [{ stat: "bonds", add: 3 }] })])),
+      advance(state, input, country, createCatalog([event({ effects: [{ stat: "belonging", add: 3 }] })])),
     ).not.toThrow();
   });
   it("refuses to advance a life that has ended", () => {
@@ -122,22 +122,22 @@ describe("turn steps", () => {
     expect(life.history[0]!.stats).not.toEqual(start("drift").person.stats);
   });
   it("events: an event that always fires lands in the record with its effects tagged by cause", () => {
-    const catalog = createCatalog([event({ effects: [{ stat: "bonds", add: 3 }], cause: "circumstance" })]);
+    const catalog = createCatalog([event({ effects: [{ stat: "belonging", add: 3 }], cause: "circumstance" })]);
     const record = advance(start("events"), input, country, catalog).state.history[0]!;
     expect(record.events.map((e) => e.id)).toEqual(["test.event"]);
     expect(record.events[0]!.textKey).toBe("event.test.event");
     expect(record.events[0]!.effects).toEqual([
-      { effect: { stat: "bonds", add: 3 }, cause: "circumstance", delta: expect.any(Number) },
+      { effect: { stat: "belonging", add: 3 }, cause: "circumstance", delta: expect.any(Number) },
     ]);
   });
   it("effects: event effects change the stats after drift", () => {
-    const plain = advance(start("fx"), input, country, empty).state.person.stats.bonds;
+    const plain = advance(start("fx"), input, country, empty).state.person.stats.belonging;
     const boosted = advance(
       start("fx"),
       input,
       country,
-      createCatalog([event({ effects: [{ stat: "bonds", add: 5 }] })]),
-    ).state.person.stats.bonds;
+      createCatalog([event({ effects: [{ stat: "belonging", add: 5 }] })]),
+    ).state.person.stats.belonging;
     expect(boosted).toBeGreaterThan(plain);
   });
   it("effects: an event can set a story flag", () => {
@@ -145,12 +145,12 @@ describe("turn steps", () => {
     expect(advance(start("flag"), input, country, catalog).state.person.flags.saw_the_sea).toBe(true);
   });
   it("effects: resilience softens a setback and low resilience deepens it", () => {
-    const hit = createCatalog([event({ effects: [{ stat: "wellbeing", add: -10 }] })]);
+    const hit = createCatalog([event({ effects: [{ stat: "happiness", add: -10 }] })]);
     const withResilience = (value: number): LifeState => {
       const life = start("res");
       return { ...life, person: { ...life.person, traits: { ...life.person.traits, resilience: value } } };
     };
-    const after = (value: number) => advance(withResilience(value), input, country, hit).state.person.stats.wellbeing;
+    const after = (value: number) => advance(withResilience(value), input, country, hit).state.person.stats.happiness;
     expect(after(2)).toBeGreaterThan(after(-2));
   });
   it("the events stream is separate from mortality: adding an event that changes nothing does not move the death", () => {
@@ -185,7 +185,7 @@ describe("family in the yearly turn (FAM-003)", () => {
     const after = next.person.relationships.find((r) => r.kind === "mother")!;
     if (after.alive) expect(after.age).toBe(before.age + 1);
   });
-  it("records a parent's death as an event, sets a flag and hurts bonds and wellbeing", () => {
+  it("records a parent's death as an event, sets a flag and hurts belonging and happiness", () => {
     const base = start("grief");
     const mother = { ...base.person.relationships[0]!, age: 99, closeness: 90 };
     const grieving: LifeState = {
@@ -201,9 +201,9 @@ describe("family in the yearly turn (FAM-003)", () => {
         expect(found.helpTopic).toBe("grief");
         expect(found.vars).toEqual({ name: mother.name });
         expect(s.person.flags.lost_mother).toBe(true);
-        expect(found.effects.some((e) => "stat" in e.effect && e.effect.stat === "bonds" && (e.delta ?? 0) < 0)).toBe(
-          true,
-        );
+        expect(
+          found.effects.some((e) => "stat" in e.effect && e.effect.stat === "belonging" && (e.delta ?? 0) < 0),
+        ).toBe(true);
         expect(found.effects.every((e) => e.cause === "chance")).toBe(true);
         return;
       }

@@ -34,14 +34,14 @@ describe("hazardMultiplier (HEALTH-002)", () => {
     expect(hazardMultiplier(makePerson(), country)).toBeGreaterThan(0.8);
     expect(hazardMultiplier(makePerson(), country)).toBeLessThan(1.25);
     const frail = makePerson({
-      stats: { health: 0, wellbeing: 0, bonds: 0, skills: 0 },
+      stats: { health: 0, happiness: 0, belonging: 0, skills: 0 },
       money: moneyAt(1),
       conditions: [1, 2, 3, 4, 5, 6].map((i) => ({ id: `c${i}`, severity: 3 as const, since: 0 })),
       location: "rural",
     });
     expect(hazardMultiplier(frail, country)).toBe(HAZARD_MAX);
     const robust = makePerson({
-      stats: { health: 100, wellbeing: 100, bonds: 100, skills: 100 },
+      stats: { health: 100, happiness: 100, belonging: 100, skills: 100 },
       money: moneyAt(100),
       traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: 0, constitution: 2 },
     });
@@ -50,7 +50,7 @@ describe("hazardMultiplier (HEALTH-002)", () => {
   it("rises with poor health, low household income, rural life and conditions", () => {
     const base = hazardMultiplier(makePerson(), country);
     expect(
-      hazardMultiplier(makePerson({ stats: { health: 30, wellbeing: 60, bonds: 60, skills: 20 } }), country),
+      hazardMultiplier(makePerson({ stats: { health: 30, happiness: 60, belonging: 60, skills: 20 } }), country),
     ).toBeGreaterThan(base);
     expect(
       hazardMultiplier(makePerson({ money: moneyAt(5) }), country),

@@ -23,7 +23,7 @@ const HEALTH_CURVE: readonly (readonly [number, number])[] = [
 /** Access to care by income group, in health points. */
 const CARE_BY_INCOME_GROUP: Record<IncomeGroup, number> = { low: -4, "lower-middle": -2, "upper-middle": 0, high: 2 };
 
-const RATE = { health: 0.5, wellbeing: 0.4, bonds: 0.3 } as const;
+const RATE = { health: 0.5, happiness: 0.4, belonging: 0.3 } as const;
 
 /** Skill points gained per year by age band before traits, access and ceiling: [from age, gain]. */
 const SKILL_GAIN: readonly (readonly [number, number])[] = [
@@ -65,14 +65,14 @@ export function healthNorm(person: Person, country: Country): number {
   );
 }
 
-const wellbeingNorm = (person: Person) =>
+const happinessNorm = (person: Person) =>
   62 +
   3 * person.traits.resilience -
   (4 * (50 - person.money.percentile)) / 50 +
-  0.1 * (person.stats.bonds - 50) -
+  0.1 * (person.stats.belonging - 50) -
   (childLabour(person) ? 3 : 0);
 
-function bondsNorm(person: Person): number {
+function belongingNorm(person: Person): number {
   const parents = person.relationships.filter((r) => r.alive && (r.kind === "mother" || r.kind === "father"));
   if (person.age < 18) {
     const closeness = parents.length ? parents.reduce((sum, r) => sum + r.closeness, 0) / parents.length : 0;
@@ -111,17 +111,21 @@ const swing = (rng: Rng, amplitude: number) => (rng.next() - 0.5) * 2 * amplitud
 export function driftStats(person: Person, country: Country, rng: Rng): Stats {
   const { stats } = person;
   const healthNoise = swing(rng, 1.5);
-  const wellbeingNoise = swing(rng, 2 + 1.5 * (person.traits.temperament + 2));
-  const bondsNoise = swing(rng, 2);
+  const happinessNoise = swing(rng, 2 + 1.5 * (person.traits.temperament + 2));
+  const belongingNoise = swing(rng, 2);
   swing(rng, 0); // kept so that adding a noise term later does not shift the others
   return {
     health: clamp(stats.health + RATE.health * (healthNorm(person, country) - stats.health) + healthNoise, 0, 100),
-    wellbeing: clamp(
-      stats.wellbeing + RATE.wellbeing * (wellbeingNorm(person) - stats.wellbeing) + wellbeingNoise,
+    happiness: clamp(
+      stats.happiness + RATE.happiness * (happinessNorm(person) - stats.happiness) + happinessNoise,
       0,
       100,
     ),
-    bonds: clamp(stats.bonds + RATE.bonds * (bondsNorm(person) - stats.bonds) + bondsNoise, 0, 100),
+    belonging: clamp(
+      stats.belonging + RATE.belonging * (belongingNorm(person) - stats.belonging) + belongingNoise,
+      0,
+      100,
+    ),
     skills: clamp(stats.skills + skillGrowth(person, country), 0, 100),
   };
 }
