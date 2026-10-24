@@ -4,9 +4,9 @@ Claude Code subagents for Birthright live in `.claude/agents/`, one Markdown fil
 
 | Agent                  | Use it to                                                                    | Tools                   |
 | ---------------------- | ---------------------------------------------------------------------------- | ----------------------- |
-| `accessibility-tester` | Audit UI changes for keyboard play, focus, labels, announcements and contrast | read-only (plus Bash)   |
-| `surgeon-reviewer`     | Review a diff for real bugs only, ranked, with a ship verdict                 | read-only (plus Bash)   |
-| `qa-expert`            | Find test gaps against a feature's acceptance criteria                        | read-only (plus Bash)   |
+| `accessibility-tester` | Audit UI changes for keyboard play, focus, labels, announcements and contrast | no edit tools (plus Bash)|
+| `surgeon-reviewer`     | Review a diff for real bugs only, ranked, with a ship verdict                 | no edit tools (plus Bash)|
+| `qa-expert`            | Find test gaps against a feature's acceptance criteria                        | no edit tools (plus Bash)|
 | `test-automator`       | Write Vitest, React Testing Library and Playwright tests, test-first          | read and write          |
 | `docs-drift-editor`    | Fix docs that no longer match a code change, with minimal edits               | edit docs only (no Write) |
 
@@ -23,5 +23,5 @@ How they were chosen: each candidate was scored against a weighted rubric (relev
 ## Rules for agents
 
 - A new or changed agent must not refer to files, commands, tools or other agents that do not exist in this repo.
-- Reviewers stay read-only. Give write tools only to agents whose job is to write.
+- Reviewers get no Write or Edit tools. They keep Bash to run checks, and their prompts forbid using it to change files; that is an instruction, not an enforced sandbox. Give write tools only to agents whose job is to write.
 - Agent prompts restate the `CLAUDE.md` rules they depend on; `CLAUDE.md` wins on any conflict.
