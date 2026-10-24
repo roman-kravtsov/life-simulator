@@ -29,12 +29,12 @@ export function newLife({ seed, country }: NewLifeOptions): LifeState {
   return { seed, person: generatePerson(seed, country), history: [] };
 }
 
-/** How much resilience cushions a setback to wellbeing: each point changes it by this share. */
+/** How much resilience cushions a setback to happiness: each point changes it by this share. */
 const RESILIENCE_CUSHION = 0.15;
 
 function cushion(effects: readonly Effect[], resilience: number): Effect[] {
   return effects.map((effect) =>
-    "stat" in effect && effect.stat === "wellbeing" && effect.add < 0
+    "stat" in effect && effect.stat === "happiness" && effect.add < 0
       ? { ...effect, add: effect.add * (1 - RESILIENCE_CUSHION * resilience) }
       : effect,
   );
@@ -45,8 +45,8 @@ function griefFor(relative: Relationship, age: number): PendingEvent {
   const infant = age < 3 ? 0.3 : 1;
   const parent = relative.kind === "mother" || relative.kind === "father";
   const effects: Effect[] = [
-    { stat: "bonds", add: -(3 + relative.closeness * 0.12) * infant },
-    { stat: "wellbeing", add: -(4 + relative.closeness * 0.15) * infant },
+    { stat: "belonging", add: -(3 + relative.closeness * 0.12) * infant },
+    { stat: "happiness", add: -(4 + relative.closeness * 0.15) * infant },
   ];
   if (parent) effects.push({ set: `lost_${relative.kind}`, value: true });
   return {
@@ -98,7 +98,7 @@ export function advance(
             tags: ["circumstance"],
             effects: [
               { set: "childLabour", value: true },
-              { stat: "wellbeing", add: -2 },
+              { stat: "happiness", add: -2 },
             ],
             cause: "circumstance",
           }
