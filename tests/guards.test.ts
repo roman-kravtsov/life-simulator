@@ -12,7 +12,9 @@ function sourceFiles(dir: string): string[] {
 
 const unseededRandom = (source: string) => /Math\s*\.\s*random\s*\(/.test(source);
 const trackingCode = (source: string) =>
-  /google-analytics|googletagmanager|gtag\(|plausible\.io|segment\.com|mixpanel|posthog|sendBeacon/i.test(source);
+  /google-analytics|googletagmanager|gtag\(|plausible\.io|\bplausible\s*\(|segment\.com|mixpanel|posthog|sendBeacon/i.test(
+    source,
+  );
 
 describe("RNG-005: no unseeded randomness in the engine", () => {
   it("detects Math.random()", () => {
@@ -30,7 +32,9 @@ describe("ANLT-001: no tracking", () => {
   it("detects common tracking code", () => {
     expect(trackingCode("<script src='https://www.googletagmanager.com/gtag/js'>")).toBe(true);
     expect(trackingCode("render(app)")).toBe(false);
+    expect(trackingCode("plausible('event')")).toBe(true);
     expect(trackingCode("// implausible year")).toBe(false);
+    expect(trackingCode("a plausible reference year")).toBe(false);
   });
 
   it.each([...sourceFiles("src"), "index.html"])("%s contains no tracking code", (file) => {

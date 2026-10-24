@@ -8,7 +8,7 @@ import { GHO_SUICIDE_FILE } from "./extract/gho";
 import { ILO_IDS, iloFile } from "./extract/ilostat";
 import { PIP_FILE } from "./extract/pip";
 import { UIS_FILE } from "./extract/uis";
-import { WDI_INDICATORS, wdiFile } from "./extract/wdi";
+import { WDI_INDICATORS, wdiFile, wdiLastUpdated } from "./extract/wdi";
 import { WPP_FILES } from "./extract/wpp";
 
 /** Bump deliberately when data files are rebuilt from newer downloads. */
@@ -39,7 +39,7 @@ const FIXED: Record<string, Fixed> = {
     publisher: "World Bank, redistributing series from UN, UNICEF, ILO and WHO",
     url: "https://data.worldbank.org/",
     licence: "CC BY 4.0",
-    version: "WDI API, latest value per country",
+    version: "WDI API, latest value per country, as last updated by the World Bank on {wdiLastUpdated}",
     files: Object.values(WDI_INDICATORS).map(wdiFile),
   },
   gdim: {
@@ -87,7 +87,8 @@ const FIXED: Record<string, Fixed> = {
 export function sourceInfo(id: string): SourceInfo {
   const { files, ...info } = FIXED[id] ?? fail(id);
   const accessed = files.map((f) => fetched(f).accessed).sort();
-  return { ...info, accessed: accessed.at(-1)! };
+  const version = info.version.replace("{wdiLastUpdated}", () => wdiLastUpdated());
+  return { ...info, version, accessed: accessed.at(-1)! };
 }
 
 function fail(id: string): never {

@@ -444,7 +444,7 @@ Built in M2 (2026-10-24), where the data pipeline settled details the sketch in 
 - **Reference year.** Everything uses the latest estimate year of each source (WPP 2023, WHO GHE 2023, latest PIP survey from 2000 on, latest value from 2000 on for the rest). Each value keeps its own year.
 - **Region** is the UN M49 sub-region from WPP (for example "Western Africa"). Fallbacks use it first, then the income group, then the world.
 - **Income percentiles** use PIP 2021 PPP, national reporting level only. Countries whose survey covers only urban areas (Argentina) or that have no recent survey (Afghanistan) are excluded rather than shown with a distribution that is not national.
-- **Cause of death** uses WHO GHE 2023 (IHME GBD needs a login, so it is not used). Bands are 0-4, 5-14, 15-29, 30-49, 50-59, 60-69 and 70+, by sex, with 16 cause ids plus `other`. GHE covers 185 countries and areas, which caps coverage.
+- **Cause of death** uses WHO GHE 2023 (IHME GBD needs a login, so it is not used). Bands are 0-4, 5-14, 15-29, 30-49, 50-59, 60-69 and 70+, by sex, with 15 cause ids plus `other` (the remainder). GHE covers 185 countries and areas, which caps coverage.
 - **Intergenerational persistence** is the parent-child correlation of years of schooling in GDIM (1980 cohort), a proxy: GDIM's income elasticity is not available for most countries.
 - **Gross ratios** (tertiary enrolment, completion rates) can exceed 100% because of over-age pupils; they are capped at 1.
 - **Not in M2:** conflict (UCDP) and migration are not in the files yet. They arrive with WORLD-010 and DEC-008, which add their schema fields. The `iso2` code is stored so country names come from `Intl.DisplayNames`.

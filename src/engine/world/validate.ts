@@ -77,6 +77,8 @@ export function validateCountry(country: Country, sources: CountryIndex["sources
   for (const [path, value] of shares) if (!inUnit(value)) fail(path, `must be between 0 and 1, got ${value}`);
 
   const sectors = w.sectorShares.value;
+  for (const [name, value] of Object.entries(sectors))
+    if (!inUnit(value)) fail(`work.sectorShares.${name}`, `must be between 0 and 1, got ${value}`);
   if (Math.abs(sectors.agriculture + sectors.industry + sectors.services - 1) > 0.02)
     fail("work.sectorShares", "shares must sum to 1");
 

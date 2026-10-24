@@ -2,7 +2,8 @@
 // WDI redistributes figures from other publishers (UN, UNICEF, ILO, WHO); the source note says so.
 import { readFileSync } from "node:fs";
 import type { IncomeGroup } from "../../../src/engine/world/types";
-import { download } from "../lib/cache";
+import { join } from "node:path";
+import { CACHE_DIR, download } from "../lib/cache";
 import { type Indicators, MIN_YEAR, put, share, sig } from "./types";
 
 const API = "https://api.worldbank.org/v2";
@@ -82,4 +83,12 @@ export async function extractWdi(refresh: boolean): Promise<Indicators> {
       );
   }
   return out;
+}
+
+/** The date the World Bank last updated WDI, as the API reports it, so the source edition is identifiable. */
+export function wdiLastUpdated(): string {
+  const body = JSON.parse(readFileSync(join(CACHE_DIR, wdiFile(WDI_INDICATORS.urban)), "utf8")) as [
+    { lastupdated: string },
+  ];
+  return body[0].lastupdated;
 }

@@ -13,6 +13,12 @@ describe("validateCountry", () => {
     expect(errors(makeCountry({ iso3: "ab" }))).toContainEqual(expect.stringMatching(/iso3/));
   });
 
+  it("requires each sector share to be a share, not just a sum of 1", () => {
+    const c = makeCountry();
+    c.work.sectorShares.value = { agriculture: -1, industry: 1, services: 1 };
+    expect(errors(c)).toContainEqual(expect.stringMatching(/sectorShares\.agriculture/));
+  });
+
   it("requires a two-letter ISO 3166-1 alpha-2 code for country names", () => {
     expect(errors(makeCountry({ iso2: "a" }))).toContainEqual(expect.stringMatching(/iso2/));
   });
