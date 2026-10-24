@@ -72,7 +72,8 @@ describe("calibration harness (SIM-007)", () => {
 describe("the life systems against the source data (M4, M5)", () => {
   // EDU-001, EDU-002, CAREER-001, CAREER-002, CAREER-003, MONEY-003, FAM-002, FAM-004, REL-004: whole
   // lives, compared with each country's published completion, literacy, participation, sector,
-  // informality, unemployment, marriage age, fertility and schooling persistence. Each comparison has its own tolerance, set in calibrateSystems.
+  // informality, unemployment, marriage age, fertility and schooling persistence. Each comparison has
+  // its own tolerance, set in calibrateSystems.
   const countries = ["NGA", "NER", "IND", "BRA", "JPN", "USA"];
   it.each(countries)(
     "%s: school, work, income and family reproduce the source within tolerance",
