@@ -13,6 +13,10 @@ describe("validateCountry", () => {
     expect(errors(makeCountry({ iso3: "ab" }))).toContainEqual(expect.stringMatching(/iso3/));
   });
 
+  it("requires a two-letter ISO 3166-1 alpha-2 code for country names", () => {
+    expect(errors(makeCountry({ iso2: "a" }))).toContainEqual(expect.stringMatching(/iso2/));
+  });
+
   it("requires a 101-value life table with probabilities ending at 1", () => {
     const c = makeCountry();
     c.demography.lifeTable.value.female = c.demography.lifeTable.value.female.slice(0, 50);
