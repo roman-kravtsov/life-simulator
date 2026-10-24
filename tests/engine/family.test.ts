@@ -52,7 +52,11 @@ describe("rollFamilyDeaths (FAM-003)", () => {
   });
   it("draws once per relative whether or not they are alive, so one death never shifts another's roll", () => {
     const alone = rollFamilyDeaths([rel({ id: "b", age: 60 })], country, createRng("x"));
-    const withDead = rollFamilyDeaths([rel({ id: "a", alive: false }), rel({ id: "b", age: 60 })], country, createRng("x"));
+    const withDead = rollFamilyDeaths(
+      [rel({ id: "a", alive: false }), rel({ id: "b", age: 60 })],
+      country,
+      createRng("x"),
+    );
     // The second relative's roll is the second draw in one case and the first in the other,
     // so compare over many seeds that both behave like the table instead of each other.
     expect(alone).toHaveLength(1);
@@ -105,7 +109,14 @@ describe("childLabourStatus (SIM-005)", () => {
     const share = (percentile: number) => {
       let w = 0;
       for (let i = 0; i < 4000; i++) {
-        if (childLabourStatus(makePerson({ age: 7, money: { householdPercentile: percentile, savings: 0, debt: 0 } }), country, createRng(`p${percentile}-${i}`))) w++;
+        if (
+          childLabourStatus(
+            makePerson({ age: 7, money: { householdPercentile: percentile, savings: 0, debt: 0 } }),
+            country,
+            createRng(`p${percentile}-${i}`),
+          )
+        )
+          w++;
       }
       return w / 4000;
     };
@@ -113,6 +124,7 @@ describe("childLabourStatus (SIM-005)", () => {
   });
   it("is zero where no child works", () => {
     const none = makeCountry({ work: { ...country.work, childLabour: { ...country.work.childLabour, value: 0 } } });
-    for (let i = 0; i < 200; i++) expect(childLabourStatus(makePerson({ age: 9 }), none, createRng(`z${i}`))).toBe(false);
+    for (let i = 0; i < 200; i++)
+      expect(childLabourStatus(makePerson({ age: 9 }), none, createRng(`z${i}`))).toBe(false);
   });
 });

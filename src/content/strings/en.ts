@@ -94,25 +94,36 @@ export const en: Readonly<Record<string, string>> = {
   "note.unemployment": "Here, about {share} of the people who look for work cannot find it",
 
   "event.family.mother_died": "{name}, your mother, dies. The house is a different size afterwards.",
-  "event.family.father_died": "{name}, your father, dies. People bring food and speak quietly, and you are not sure where to stand.",
+  "event.family.father_died":
+    "{name}, your father, dies. People bring food and speak quietly, and you are not sure where to stand.",
   "event.family.relative_died": "{name} dies. The family gathers, and the gap in it is plain to everyone.",
-  "event.check.child_labour_starts": "There is work to be done and not enough hands, so yours are needed. School, if there is school, fits in around it.",
+  "event.check.child_labour_starts":
+    "There is work to be done and not enough hands, so yours are needed. School, if there is school, fits in around it.",
   "event.check.child_labour_ends": "The work you did as a child is behind you now.",
 
-  "event.infancy.first_steps": "You take your first steps from one pair of hands to the next. Everyone watching laughs.",
+  "event.infancy.first_steps":
+    "You take your first steps from one pair of hands to the next. Everyone watching laughs.",
   "event.infancy.lullaby": "The same song, every night, until it is the sound of being safe.",
   "event.infancy.fever": "A fever keeps the household awake for three nights. It breaks before dawn on the fourth.",
-  "event.childhood.long_walk": "The way to water, to school, to anywhere, is long. You learn the road by its stones and by who you meet on it.",
-  "event.childhood.teacher_notices": "A teacher stops at your work and is quiet for a moment, then says your name as if it were praise.",
-  "event.childhood.harvest_help": "The harvest needs every pair of hands, and yours are among them. You are tired and proud in about equal parts.",
-  "event.adolescence.first_friend": "Someone sits beside you without being asked. By the end of the year you cannot remember not knowing them.",
+  "event.childhood.long_walk":
+    "The way to water, to school, to anywhere, is long. You learn the road by its stones and by who you meet on it.",
+  "event.childhood.teacher_notices":
+    "A teacher stops at your work and is quiet for a moment, then says your name as if it were praise.",
+  "event.childhood.harvest_help":
+    "The harvest needs every pair of hands, and yours are among them. You are tired and proud in about equal parts.",
+  "event.adolescence.first_friend":
+    "Someone sits beside you without being asked. By the end of the year you cannot remember not knowing them.",
   "event.adolescence.growth_spurt": "You grow out of your clothes and into a body that is yours only by half.",
-  "event.youth.restless_year": "You are restless. You read what you can find, ask questions nobody has time for, and sleep badly with the window open.",
-  "event.adulthood.unemployed_year": "For a stretch of the year there is no steady work, and the days lose their edges.",
+  "event.youth.restless_year":
+    "You are restless. You read what you can find, ask questions nobody has time for, and sleep badly with the window open.",
+  "event.adulthood.unemployed_year":
+    "For a stretch of the year there is no steady work, and the days lose their edges.",
   "event.adulthood.hard_times": "Money is tight everywhere. People lean on each other more than they say.",
-  "event.adulthood.quiet_evening": "One evening the work is done early. You sit outside while the light goes, and nothing is asked of you.",
+  "event.adulthood.quiet_evening":
+    "One evening the work is done early. You sit outside while the light goes, and nothing is asked of you.",
   "event.midlife.old_injury": "An old strain comes back and stays. You learn to plan your days around it.",
-  "event.midlife.looking_back": "You catch yourself telling a story you have never told. It sounds, for once, like a life.",
+  "event.midlife.looking_back":
+    "You catch yourself telling a story you have never told. It sounds, for once, like a life.",
   "event.elder.stories": "The young ones come to be told things. You tell them, and some of it is even true.",
   "event.elder.slower_mornings": "Mornings start slower. The body keeps its own calendar now.",
 

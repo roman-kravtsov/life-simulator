@@ -121,9 +121,12 @@ export function selectEvents({ catalog, person, country, history, rng, rollFor }
     return true;
   });
 
-  const picked = eligible.filter((def) => def.chance.kind !== "weight" && (rollFor?.(def.id) ?? rng).chance(eventProbability(def, person, country)));
+  const picked = eligible.filter(
+    (def) => def.chance.kind !== "weight" && (rollFor?.(def.id) ?? rng).chance(eventProbability(def, person, country)),
+  );
 
-  const pool = (tier: "major" | "minor") => eligible.filter((def) => def.chance.kind === "weight" && (def.tier ?? "minor") === tier);
+  const pool = (tier: "major" | "minor") =>
+    eligible.filter((def) => def.chance.kind === "weight" && (def.tier ?? "minor") === tier);
   const draw = (candidates: EventDef[]): EventDef | undefined => {
     if (candidates.length === 0) return undefined;
     const choice = rng.weighted<EventDef | undefined>(

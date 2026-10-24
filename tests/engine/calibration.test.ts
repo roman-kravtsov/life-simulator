@@ -1,6 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LE_TOLERANCE_YEARS, calibrateLifeExpectancy, expectedLifeExpectancy, simulateLife } from "../../src/engine/calibration";
+import {
+  LE_TOLERANCE_YEARS,
+  calibrateLifeExpectancy,
+  expectedLifeExpectancy,
+  simulateLife,
+} from "../../src/engine/calibration";
 import type { Country } from "../../src/engine/world/types";
 import { makeCountry } from "../fixtures/country";
 
@@ -26,17 +31,33 @@ describe("calibration harness (SIM-007)", () => {
 
   // The calibration gate: simulated life expectancy must be within 2 years of the UN WPP value.
   const sample = ["NGA", "IND", "BRA", "JPN", "ETH", "USA"];
-  it.each(sample)("%s is within the tolerance of its life table", (iso3) => {
-    expect(LE_TOLERANCE_YEARS).toBe(2);
-    const report = calibrateLifeExpectancy(load(iso3), 2000, `calibrate-${iso3}`);
-    expect(Math.abs(report.difference), `${iso3}: expected ${report.expected.toFixed(1)}, simulated ${report.simulated.toFixed(1)}`).toBeLessThanOrEqual(LE_TOLERANCE_YEARS);
-  }, 60_000);
+  it.each(sample)(
+    "%s is within the tolerance of its life table",
+    (iso3) => {
+      expect(LE_TOLERANCE_YEARS).toBe(2);
+      const report = calibrateLifeExpectancy(load(iso3), 2000, `calibrate-${iso3}`);
+      expect(
+        Math.abs(report.difference),
+        `${iso3}: expected ${report.expected.toFixed(1)}, simulated ${report.simulated.toFixed(1)}`,
+      ).toBeLessThanOrEqual(LE_TOLERANCE_YEARS);
+    },
+    60_000,
+  );
 
   it("fails loudly when mortality is mis-calibrated", () => {
     const real = load("JPN");
     const wrong = {
       ...real,
-      demography: { ...real.demography, lifeTable: { ...real.demography.lifeTable, value: { female: real.demography.lifeTable.value.female.map((q, i) => (i === 100 ? q : q * 4)), male: real.demography.lifeTable.value.male } } },
+      demography: {
+        ...real.demography,
+        lifeTable: {
+          ...real.demography.lifeTable,
+          value: {
+            female: real.demography.lifeTable.value.female.map((q, i) => (i === 100 ? q : q * 4)),
+            male: real.demography.lifeTable.value.male,
+          },
+        },
+      },
     };
     // Same simulated life, but compared against the true table: the gap must exceed the tolerance.
     const report = calibrateLifeExpectancy(wrong, 800, "wrong");

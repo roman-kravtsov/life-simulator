@@ -1,4 +1,3 @@
-import { dailyIncome, householdBand } from "../engine/money";
 import type { LifeState } from "../engine/types";
 import type { Country } from "../engine/world/types";
 import { countryName, formatMoney } from "../format";
@@ -6,6 +5,7 @@ import { t } from "../i18n";
 import styles from "./BirthScreen.module.css";
 import { Header } from "./Header";
 import { Button } from "./kit";
+import { birthSummary } from "./store";
 import { useFocusOn } from "./useFocusOn";
 
 interface Props {
@@ -19,9 +19,7 @@ export function BirthScreen({ life, country, onContinue }: Props) {
   const { person, seed } = life;
   const heading = useFocusOn<HTMLHeadingElement>();
   const place = countryName(country);
-  const mother = person.relationships.find((r) => r.kind === "mother")!;
-  const father = person.relationships.find((r) => r.kind === "father")!;
-  const income = dailyIncome(country, person.money.householdPercentile);
+  const { band, income, incomeYear, mother, father } = birthSummary(life, country);
 
   return (
     <section>
@@ -35,10 +33,10 @@ export function BirthScreen({ life, country, onContinue }: Props) {
       </p>
       <p className={styles.story}>
         {t("birth.household", {
-          band: t(`birth.band.${householdBand(person.money.householdPercentile)}`),
+          band: t(`birth.band.${band}`),
           country: place,
           income: formatMoney(income),
-          year: country.money.percentiles.year,
+          year: incomeYear,
         })}
       </p>
       <p className={styles.story}>

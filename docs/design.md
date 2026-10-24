@@ -325,6 +325,8 @@ For a zoomed year (3.1.1), steps 2 to 8 run once per quarter with quarterly prob
 9. Record the year (stats, events, decisions, ring data) and save.
 ```
 
+**Built in M3 (2026-10-24):** the year is the one the person is living at their current age, and the birthday comes at its end. So drift, checks, events and mortality all use the age the person has now (mortality uses the life table's `qx` for that age), the record is written with the new age, and a death records the age at death (the infant who dies in year one dies at age 0). Steps without a system yet (the plan, decisions) are no-ops until M5.
+
 ### 3.3 Player agency: the yearly plan and the odds lens
 
 This is where the "in-depth game feeling" comes from.
@@ -451,3 +453,14 @@ Built in M2 (2026-10-24), where the data pipeline settled details the sketch in 
 - **Licence note.** UNESCO UIS data is CC BY-SA 3.0 IGO. Its share-alike term applies to the education values in the country files, which the Sources screen states. WHO data is used under WHO's terms for public health purposes with attribution.
 
 Decided 2026-10-24: **WHO GHE is the only cause-of-death source for the MVP**; IHME GBD is not used (it needs an account). Revisit for finer causes or more countries after the MVP.
+
+Built in M3 (2026-10-24), where the engine settled details the sketch left open:
+
+- **Engine API.** `advance(state, input, country, catalog?)` takes the loaded country; the engine does no I/O. `newLife({ seed, country })` draws sex (from the sex ratio), place (urban share), household percentile (uniform 1 to 100), traits, name and parents from separate streams.
+- **Traits** are integers from -2 to 2 with weights 1:4:6:4:1. Constitution moves the health norm and mortality; aptitude and curiosity move skill growth; sociability moves bonds; resilience moves wellbeing and cushions negative wellbeing effects; temperament widens wellbeing swings.
+- **Mortality** is the life table's `qx` times a hazard multiplier (0.5 to 4) built from health against its age norm, constitution, household percentile, place and conditions, with a small calibration offset. Simulated life expectancy is within about 1 year of the source for the sampled countries; the test limit is 2.
+- **Cause of death** is drawn from the WHO GHE mix for the age band and sex; each condition's `raises` cause gets weight x (1 + 1.5 x severity).
+- **Child labour** uses the ILO share for ages 7 to 14. Poorer households are far more likely (the weight runs from 2x to 0 and averages 1, so the country share holds); a working child stops with probability 0.2 a year.
+- **Family:** parents are alive at the birth (mother's age around the country's mean age at birth, father a few years older) and then die by the life table, with a grief event.
+- **Events:** each statistical event has its own stream (`event:<id>`); narrative events are drawn from a major pool (at most one a year) and a minor pool (at most two), each with a "nothing happens" weight of 8. Events with choices are skipped until M5.
+- **Skills and school** use a stand-in in M3: yearly gain by age band, scaled by the country's completion rate for that age, place and child labour. M4 (EDU-001) replaces it.

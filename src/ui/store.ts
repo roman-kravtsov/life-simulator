@@ -2,9 +2,10 @@
 // framework-free; React only reads snapshots and calls these actions. The store also owns the
 // one piece of I/O a life needs: loading the world data, which it receives from outside.
 import { advance, newLife } from "../engine/life";
+import { dailyIncome, householdBand } from "../engine/money";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
-import type { LifeState } from "../engine/types";
+import type { LifeState, Relationship } from "../engine/types";
 import { drawBirthCountry } from "../engine/world/birth";
 import type { Country, CountryIndex } from "../engine/world/types";
 
@@ -20,6 +21,32 @@ export interface GameSnapshot {
   /** Source details for the data notes shown in the story. */
   sources: CountryIndex["sources"] | null;
   status: LoadStatus;
+}
+
+/** What the birth screen says about the household and parents, derived here so screens stay free of engine code. */
+export interface BirthSummary {
+  band: number;
+  /** Daily income per person in PPP dollars at the household's percentile. */
+  income: number;
+  incomeYear: number;
+  mother: Relationship;
+  father: Relationship;
+}
+
+export function birthSummary(life: LifeState, country: Country): BirthSummary {
+  const { relationships, money } = life.person;
+  const parent = (kind: Relationship["kind"]) => {
+    const found = relationships.find((r) => r.kind === kind);
+    if (!found) throw new Error(`A new life always has a ${kind}`);
+    return found;
+  };
+  return {
+    band: householdBand(money.householdPercentile),
+    income: dailyIncome(country, money.householdPercentile),
+    incomeYear: country.money.percentiles.year,
+    mother: parent("mother"),
+    father: parent("father"),
+  };
 }
 
 export interface WorldLoader {

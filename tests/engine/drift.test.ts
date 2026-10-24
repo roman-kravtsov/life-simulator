@@ -29,7 +29,9 @@ describe("health norm (HEALTH-001)", () => {
     }
   });
   it("is higher with a stronger constitution", () => {
-    expect(healthNorm(at(30, withTrait("constitution", 2)), country)).toBeGreaterThan(healthNorm(at(30, withTrait("constitution", -2)), country));
+    expect(healthNorm(at(30, withTrait("constitution", 2)), country)).toBeGreaterThan(
+      healthNorm(at(30, withTrait("constitution", -2)), country),
+    );
   });
   it("is lower for a poor household than a rich one", () => {
     const poor = at(30, { money: { householdPercentile: 5, savings: 0, debt: 0 } });
@@ -37,7 +39,9 @@ describe("health norm (HEALTH-001)", () => {
     expect(healthNorm(poor, country)).toBeLessThan(healthNorm(rich, country));
   });
   it("is lower in rural areas", () => {
-    expect(healthNorm(at(30, { location: "rural" }), country)).toBeLessThan(healthNorm(at(30, { location: "urban" }), country));
+    expect(healthNorm(at(30, { location: "rural" }), country)).toBeLessThan(
+      healthNorm(at(30, { location: "urban" }), country),
+    );
   });
   it("is lower for a child at work", () => {
     expect(healthNorm(at(10, { flags: { childLabour: true } }), country)).toBeLessThan(healthNorm(at(10), country));
@@ -78,19 +82,24 @@ describe("driftStats (SIM-004)", () => {
     expect(drift(at(20), "same")).toEqual(drift(at(20), "same"));
   });
   it("grows skills fastest in school years and slowly in adulthood, and loses a little in old age", () => {
-    const g = (age: number) => skillGrowth(at(age, { stats: { health: 70, wellbeing: 60, bonds: 60, skills: 10 } }), country);
+    const g = (age: number) =>
+      skillGrowth(at(age, { stats: { health: 70, wellbeing: 60, bonds: 60, skills: 10 } }), country);
     expect(g(8)).toBeGreaterThan(g(2));
     expect(g(8)).toBeGreaterThan(g(40));
     expect(g(40)).toBeGreaterThan(0);
     expect(g(80)).toBeLessThan(0);
   });
   it("slows skill growth as skills approach the ceiling", () => {
-    const g = (skills: number) => skillGrowth(at(8, { stats: { health: 70, wellbeing: 60, bonds: 60, skills } }), country);
+    const g = (skills: number) =>
+      skillGrowth(at(8, { stats: { health: 70, wellbeing: 60, bonds: 60, skills } }), country);
     expect(g(80)).toBeLessThan(g(10));
   });
   it("grows skills less where children rarely finish school", () => {
     const poorSchooling = makeCountry({
-      education: { ...country.education, primaryCompletion: { ...country.education.primaryCompletion, value: { female: 0.3, male: 0.3 } } },
+      education: {
+        ...country.education,
+        primaryCompletion: { ...country.education.primaryCompletion, value: { female: 0.3, male: 0.3 } },
+      },
     });
     expect(skillGrowth(at(8), poorSchooling)).toBeLessThan(skillGrowth(at(8), country));
   });
@@ -104,7 +113,8 @@ describe("traits shape drift (CHAR-003)", () => {
   const mean = (trait: TraitId, value: number, pick: (s: ReturnType<typeof driftStats>) => number, age = 30) => {
     let total = 0;
     const n = 300;
-    for (let i = 0; i < n; i++) total += pick(driftStats(at(age, withTrait(trait, value)), country, createRng(`t${i}`)));
+    for (let i = 0; i < n; i++)
+      total += pick(driftStats(at(age, withTrait(trait, value)), country, createRng(`t${i}`)));
     return total / n;
   };
   it("constitution raises health", () => {
@@ -124,7 +134,10 @@ describe("traits shape drift (CHAR-003)", () => {
   });
   it("temperament widens the swings in wellbeing without moving the average much", () => {
     const spread = (value: number) => {
-      const xs = Array.from({ length: 400 }, (_, i) => driftStats(at(30, withTrait("temperament", value)), country, createRng(`v${i}`)).wellbeing);
+      const xs = Array.from(
+        { length: 400 },
+        (_, i) => driftStats(at(30, withTrait("temperament", value)), country, createRng(`v${i}`)).wellbeing,
+      );
       const m = xs.reduce((a, b) => a + b, 0) / xs.length;
       return xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length;
     };

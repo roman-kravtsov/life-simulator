@@ -46,7 +46,13 @@ describe("generatePerson (CHAR-001)", () => {
 describe("location (WORLD-009)", () => {
   it("follows the country's urban share", () => {
     const urban = (share: number) =>
-      people(4000, makeCountry({ region: "Western Africa", demography: { ...country.demography, urbanShare: { ...country.demography.urbanShare, value: share } } })).filter((p) => p.location === "urban").length / 4000;
+      people(
+        4000,
+        makeCountry({
+          region: "Western Africa",
+          demography: { ...country.demography, urbanShare: { ...country.demography.urbanShare, value: share } },
+        }),
+      ).filter((p) => p.location === "urban").length / 4000;
     expect(urban(0.2)).toBeGreaterThan(0.17);
     expect(urban(0.2)).toBeLessThan(0.23);
     expect(urban(0.9)).toBeGreaterThan(0.87);
@@ -104,7 +110,8 @@ describe("household at birth (MONEY-001)", () => {
 });
 
 describe("parents (FAM-001)", () => {
-  const parents = (n: number) => Array.from({ length: n }, (_, i) => generateParents(createRng(`p${i}`), country, createRng(`n${i}`)));
+  const parents = (n: number) =>
+    Array.from({ length: n }, (_, i) => generateParents(createRng(`p${i}`), country, createRng(`n${i}`)));
   it("makes a mother and a father, alive at the birth", () => {
     for (const [mother, father] of parents(50)) {
       expect(mother!.kind).toBe("mother");

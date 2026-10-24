@@ -48,12 +48,25 @@ describe("hazardMultiplier (HEALTH-002)", () => {
   });
   it("rises with poor health, low household income, rural life and conditions", () => {
     const base = hazardMultiplier(makePerson(), country);
-    expect(hazardMultiplier(makePerson({ stats: { health: 30, wellbeing: 60, bonds: 60, skills: 20 } }), country)).toBeGreaterThan(base);
-    expect(hazardMultiplier(makePerson({ money: { householdPercentile: 5, savings: 0, debt: 0 } }), country)).toBeGreaterThan(base);
-    expect(hazardMultiplier(makePerson({ money: { householdPercentile: 95, savings: 0, debt: 0 } }), country)).toBeLessThan(base);
+    expect(
+      hazardMultiplier(makePerson({ stats: { health: 30, wellbeing: 60, bonds: 60, skills: 20 } }), country),
+    ).toBeGreaterThan(base);
+    expect(
+      hazardMultiplier(makePerson({ money: { householdPercentile: 5, savings: 0, debt: 0 } }), country),
+    ).toBeGreaterThan(base);
+    expect(
+      hazardMultiplier(makePerson({ money: { householdPercentile: 95, savings: 0, debt: 0 } }), country),
+    ).toBeLessThan(base);
     expect(hazardMultiplier(makePerson({ location: "rural" }), country)).toBeGreaterThan(base);
     expect(hazardMultiplier(makePerson({ conditions: [{ id: "x", severity: 2 }] }), country)).toBeGreaterThan(base);
-    expect(hazardMultiplier(makePerson({ traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: 0, constitution: -2 } }), country)).toBeGreaterThan(base);
+    expect(
+      hazardMultiplier(
+        makePerson({
+          traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: 0, constitution: -2 },
+        }),
+        country,
+      ),
+    ).toBeGreaterThan(base);
   });
 });
 
@@ -67,7 +80,10 @@ describe("deathProbability", () => {
     const skewed = makeCountry({
       demography: {
         ...country.demography,
-        lifeTable: { ...country.demography.lifeTable, value: { female: syntheticLifeTable().map((q) => q / 2), male: syntheticLifeTable() } },
+        lifeTable: {
+          ...country.demography.lifeTable,
+          value: { female: syntheticLifeTable().map((q) => q / 2), male: syntheticLifeTable() },
+        },
       },
     });
     const male = makePerson({ age: 50, sex: "male" });
@@ -97,7 +113,13 @@ describe("rollDeath", () => {
 });
 
 describe("drawCause (HEALTH-003)", () => {
-  const share = (sex: "female" | "male", age: number, id: string, conditions = [] as { id: string; severity: 1 | 2 | 3; raises?: string }[], n = 20000) => {
+  const share = (
+    sex: "female" | "male",
+    age: number,
+    id: string,
+    conditions = [] as { id: string; severity: 1 | 2 | 3; raises?: string }[],
+    n = 20000,
+  ) => {
     const rng = createRng(`cause-${sex}-${age}-${id}`);
     let hits = 0;
     for (let i = 0; i < n; i++) if (drawCause(country, sex, age, conditions, rng) === id) hits++;

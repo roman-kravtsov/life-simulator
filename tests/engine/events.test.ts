@@ -19,7 +19,10 @@ const country = makeCountry();
 
 describe("createCatalog (EVENT-001)", () => {
   it("indexes events by stage", () => {
-    const catalog = createCatalog([def({ id: "a", stage: ["infancy"] }), def({ id: "b", stage: ["infancy", "elder"] })]);
+    const catalog = createCatalog([
+      def({ id: "a", stage: ["infancy"] }),
+      def({ id: "b", stage: ["infancy", "elder"] }),
+    ]);
     expect(catalog.forStage("infancy").map((e) => e.id)).toEqual(["a", "b"]);
     expect(catalog.forStage("elder").map((e) => e.id)).toEqual(["b"]);
     expect(catalog.forStage("youth")).toEqual([]);
@@ -57,8 +60,12 @@ describe("eventProbability", () => {
 });
 
 describe("selectEvents", () => {
-  const select = (defs: EventDef[], person = makePerson(), history: Parameters<typeof selectEvents>[0]["history"] = [], seed = "s") =>
-    selectEvents({ catalog: createCatalog(defs), person, country, history, rng: createRng(seed) }).map((e) => e.id);
+  const select = (
+    defs: EventDef[],
+    person = makePerson(),
+    history: Parameters<typeof selectEvents>[0]["history"] = [],
+    seed = "s",
+  ) => selectEvents({ catalog: createCatalog(defs), person, country, history, rng: createRng(seed) }).map((e) => e.id);
 
   it("picks only events for the person's stage whose conditions hold", () => {
     const defs = [
@@ -147,7 +154,8 @@ describe("shipped event content", () => {
       if (e.chance.kind === "indicator") paths.add(e.chance.path);
       if (e.dataNote) paths.add(e.dataNote.path);
       for (const c of e.conditions ?? []) if ("world" in c) paths.add(c.world);
-      if (e.chance.kind === "weight") for (const m of e.chance.modifiers ?? []) for (const c of m.when) if ("world" in c) paths.add(c.world);
+      if (e.chance.kind === "weight")
+        for (const m of e.chance.modifiers ?? []) for (const c of m.when) if ("world" in c) paths.add(c.world);
     }
     for (const path of paths) expect(() => indicatorValue(country, path, "female"), path).not.toThrow();
   });

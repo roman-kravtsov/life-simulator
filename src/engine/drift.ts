@@ -116,7 +116,11 @@ export function driftStats(person: Person, country: Country, rng: Rng): Stats {
   swing(rng, 0); // kept so that adding a noise term later does not shift the others
   return {
     health: clamp(stats.health + RATE.health * (healthNorm(person, country) - stats.health) + healthNoise, 0, 100),
-    wellbeing: clamp(stats.wellbeing + RATE.wellbeing * (wellbeingNorm(person) - stats.wellbeing) + wellbeingNoise, 0, 100),
+    wellbeing: clamp(
+      stats.wellbeing + RATE.wellbeing * (wellbeingNorm(person) - stats.wellbeing) + wellbeingNoise,
+      0,
+      100,
+    ),
     bonds: clamp(stats.bonds + RATE.bonds * (bondsNorm(person) - stats.bonds) + bondsNoise, 0, 100),
     skills: clamp(stats.skills + skillGrowth(person, country), 0, 100),
   };
