@@ -44,8 +44,8 @@ This pattern also applies to `useEffect` when combining unrelated side effects:
 
 ```tsx
 useEffect(() => {
-  analytics.trackPageView(pathname)
-  document.title = `${pageTitle} | My App`
+  rememberScreen(pathname)
+  document.title = `${pageTitle} | Birthright`
 }, [pathname, pageTitle])
 ```
 
@@ -53,11 +53,11 @@ useEffect(() => {
 
 ```tsx
 useEffect(() => {
-  analytics.trackPageView(pathname)
+  rememberScreen(pathname)
 }, [pathname])
 
 useEffect(() => {
-  document.title = `${pageTitle} | My App`
+  document.title = `${pageTitle} | Birthright`
 }, [pageTitle])
 ```
 

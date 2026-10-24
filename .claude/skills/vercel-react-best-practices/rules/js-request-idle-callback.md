@@ -2,7 +2,7 @@
 title: Defer Non-Critical Work with requestIdleCallback
 impact: MEDIUM
 impactDescription: keeps UI responsive during background tasks
-tags: javascript, performance, idle, scheduling, analytics
+tags: javascript, performance, idle, scheduling, autosave
 ---
 
 ## Defer Non-Critical Work with requestIdleCallback
@@ -19,7 +19,7 @@ function handleSearch(query: string) {
   setResults(results)
 
   // These block the main thread immediately
-  analytics.track('search', { query })
+  saveLifeSnapshot(lifeState)
   saveToRecentSearches(query)
   prefetchTopResults(results.slice(0, 3))
 }
@@ -34,7 +34,7 @@ function handleSearch(query: string) {
 
   // Defer non-critical work to idle periods
   requestIdleCallback(() => {
-    analytics.track('search', { query })
+    saveLifeSnapshot(lifeState)
   })
 
   requestIdleCallback(() => {
@@ -50,9 +50,9 @@ function handleSearch(query: string) {
 **With timeout for required work:**
 
 ```typescript
-// Ensure analytics fires within 2 seconds even if browser stays busy
+// Ensure the autosave runs within 2 seconds even if the browser stays busy
 requestIdleCallback(
-  () => analytics.track('page_view', { path: location.pathname }),
+  () => saveLifeSnapshot(lifeState),
   { timeout: 2000 }
 )
 ```
@@ -92,8 +92,7 @@ scheduleIdleWork(() => {
 
 **When to use:**
 
-- Analytics and telemetry
-- Saving state to localStorage/IndexedDB
+- Autosaving state to localStorage/IndexedDB
 - Prefetching resources for likely next actions
 - Processing non-urgent data transformations
 - Lazy initialization of non-critical features

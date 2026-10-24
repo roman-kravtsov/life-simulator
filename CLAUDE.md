@@ -76,7 +76,7 @@ Read these docs before starting work:
 - **Real data only from the primary publishers** listed in `docs/analysis.md` 1.7, with source and year on every value. Never copy text, art, code or data from the reference game (1in8b.life).
 - **Sensitive content** (death, suicide, violence) is never graphic, always tagged with a sensitivity level, and followed by help resources where relevant. Suicide is never a player choice.
 - **No tracking, analytics or third-party requests** (fonts included). A guard test checks for common trackers.
-- **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow the client-side rules in `.claude/skills/vercel-react-best-practices`; its server and Next.js rules do not apply.
+- **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow `.claude/skills/vercel-react-best-practices`, a client-only subset trimmed for this SPA: read its `SKILL.md` index and open only the rule files you need, never the whole `rules/` folder.
 - **Accessibility is part of done:** keyboard play, visible focus, labelled controls, announcements for new events, colour never the only signal, reduced motion respected.
 - Match the surrounding code: naming, comment density and idiom.
 

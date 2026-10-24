@@ -417,7 +417,7 @@ This is where the "in-depth game feeling" comes from.
   - **Quality:** Vitest with React Testing Library and jsdom; Playwright end-to-end at phone (360 px) and desktop (1440 px); ESLint (typescript-eslint, React Hooks, `Math.random` banned in the engine); Prettier.
   - **Data pipeline:** Node scripts run with `tsx`.
   - **CI and hosting:** GitHub Actions (lint, format, typecheck, unit tests, build, end-to-end) and GitHub Pages deploy on merge to `main`.
-  - The repo's `vercel-react-best-practices` skill applies for its client-side rules (bundle size, re-renders, rendering); its server and Next.js rules do not apply.
+  - The repo's `vercel-react-best-practices` skill is trimmed to the client-side rules (bundle size, re-renders, rendering, JS hot paths); its server and Next.js rules were removed (see its `SOURCE.md`).
 - **Layout of the repo:**
 
 ```
