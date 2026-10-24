@@ -1,9 +1,9 @@
 import { t } from "../i18n";
 import { Header } from "./Header";
-import { useFocusOnMount } from "./useFocusOnMount";
+import { useFocusOn } from "./useFocusOn";
 
 export function StartScreen({ onBegin }: { onBegin: () => void }) {
-  const heading = useFocusOnMount<HTMLHeadingElement>();
+  const heading = useFocusOn<HTMLHeadingElement>();
   return (
     <section>
       <Header />

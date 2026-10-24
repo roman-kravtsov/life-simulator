@@ -70,7 +70,8 @@ main {
   padding: 0 var(--gutter) 3rem;
 }
 
-main:focus {
+main:focus,
+#content:focus {
   outline: none;
 }
 

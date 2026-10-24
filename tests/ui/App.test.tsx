@@ -43,6 +43,27 @@ describe("App", () => {
     expect(screen.getByRole("status")).toHaveTextContent("A new chapter begins: Childhood.");
   });
 
+  it("keeps the same status region across years so announcements are read", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    const status = screen.getByRole("status");
+    await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("You turn 1.");
+  });
+
+  it("moves focus back to the heading after each year", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
+  });
+
+  it("offers a skip link to the main content", () => {
+    setup();
+    expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#content");
+  });
+
   it("is playable with the keyboard alone", async () => {
     const { user } = setup();
     // Focus starts on the heading, so the next stop is the main action.

@@ -83,6 +83,17 @@ describe("Rng helpers", () => {
     expect(() => rng.weighted([], [])).toThrow();
     expect(() => rng.weighted(["x"], [0])).toThrow();
   });
+
+  it("weighted rejects negative, NaN or infinite weights", () => {
+    const rng = createRng("invalid");
+    expect(() => rng.weighted(["a", "b", "c"], [1, -1, 1])).toThrow();
+    expect(() => rng.weighted(["a", "b", "c"], [1, Infinity, 1])).toThrow();
+    expect(() => rng.weighted(["a", "b"], [1, NaN])).toThrow();
+  });
+
+  it("weighted rejects mismatched lengths", () => {
+    expect(() => createRng("len").weighted(["a", "b"], [1])).toThrow();
+  });
 });
 
 describe("stream", () => {
@@ -99,10 +110,9 @@ describe("stream", () => {
 
   it("is unaffected by how much another stream was used", () => {
     // Adding an event (more draws on "events") must not change mortality rolls.
-    const quiet = stream("s", "events", 30);
-    quiet.next();
-    const busy = stream("s", "events", 30);
-    for (let i = 0; i < 100; i++) busy.next();
-    expect(draw(stream("s", "mortality", 30), 5)).toEqual(draw(stream("s", "mortality", 30), 5));
+    const before = draw(stream("s", "mortality", 30), 5);
+    const events = stream("s", "events", 30);
+    for (let i = 0; i < 100; i++) events.next();
+    expect(draw(stream("s", "mortality", 30), 5)).toEqual(before);
   });
 });

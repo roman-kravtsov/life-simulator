@@ -67,10 +67,14 @@ export function createRng(seed: string): Rng {
       return next() < p;
     },
     weighted(items, weights) {
-      const total = weights.reduce((sum, w) => sum + w, 0);
-      if (items.length === 0 || items.length !== weights.length || !(total > 0)) {
-        throw new Error("weighted() needs matching items and weights with a positive total");
+      if (items.length === 0 || items.length !== weights.length) {
+        throw new Error("weighted() needs one weight per item");
       }
+      if (weights.some((w) => !Number.isFinite(w) || w < 0)) {
+        throw new Error("weighted() needs finite, non-negative weights");
+      }
+      const total = weights.reduce((sum, w) => sum + w, 0);
+      if (!(total > 0)) throw new Error("weighted() needs a positive total weight");
       let roll = next() * total;
       for (let i = 0; i < items.length; i++) {
         roll -= weights[i]!;

@@ -2,7 +2,7 @@ import type { LifeState, StatId } from "../engine/types";
 import { t } from "../i18n";
 import { Header } from "./Header";
 import styles from "./LifeScreen.module.css";
-import { useFocusOnMount } from "./useFocusOnMount";
+import { useFocusOn } from "./useFocusOn";
 
 const STATS: readonly StatId[] = ["health", "wellbeing", "bonds", "skills"];
 
@@ -13,8 +13,8 @@ interface Props {
 }
 
 export function LifeScreen({ life, onContinue, onBack }: Props) {
-  const heading = useFocusOnMount<HTMLHeadingElement>();
   const { person } = life;
+  const heading = useFocusOn<HTMLHeadingElement>(person.age);
   const last = life.history.at(-1);
   const story = !last
     ? ""

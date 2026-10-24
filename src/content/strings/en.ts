@@ -2,6 +2,7 @@
 export const en: Readonly<Record<string, string>> = {
   "app.title": "Birthright",
   "app.subtitle": "a life simulation",
+  "app.skipToContent": "Skip to content",
 
   "start.intro":
     "You will be born somewhere in the world, to a family you did not choose. Where, and to whom, follows the real odds of birth today. What you make of it is partly up to you.",
