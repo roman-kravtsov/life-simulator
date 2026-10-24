@@ -11,8 +11,8 @@ against upstream at a newer commit, re-apply the trims below and bump the pinned
 ## Why it was trimmed (2026-10-24)
 
 Birthright is a client-only React 19 + Vite SPA on GitHub Pages: no server, Next.js, RSC, SWR or
-third-party scripts. The agents that preload this skill (`skills: [vercel-react-best-practices]`) load
-`SKILL.md` on every run, so it is a ~4 KB index (was ~7 KB) and rules are read one file at a time.
+third-party scripts. An agent that preloads this skill via `skills:` frontmatter (planned for the frontend-developer agent)
+loads `SKILL.md` on every run, so it is a ~4 KB index (was ~7 KB) and rules are read one file at a time.
 
 ## Removed
 

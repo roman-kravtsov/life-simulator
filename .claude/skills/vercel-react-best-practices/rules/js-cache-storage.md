@@ -55,7 +55,7 @@ function getCookie(name: string) {
 
 **Important (invalidate on external changes):**
 
-If storage can change externally (another tab, server-set cookies), invalidate cache:
+If storage can change externally (another tab, cookies changed elsewhere), invalidate cache:
 
 ```typescript
 window.addEventListener('storage', (e) => {
