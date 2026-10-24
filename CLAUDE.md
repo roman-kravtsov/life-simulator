@@ -99,7 +99,21 @@ npm test
 npm run e2e            # in the cloud sandbox: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run e2e
 ```
 
+## Independent review before hand-off
+
+Before handing a PR to Roman for review, run an independent review pass. Skip it for changes that touch only docs or data files. Spawn the reviewers in parallel, each with fresh context and only the diff vs `main` (`git diff main...HEAD`), `CLAUDE.md` and the `docs/features.md` rows for the feature IDs in the PR. Their prompts must say to report only and not to edit files.
+
+- **`surgeon-reviewer` (acceptance):** checks that each feature ID's acceptance criteria are met and tested. An unmet criterion is a WILL BREAK finding.
+- **`surgeon-reviewer` (React):** checks correctness, React patterns per `.claude/skills/vercel-react-best-practices`, and performance.
+- **`surgeon-reviewer` (CSS), only if a `*.css` file or a design token is added, changed or deleted, or the markup of `src/ui/kit` changes:** checks token use, layout, responsiveness and dead styles.
+- **`accessibility-tester`, only if `src/ui` changes.**
+
+Reviewers report and never edit code, so each pass stays independent. They use their own severity scale: `surgeon-reviewer` WILL BREAK, WILL COST and WILL ROT; `accessibility-tester` Blocker, Serious and Minor. Each finding has a `path:line` and its evidence.
+
+- Fix every WILL BREAK, WILL COST, Blocker and Serious finding, run the checks in "Before pushing" again, and re-run only the reviewers that flagged them. Stop after 2 rounds and report whatever is still unresolved.
+- The hand-off lists each reviewer's findings and how they were resolved, including any left unfixed and why.
+
 ## Commits and PRs
 
 - Clear commit messages that say what changed and why.
-- PR descriptions list the feature IDs delivered, the checks run, and anything Roman needs to do.
+- PR descriptions list the feature IDs delivered, the checks run, the review summary from "Independent review before hand-off", and anything Roman needs to do.
