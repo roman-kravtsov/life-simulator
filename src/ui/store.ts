@@ -6,7 +6,8 @@ import { advance, newLife } from "../engine/life";
 import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
-import type { EducationLevel, HealthCondition, LifeState, Relationship, Sector } from "../engine/types";
+import { conditionCatalog } from "../content/healthConditions";
+import type { EducationLevel, HealthCondition, HelpTopic, LifeState, Relationship, Sector } from "../engine/types";
 import { drawBirthCountry } from "../engine/world/birth";
 import type { Country, CountryIndex } from "../engine/world/types";
 import { incomeBand, type IncomeBand } from "../format";
@@ -116,7 +117,8 @@ export interface LifeOverview {
   /** Null under age 6: there is nothing to say about work yet. */
   work: WorkSummary | null;
   money: MoneySummary;
-  conditions: Pick<HealthCondition, "id" | "severity" | "since">[];
+  /** `helpTopic` is the condition's own, so its help stays on screen for as long as it lasts. */
+  conditions: (Pick<HealthCondition, "id" | "severity" | "since"> & { helpTopic?: HelpTopic })[];
   family: FamilySummary;
 }
 
@@ -192,7 +194,10 @@ export function lifeOverview(life: LifeState, country: Country): LifeOverview {
       person.age >= LITERACY_SHOWN_AGE && literate !== undefined ? (literate ? "literate" : "illiterate") : null,
     work: workSummary(person),
     money: moneySummary(person, country),
-    conditions: person.conditions.map(({ id, severity, since }) => ({ id, severity, since })),
+    conditions: person.conditions.map(({ id, severity, since }) => {
+      const helpTopic = conditionCatalog.get(id)?.helpTopic;
+      return { id, severity, since, ...(helpTopic ? { helpTopic } : {}) };
+    }),
     family: familySummary(person.relationships),
   };
 }

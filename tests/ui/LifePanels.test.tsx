@@ -186,6 +186,13 @@ describe("life panels", () => {
       expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
+    it("keeps a polite live region for the comparison, so turning the switch on is announced", () => {
+      renderLife({ age: 30 });
+      const live = panel("Money").querySelector("[aria-live]")!;
+      expect(live).toHaveAttribute("aria-live", "polite");
+      expect(live).toBeEmptyDOMElement();
+    });
+
     it("shows the comparison with US prices when the switch is on", () => {
       renderLife({ age: 30 }, { showUsPrices: true });
       expect(screen.getByRole("switch", { name: "Compare with US prices" })).toBeChecked();
@@ -216,6 +223,22 @@ describe("life panels", () => {
         "A serious injury, severe, since age 25",
         "A lasting condition, mild, from birth",
       ]);
+    });
+  });
+
+  describe("Help beside persistent conditions", () => {
+    it("shows the help line and link while a condition with a help topic lasts", () => {
+      renderLife({ age: 30, conditions: [{ id: "depression", severity: 2, since: 25 }] });
+      const conditions = within(panel("Health conditions"));
+      expect(conditions.getByText(/helplines exist around the world/)).toBeInTheDocument();
+      expect(conditions.getByRole("link", { name: "findahelpline.com" })).toHaveAttribute(
+        "href",
+        "https://findahelpline.com",
+      );
+    });
+    it("shows no help line for conditions without a topic", () => {
+      renderLife({ age: 30, conditions: [{ id: "malaria", severity: 1, since: 7 }] });
+      expect(within(panel("Health conditions")).queryByRole("link")).not.toBeInTheDocument();
     });
   });
 

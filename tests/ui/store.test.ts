@@ -307,6 +307,20 @@ describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, 
     expect(conditions).toEqual([{ id: "malaria", severity: 2, since: 7 }]);
   });
 
+  it("carries a condition's help topic, so help stays with it while it lasts", () => {
+    const { conditions } = lifeOverview(
+      lifeOf({
+        conditions: [
+          { id: "depression", severity: 1, since: 20 },
+          { id: "malaria", severity: 1, since: 7 },
+        ],
+      }),
+      country,
+    );
+    expect(conditions.find((c) => c.id === "depression")?.helpTopic).toBe("suicide");
+    expect(conditions.find((c) => c.id === "malaria")?.helpTopic).toBeUndefined();
+  });
+
   it("sorts relatives: parents, then siblings oldest first, then others", () => {
     const { family } = lifeOverview(
       lifeOf({

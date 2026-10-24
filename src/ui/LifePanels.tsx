@@ -2,7 +2,7 @@
 // conditions and family. Each one is a labelled region that reads as plain lists, so a screen
 // reader can jump between them. They only display what `lifeOverview` (store.ts) derives.
 import { useId, type ReactNode } from "react";
-import type { Relationship } from "../engine/types";
+import type { HelpTopic, Relationship } from "../engine/types";
 import { capitalise, formatMoney, pluralKey } from "../format";
 import { t } from "../i18n";
 import { Switch } from "./kit";
@@ -120,12 +120,23 @@ export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanel
       <Switch isSelected={showUsPrices} onChange={() => onToggleUsPrices()}>
         {t("money.usSwitch")}
       </Switch>
-      {showUsPrices && <p className="small">{t("money.usComparison")}</p>}
+      {/* Always present, so a screen reader hears the text arrive when the switch is turned on. */}
+      <p className="small" aria-live="polite">
+        {showUsPrices && t("money.usComparison")}
+      </p>
     </Panel>
   );
 }
 
+/** Each help topic once, however many of the conditions point to it. */
+function helpTopicsOf(conditions: LifeOverview["conditions"]) {
+  const topics = new Set<HelpTopic>();
+  for (const { helpTopic } of conditions) if (helpTopic) topics.add(helpTopic);
+  return [...topics];
+}
+
 export function ConditionsPanel({ conditions }: { conditions: LifeOverview["conditions"] }) {
+  const helpTopics = helpTopicsOf(conditions);
   return (
     <Panel title={t("conditions.heading")}>
       <ul className={styles.list}>
@@ -141,6 +152,14 @@ export function ConditionsPanel({ conditions }: { conditions: LifeOverview["cond
           </li>
         ))}
       </ul>
+      {helpTopics.map((topic) => (
+        <p key={topic} className={styles.help}>
+          {t(`help.${topic}`)}{" "}
+          <a href="https://findahelpline.com" rel="noopener">
+            {t("help.link")}
+          </a>
+        </p>
+      ))}
     </Panel>
   );
 }
