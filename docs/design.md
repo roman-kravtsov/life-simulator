@@ -387,7 +387,7 @@ This is where the "in-depth game feeling" comes from.
 
 - **Seed:** a readable string (three words or two words plus digits), stored with the life and shown on the summary.
 - **PRNG:** a small, fast, well-tested generator (sfc32 or similar), seeded by hashing the seed string (cyrb128-style hash). No `Math.random()` anywhere in the engine; a lint rule enforces it.
-- **Independent streams:** each subsystem draws from its own stream derived from `hash(seed, stream name, year)`: `birth`, `family`, `mortality`, `events`, `outcomes`, `money`, `names`. Adding a new event to the content therefore does not change when someone dies, and replays stay stable across small content updates.
+- **Independent streams:** each subsystem draws from its own stream derived from `hash(seed, stream name, year)`: `birth`, `person`, `names`, `parents`, `family`, `drift`, `labour`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `mortality`, `cause`, and later `outcomes`, `money`. Adding a new event to the content therefore does not change when someone dies, and replays stay stable across small content updates.
 - **Replay guarantee:** the same seed, data version, content version and decision log always produce the same life. Tested directly (same inputs, identical history, run many times).
 - **Auto mode:** an auto-player chooses for the player using a simple policy (weighted by traits), drawing from its own `autoplay` stream, so auto lives are also replayable.
 
