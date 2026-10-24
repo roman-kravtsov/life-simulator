@@ -32,6 +32,7 @@ src/ui/             React 19 components and the game store
   kit/              styled wrappers around React Aria Components (Button, Switch, Slider, Tooltip, Dialog)
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
+.claude/agents/     project subagents (see docs/agents.md)
 e2e/                Playwright: full-loop tests at phone and desktop widths
 ```
 
@@ -51,6 +52,7 @@ Read these docs before starting work:
 
 - `docs/features.md`: **the source of truth.** Every change traces back to a feature ID (SIM-001, UI-004, ...).
 - `docs/roadmap.md`: milestones in dependency order. `docs/mvp.md`: what the MVP includes and how it is built.
+- `docs/agents.md`: the project subagents, where they came from and the rules for them.
 - `docs/design.md`: data model, engine rules and stack. `docs/analysis.md`: reference analysis and data sources with licences.
 
 ## How work flows
