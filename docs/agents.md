@@ -1,6 +1,6 @@
 # Project subagents
 
-Claude Code subagents for Birthright live in `.claude/agents/`, one Markdown file each. They were adapted to this repo: each prompt refers only to files, commands and rules that exist here, and to no other agents.
+Claude Code subagents for Birthright live in `.claude/agents/`, one Markdown file each. They were adapted to this repo: each prompt refers only to files, commands and rules that exist here, and only to agents that exist here.
 
 | Agent                  | Use it to                                                                    | Tools                   |
 | ---------------------- | ---------------------------------------------------------------------------- | ----------------------- |
@@ -9,7 +9,7 @@ Claude Code subagents for Birthright live in `.claude/agents/`, one Markdown fil
 | `qa-expert`            | Find test gaps against a feature's acceptance criteria                        | no edit tools (plus Bash)|
 | `frontend-developer`   | Build or change screens and kit components in `src/ui/`, test-first, with kit-only controls, tokens and `t()` | read and write          |
 | `test-automator`       | Write Vitest, React Testing Library and Playwright tests, test-first          | read and write          |
-| `docs-drift-editor`    | Fix docs that no longer match a code change, with minimal edits               | edit docs only (no Write) |
+| `docs-drift-editor`    | Fix docs that no longer match a code change or each other, with minimal edits, and report stale code comments | edit docs only (no Write) |
 
 ## Provenance and licences
 
