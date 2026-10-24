@@ -7,7 +7,10 @@ import { StartScreen } from "./StartScreen";
 import type { GameStore } from "./store";
 
 function CurrentScreen({ store }: { store: GameStore }) {
-  const { screen, life, country, sources, status } = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { screen, life, country, sources, status, showUsPrices } = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+  );
   if (screen === "birth" && life && country) {
     return <BirthScreen life={life} country={country} onContinue={store.startLife} />;
   }
@@ -18,6 +21,8 @@ function CurrentScreen({ store }: { store: GameStore }) {
         life={life}
         country={country}
         sources={sources ?? {}}
+        showUsPrices={showUsPrices}
+        onToggleUsPrices={store.toggleUsPrices}
         onContinue={store.continueYear}
         onAnother={store.begin}
         onBack={store.backToStart}

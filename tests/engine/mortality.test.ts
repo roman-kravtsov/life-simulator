@@ -52,14 +52,12 @@ describe("hazardMultiplier (HEALTH-002)", () => {
     expect(
       hazardMultiplier(makePerson({ stats: { health: 30, happiness: 60, belonging: 60, skills: 20 } }), country),
     ).toBeGreaterThan(base);
-    expect(
-      hazardMultiplier(makePerson({ money: moneyAt(5) }), country),
-    ).toBeGreaterThan(base);
-    expect(
-      hazardMultiplier(makePerson({ money: moneyAt(95) }), country),
-    ).toBeLessThan(base);
+    expect(hazardMultiplier(makePerson({ money: moneyAt(5) }), country)).toBeGreaterThan(base);
+    expect(hazardMultiplier(makePerson({ money: moneyAt(95) }), country)).toBeLessThan(base);
     expect(hazardMultiplier(makePerson({ location: "rural" }), country)).toBeGreaterThan(base);
-    expect(hazardMultiplier(makePerson({ conditions: [{ id: "x", severity: 2, since: 0 }] }), country)).toBeGreaterThan(base);
+    expect(hazardMultiplier(makePerson({ conditions: [{ id: "x", severity: 2, since: 0 }] }), country)).toBeGreaterThan(
+      base,
+    );
     expect(
       hazardMultiplier(
         makePerson({
@@ -114,13 +112,7 @@ describe("rollDeath", () => {
 });
 
 describe("drawCause (HEALTH-003)", () => {
-  const share = (
-    sex: "female" | "male",
-    age: number,
-    id: string,
-    conditions = [] as HealthCondition[],
-    n = 20000,
-  ) => {
+  const share = (sex: "female" | "male", age: number, id: string, conditions = [] as HealthCondition[], n = 20000) => {
     const rng = createRng(`cause-${sex}-${age}-${id}`);
     let hits = 0;
     for (let i = 0; i < n; i++) if (drawCause(country, sex, age, conditions, rng) === id) hits++;

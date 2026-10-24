@@ -1,10 +1,12 @@
 import type { CountryIndex, Country } from "../engine/world/types";
-import type { EventRecord, LifeState, Relationship, StatId } from "../engine/types";
+import type { EventRecord, LifeState, StatId } from "../engine/types";
 import { countryName, formatPercent } from "../format";
 import { hasString, t } from "../i18n";
 import { Header } from "./Header";
 import { Button } from "./kit";
+import { ConditionsPanel, FamilyPanel, MoneyPanel, SchoolPanel, WorkPanel } from "./LifePanels";
 import styles from "./LifeScreen.module.css";
+import { lifeOverview } from "./store";
 import { useFocusOn } from "./useFocusOn";
 
 const STATS: readonly StatId[] = ["health", "happiness", "belonging", "skills"];
@@ -13,6 +15,8 @@ interface Props {
   life: LifeState;
   country: Country;
   sources: CountryIndex["sources"];
+  showUsPrices: boolean;
+  onToggleUsPrices: () => void;
   onContinue: () => void;
   onAnother: () => void;
   onBack: () => void;
@@ -45,12 +49,16 @@ function EventLine({ event, sources }: { event: EventRecord; sources: CountryInd
   );
 }
 
-function relativeLine(relative: Relationship) {
-  const vars = { name: relative.name, kind: t(`kind.${relative.kind}`), age: relative.age };
-  return t(relative.alive ? "life.relative.alive" : "life.relative.dead", vars);
-}
-
-export function LifeScreen({ life, country, sources, onContinue, onAnother, onBack }: Props) {
+export function LifeScreen({
+  life,
+  country,
+  sources,
+  showUsPrices,
+  onToggleUsPrices,
+  onContinue,
+  onAnother,
+  onBack,
+}: Props) {
   const { person, death } = life;
   const heading = useFocusOn<HTMLHeadingElement>(life.history.length);
   const last = life.history.at(-1);
@@ -65,6 +73,7 @@ export function LifeScreen({ life, country, sources, onContinue, onAnother, onBa
         ? t("life.stageReached", { stage: t(`life.stage.${last.stage}`) })
         : t("life.yearPassed", { age: last.age });
   const events = last?.events ?? [];
+  const { education, literacy, work, money, conditions, family } = lifeOverview(life, country);
 
   return (
     <section>
@@ -110,12 +119,6 @@ export function LifeScreen({ life, country, sources, onContinue, onAnother, onBa
           </>
         )}
       </div>
-      <h2 className={styles.sectionHeading}>{t("life.family")}</h2>
-      <ul className={styles.family}>
-        {person.relationships.map((relative) => (
-          <li key={relative.id}>{relativeLine(relative)}</li>
-        ))}
-      </ul>
       <div className={styles.actions}>
         {person.alive ? (
           <Button variant="primary" onPress={onContinue}>
@@ -128,6 +131,11 @@ export function LifeScreen({ life, country, sources, onContinue, onAnother, onBa
         )}
         <Button onPress={onBack}>{t("life.backToStart")}</Button>
       </div>
+      <SchoolPanel education={education} literacy={literacy} />
+      {work && <WorkPanel work={work} />}
+      <MoneyPanel money={money} showUsPrices={showUsPrices} onToggleUsPrices={onToggleUsPrices} />
+      {conditions.length > 0 && <ConditionsPanel conditions={conditions} />}
+      <FamilyPanel family={family} />
     </section>
   );
 }

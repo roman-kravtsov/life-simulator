@@ -29,7 +29,8 @@ export const formatCompactNumber = (value: number, locale = DEFAULT_LOCALE) =>
 
 /**
  * Amounts in international (PPP) dollars. Cents show below 100, because the poorest
- * lives are measured in a few dollars a day and the difference matters.
+ * lives are measured in a few dollars a day and the difference matters. This is the one
+ * formatter for every dollar amount the player sees (MONEY-007).
  */
 export const formatMoney = (amount: number, locale = DEFAULT_LOCALE) =>
   numberFormat(locale, {
@@ -39,6 +40,33 @@ export const formatMoney = (amount: number, locale = DEFAULT_LOCALE) =>
     minimumFractionDigits: amount < 100 ? 2 : 0,
     maximumFractionDigits: amount < 100 ? 2 : 0,
   }).format(amount);
+
+export type IncomeBand = "below-extreme" | "near-extreme" | "low" | "modest" | "comfortable" | "wealthy";
+
+// Daily income per person in international dollars. The first three cuts are the World Bank's
+// international poverty lines at 2021 PPP (June 2025 update): 3.00 for extreme poverty, 4.20 for
+// lower-middle-income countries, 8.30 for upper-middle-income countries. The cuts at 20 and 60 are
+// the game's own wording thresholds, not published lines.
+const INCOME_CUTS: readonly (readonly [number, IncomeBand])[] = [
+  [3.0, "below-extreme"],
+  [4.2, "near-extreme"],
+  [8.3, "low"],
+  [20, "modest"],
+  [60, "comfortable"],
+];
+
+/** Which band of daily income per person an amount falls in (MONEY-007); the words live in `money.band.<id>`. */
+export function incomeBand(dailyAmount: number): IncomeBand {
+  return INCOME_CUTS.find(([cut]) => dailyAmount < cut)?.[1] ?? "wealthy";
+}
+
+/** The string key for a count in the locale's plural form: `common.years` and 1 give `common.years.one`. */
+export const pluralKey = (base: string, count: number, locale = DEFAULT_LOCALE) =>
+  `${base}.${new Intl.PluralRules(locale).select(count)}`;
+
+/** A phrase with its first letter in upper case, for names that are written in lower case in the strings. */
+export const capitalise = (text: string, locale = DEFAULT_LOCALE) =>
+  text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
 
 /** The country's name in `locale` from CLDR, or the source's English name when CLDR has none. */
 export function countryName(country: { iso2: string; name: string }, locale = DEFAULT_LOCALE): string {
