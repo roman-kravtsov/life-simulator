@@ -33,7 +33,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | CHAR-001 | Person generation | Creates the person at birth: sex (from the country's sex ratio), name, birth year, country, rural or urban. Done when generation is seeded and deterministic and every field is shown on the birth screen. | P0 | WORLD-005, RNG-002, CHAR-002 | M | MVP | done ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)) |
 | CHAR-002 | Name lists | Our own name lists per region and sex, written for the project, for the person and family. Done when every included country maps to a list with at least 40 names per sex. | P0 | WORLD-002 | M | MVP | done ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)) |
 | CHAR-003 | Traits | Six hidden traits (temperament, curiosity, resilience, sociability, aptitude, constitution) rolled at birth, which shape drift, event weights and outcome odds. Done when every trait has at least one engine effect and tests show it changes outcomes. | P0 | CHAR-001 | M | MVP | done ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)) |
-| CHAR-004 | Visible stats | Health, wellbeing, bonds and skills on a 0 to 100 scale (2.2). Done when they are clamped, recorded every year and shown on the life screen. | P0 | SIM-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
+| CHAR-004 | Visible stats | Health, happiness, belonging and skills on a 0 to 100 scale (2.2). Done when they are clamped, recorded every year and shown on the life screen. | P0 | SIM-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | CHAR-005 | Trait reveal | Traits are revealed in words as the player sees them act ("You have always been quick to anger"). Done when each trait has reveal texts and a reveal is triggered by relevant events. | P2 | CHAR-003, EVENT-001 | M | post-MVP | not started |
 | CHAR-006 | Portrait | A simple, non-stereotyped abstract portrait or emblem per life. | P3 | UI-011 | M | post-MVP | not started |
 
@@ -97,7 +97,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 |---|---|---|---|---|---|---|---|
 | CAREER-001 | Work entry | Entering work from labour participation rates by age and sex. Done when a batch test reproduces participation within tolerance. | P0 | SIM-005, WORLD-002 | M | MVP | not started |
 | CAREER-002 | Sectors and informal work | Jobs in agriculture, industry or services, formal or informal, drawn from country shares and education. Done when the job is shown with a sector and affects income and health risk. | P0 | CAREER-001 | M | MVP | not started |
-| CAREER-003 | Job loss and unemployment | Losing work at country unemployment rates, plus job search. Done when unemployment spells occur at realistic rates and affect money and wellbeing. | P0 | CAREER-001, MONEY-004 | M | MVP | not started |
+| CAREER-003 | Job loss and unemployment | Losing work at country unemployment rates, plus job search. Done when unemployment spells occur at realistic rates and affect money and happiness. | P0 | CAREER-001, MONEY-004 | M | MVP | not started |
 | CAREER-004 | Child labour | Children working, from country child labour rates; takes a focus point to Earn. Done when it occurs at realistic rates and links to EDU-004. | P1 | CAREER-001, DEC-004 | S | MVP | not started |
 | CAREER-005 | Career progression | Promotions, setbacks and job changes driven by skills, focus and luck. | P1 | CAREER-002 | M | post-MVP | not started |
 | CAREER-006 | Retirement | Stopping work in old age, by country norms and health. Done when retirement happens for working adults and changes income and focus. | P1 | CAREER-001 | S | MVP | not started |
@@ -194,7 +194,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
 | SUM-001 | Summary screen | The end-of-life screen: closing passage, age and cause, key facts, start-again button. Done when it works on mobile and desktop. | P0 | DEATH-001, UI-001 | M | MVP | not started |
-| SUM-002 | Growth-ring cross-section | The life drawn as tree rings: thickness from wellbeing, colour from the year's theme, marks for key events, with patterns and labels for accessibility (1.3). Done when every finished life renders its rings in SVG. | P1 | SUM-001, UI-011 | L | MVP | not started |
+| SUM-002 | Growth-ring cross-section | The life drawn as tree rings: thickness from happiness, colour from the year's theme, marks for key events, with patterns and labels for accessibility (1.3). Done when every finished life renders its rings in SVG. | P1 | SUM-001, UI-011 | L | MVP | not started |
 | SUM-003 | Key moments | A short timeline of the most significant years. Done when 5 to 12 moments are chosen by a tested rule. | P0 | SUM-001 | M | MVP | not started |
 | SUM-004 | Chance, choice and circumstance | A breakdown of what shaped the life, built from effect tags. Done when the breakdown is computed and explained in words. | P1 | SUM-001, SIM-006 | M | MVP | not started |
 | SUM-005 | Notes and epitaph | Shows the journal entries and the epitaph. | P1 | SUM-001, UI-007, DEATH-004 | S | MVP | not started |

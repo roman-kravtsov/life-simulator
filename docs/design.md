@@ -35,7 +35,7 @@ Code and storage keys use the prefix `birthright`.
 
 ### 1.3 Visual direction
 
-- **Core motif: growth rings.** The life is drawn as a tree cross-section that grows one ring per year. Ring thickness reflects how good the year was (wellbeing), colour reflects the year's dominant theme (study, work, love, loss, illness, migration), and marks on a ring show key events. The final cross-section is the summary image and the shareable card. This is our signature and has nothing in common with the reference's look.
+- **Core motif: growth rings.** The life is drawn as a tree cross-section that grows one ring per year. Ring thickness reflects how good the year was (happiness), colour reflects the year's dominant theme (study, work, love, loss, illness, migration), and marks on a ring show key events. The final cross-section is the summary image and the shareable card. This is our signature and has nothing in common with the reference's look.
 - **Palette:** warm paper background, ink-dark text, muted natural colours for themes (moss, ochre, river blue, rust, slate). A proper dark mode ("night paper").
 - **Type:** a readable serif for narrative text, a clean sans for numbers and controls. Generous line height, a 60 to 70 character column on desktop.
 - **Layout:** one column on phones; on desktop the rings and stats sit on the left and the story column on the right.
@@ -139,8 +139,8 @@ interface Person {
   // Visible meters, 0..100
   stats: {
     health: number;
-    wellbeing: number;          // mood and meaning combined
-    bonds: number;              // quality of close relationships
+    happiness: number;          // mood and meaning combined
+    belonging: number;          // quality of close relationships
     skills: number;             // education plus practical know-how
   };
 
@@ -335,8 +335,8 @@ This is where the "in-depth game feeling" comes from.
   - **Learn**: school, reading, training. Raises skills; affects education outcomes.
   - **Earn**: work, trade, saving. Raises income and savings.
   - **Health**: exercise, medical care, eating well, avoiding risk. Raises health; lowers illness and death risk.
-  - **Bond**: family, friends, partner, children, and caring for relatives. Raises bonds and relationship odds.
-  - **Rest**: play, leisure, faith, solitude. Raises wellbeing; buffers stress.
+  - **Bond**: family, friends, partner, children, and caring for relatives. Raises belonging and relationship odds.
+  - **Rest**: play, leisure, faith, solitude. Raises happiness; buffers stress.
 
   Each point is a nudge to that area's yearly change and to the odds of related events. Several points in one area give diminishing returns, so spreading is often wiser than stacking. Circumstances can take points away before the player chooses. A child who must work loses a point to Earn. Someone caring for a sick parent loses one to Bond. An ill person loses one to Health. Poverty and duty are therefore felt in play, not just described. The plan carries over to the next year unless the player changes it, so it costs no clicks when nothing has changed.
 - **Alternatives considered for yearly input** (for Roman's choice, see section 7):
@@ -379,7 +379,7 @@ This is where the "in-depth game feeling" comes from.
 - A closing passage, the cause and age of death, and where that sits against the country's life expectancy.
 - **The cross-section**: the full growth-ring image of the life.
 - **Key moments**: a short timeline of the most significant years.
-- **Chance, choice and circumstance**: a breakdown of what shaped this life, built from the effect tags (2.3). For example: "Most of your health came from where you were born; most of your bonds came from your choices."
+- **Chance, choice and circumstance**: a breakdown of what shaped this life, built from the effect tags (2.3). For example: "Most of your health came from where you were born; most of your belonging came from your choices."
 - **Your notes**: the journal entries and the epitaph.
 - Post-MVP ideas, our own take on comparison: **"The other shore"** (the same seed and traits, born in a different country) and **"The road not taken"** (replay from a past decision and change it).
 
@@ -452,12 +452,14 @@ Built in M2 (2026-10-24), where the data pipeline settled details the sketch in 
 - **Not in M2:** conflict (UCDP) and migration are not in the files yet. They arrive with WORLD-010 and DEC-008, which add their schema fields. The `iso2` code is stored so country names come from `Intl.DisplayNames`.
 - **Licence note.** UNESCO UIS data is CC BY-SA 3.0 IGO. Its share-alike term applies to the education values in the country files, which the Sources screen states. WHO data is used under WHO's terms for public health purposes with attribution.
 
+Decided 2026-10-24: the visible stats **Bonds** and **Wellbeing** are renamed **Belonging** and **Happiness** (2.2). The code ids are `belonging` and `happiness`, and all docs, feature rows, strings and tests use the new names. The yearly focus area **Bond** (3.3) is a separate thing and keeps its name: it raises Belonging, so the two sit side by side on the plan and life screens. The reference analysis (`docs/analysis.md`) still says "happiness" and "relationships" where it describes the reference game's own stats. Saves arrive in M6, so no saved life uses the old ids.
+
 Decided 2026-10-24: **WHO GHE is the only cause-of-death source for the MVP**; IHME GBD is not used (it needs an account). Revisit for finer causes or more countries after the MVP.
 
 Built in M3 (2026-10-24), where the engine settled details the sketch left open:
 
 - **Engine API.** `advance(state, input, country, catalog?)` takes the loaded country; the engine does no I/O. `newLife({ seed, country })` draws sex (from the sex ratio), place (urban share), household percentile (uniform 1 to 100), traits, name and parents from separate streams.
-- **Traits** are integers from -2 to 2 with weights 1:4:6:4:1. Constitution moves the health norm and mortality; aptitude and curiosity move skill growth; sociability moves bonds; resilience moves wellbeing and cushions negative wellbeing effects; temperament widens wellbeing swings.
+- **Traits** are integers from -2 to 2 with weights 1:4:6:4:1. Constitution moves the health norm and mortality; aptitude and curiosity move skill growth; sociability moves belonging; resilience moves happiness and cushions negative happiness effects; temperament widens happiness swings.
 - **Mortality** is the life table's `qx` times a hazard multiplier (0.5 to 4) built from health against its age norm, constitution, household percentile, place and conditions, with a small calibration offset. Simulated life expectancy is within about 1 year of the source for the sampled countries; the test limit is 2.
 - **Cause of death** is drawn from the WHO GHE mix for the age band and sex; each condition's `raises` cause gets weight x (1 + 1.5 x severity).
 - **Child labour** uses the ILO share for ages 7 to 14. Poorer households are far more likely (the weight runs from 2x to 0 and averages 1, so the country share holds); a working child stops with probability 0.2 a year.

@@ -11,14 +11,14 @@ export const eventDefs: readonly EventDef[] = [
     chance: { kind: "weight", base: 6 },
     once: true,
     text: "event.infancy.first_steps",
-    effects: [{ stat: "wellbeing", add: 2 }],
+    effects: [{ stat: "happiness", add: 2 }],
   },
   {
     id: "infancy.lullaby",
     stage: ["infancy"],
     chance: { kind: "weight", base: 5 },
     text: "event.infancy.lullaby",
-    effects: [{ stat: "bonds", add: 2 }],
+    effects: [{ stat: "belonging", add: 2 }],
   },
   {
     id: "infancy.fever",
@@ -35,7 +35,7 @@ export const eventDefs: readonly EventDef[] = [
     chance: { kind: "weight", base: 5 },
     cause: "circumstance",
     text: "event.childhood.long_walk",
-    effects: [{ stat: "bonds", add: 2 }],
+    effects: [{ stat: "belonging", add: 2 }],
   },
   {
     id: "childhood.teacher_notices",
@@ -47,7 +47,7 @@ export const eventDefs: readonly EventDef[] = [
     text: "event.childhood.teacher_notices",
     effects: [
       { stat: "skills", add: 4 },
-      { stat: "wellbeing", add: 3 },
+      { stat: "happiness", add: 3 },
     ],
   },
   {
@@ -59,7 +59,7 @@ export const eventDefs: readonly EventDef[] = [
     cooldownYears: 2,
     text: "event.childhood.harvest_help",
     effects: [
-      { stat: "bonds", add: 2 },
+      { stat: "belonging", add: 2 },
       { stat: "health", add: -1 },
     ],
   },
@@ -71,7 +71,7 @@ export const eventDefs: readonly EventDef[] = [
     chance: { kind: "weight", base: 5 },
     once: true,
     text: "event.adolescence.first_friend",
-    effects: [{ stat: "bonds", add: 5 }],
+    effects: [{ stat: "belonging", add: 5 }],
   },
   {
     id: "adolescence.growth_spurt",
@@ -82,7 +82,7 @@ export const eventDefs: readonly EventDef[] = [
     text: "event.adolescence.growth_spurt",
     effects: [
       { stat: "health", add: 2 },
-      { stat: "wellbeing", add: -1 },
+      { stat: "happiness", add: -1 },
     ],
   },
   {
@@ -94,7 +94,7 @@ export const eventDefs: readonly EventDef[] = [
     text: "event.youth.restless_year",
     effects: [
       { stat: "skills", add: 3 },
-      { stat: "wellbeing", add: -1 },
+      { stat: "happiness", add: -1 },
     ],
   },
   {
@@ -106,7 +106,7 @@ export const eventDefs: readonly EventDef[] = [
     cooldownYears: 3,
     text: "event.adulthood.unemployed_year",
     dataNote: { text: "note.unemployment", path: "work.unemployment" },
-    effects: [{ stat: "wellbeing", add: -3 }],
+    effects: [{ stat: "happiness", add: -3 }],
   },
   {
     id: "adulthood.hard_times",
@@ -120,8 +120,8 @@ export const eventDefs: readonly EventDef[] = [
     cooldownYears: 4,
     text: "event.adulthood.hard_times",
     effects: [
-      { stat: "wellbeing", add: -2 },
-      { stat: "bonds", add: 1 },
+      { stat: "happiness", add: -2 },
+      { stat: "belonging", add: 1 },
     ],
   },
   {
@@ -129,7 +129,7 @@ export const eventDefs: readonly EventDef[] = [
     stage: ["youth", "adulthood"],
     chance: { kind: "weight", base: 6 },
     text: "event.adulthood.quiet_evening",
-    effects: [{ stat: "wellbeing", add: 2 }],
+    effects: [{ stat: "happiness", add: 2 }],
   },
   {
     id: "midlife.old_injury",
@@ -146,7 +146,7 @@ export const eventDefs: readonly EventDef[] = [
     cooldownYears: 5,
     text: "event.midlife.looking_back",
     effects: [
-      { stat: "wellbeing", add: 1 },
+      { stat: "happiness", add: 1 },
       { stat: "skills", add: 1 },
     ],
   },
@@ -157,8 +157,8 @@ export const eventDefs: readonly EventDef[] = [
     cooldownYears: 2,
     text: "event.elder.stories",
     effects: [
-      { stat: "wellbeing", add: 3 },
-      { stat: "bonds", add: 2 },
+      { stat: "happiness", add: 3 },
+      { stat: "belonging", add: 2 },
     ],
   },
   {

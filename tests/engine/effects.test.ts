@@ -17,12 +17,12 @@ describe("applyEffects", () => {
       life(),
       [
         { stat: "skills", add: 500 },
-        { stat: "bonds", add: -500 },
+        { stat: "belonging", add: -500 },
       ],
       "choice",
     );
     expect(state.person.stats.skills).toBe(100);
-    expect(state.person.stats.bonds).toBe(0);
+    expect(state.person.stats.belonging).toBe(0);
   });
 
   it("sets flags", () => {
