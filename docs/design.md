@@ -450,3 +450,4 @@ Built in M2 (2026-10-24), where the data pipeline settled details the sketch in 
 - **Not in M2:** conflict (UCDP) and migration are not in the files yet. They arrive with WORLD-010 and DEC-008, which add their schema fields. The `iso2` code is stored so country names come from `Intl.DisplayNames`.
 - **Licence note.** UNESCO UIS data is CC BY-SA 3.0 IGO. Its share-alike term applies to the education values in the country files, which the Sources screen states. WHO data is used under WHO's terms for public health purposes with attribution.
 
+Decided 2026-10-24: **WHO GHE is the only cause-of-death source for the MVP**; IHME GBD is not used (it needs an account). Revisit for finer causes or more countries after the MVP.
