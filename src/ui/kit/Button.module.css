@@ -11,7 +11,8 @@
   outline-offset: 2px;
 }
 
-.button[data-disabled] {
+.button[data-disabled],
+.button[aria-disabled="true"] {
   opacity: 0.5;
   cursor: default;
 }

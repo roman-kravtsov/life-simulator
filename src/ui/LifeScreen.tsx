@@ -24,7 +24,7 @@ function EventLine({ event, sources }: { event: EventRecord; sources: CountryInd
     <li>
       {t(event.textKey, event.vars)}
       {dataNote && (
-        <span className={styles.note}>
+        <span className={styles.dataNote}>
           {" "}
           {t("life.note", {
             note: t(dataNote.textKey, { share: formatPercent(dataNote.value) }),
@@ -33,7 +33,14 @@ function EventLine({ event, sources }: { event: EventRecord; sources: CountryInd
           })}
         </span>
       )}
-      {event.helpTopic && <p className={styles.help}>{t(`help.${event.helpTopic}`)}</p>}
+      {event.helpTopic && (
+        <p className={styles.help}>
+          {t(`help.${event.helpTopic}`)}{" "}
+          <a href="https://findahelpline.com" rel="noopener">
+            {t("help.link")}
+          </a>
+        </p>
+      )}
     </li>
   );
 }
@@ -90,20 +97,20 @@ export function LifeScreen({ life, country, sources, onContinue, onAnother, onBa
         <p>{story}</p>
         {last && (
           <>
-            <h2 className={styles.thisYear}>{t("life.thisYear")}</h2>
+            <h2 className={styles.sectionHeading}>{t("life.thisYear")}</h2>
             {events.length === 0 ? (
               <p>{t("life.quietYear")}</p>
             ) : (
               <ul className={styles.events}>
-                {events.map((event) => (
-                  <EventLine key={event.id} event={event} sources={sources} />
+                {events.map((event, index) => (
+                  <EventLine key={`${index}-${event.id}`} event={event} sources={sources} />
                 ))}
               </ul>
             )}
           </>
         )}
       </div>
-      <h2 className={styles.thisYear}>{t("life.family")}</h2>
+      <h2 className={styles.sectionHeading}>{t("life.family")}</h2>
       <ul className={styles.family}>
         {person.relationships.map((relative) => (
           <li key={relative.id}>{relativeLine(relative)}</li>

@@ -52,6 +52,23 @@ describe("App", () => {
     expect(screen.getByText(/Your mother, .*, is \d+\. Your father, .*, is \d+\./)).toBeInTheDocument();
     expect(screen.getByText(/You are .*, a (girl|boy)\./)).toBeInTheDocument();
     expect(screen.getByText(/^Life test-seed$/)).toBeInTheDocument();
+    expect(screen.getByText(/Your family lives in (the countryside|a town or city)\./)).toBeInTheDocument();
+    expect(heading).toHaveTextContent(/Born in \d{4}/);
+  });
+
+  it("keeps focus on the begin button while loading and after a load error", async () => {
+    let fail: (error: Error) => void = () => {};
+    const failing = { ...testWorld(), loadIndex: () => new Promise<never>((_, reject) => (fail = reject)) };
+    const store = createGameStore(() => "test-seed", failing);
+    render(<App store={store} />);
+    const user = userEvent.setup();
+    const button = screen.getByRole("button", { name: "Begin a life" });
+    await user.click(button);
+    expect(screen.getByText("Finding where you are born…")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Begin a life" })).toHaveFocus();
+    fail(new Error("offline"));
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Begin a life" })).toHaveFocus();
   });
 
   it("begins the first year at age 0 and moves focus to the new heading", async () => {
@@ -69,7 +86,7 @@ describe("App", () => {
       expect(screen.getByRole("meter", { name })).toBeInTheDocument();
     }
     expect(screen.getByRole("heading", { name: "Family" })).toBeInTheDocument();
-    expect(screen.getByText(/your mother, 2\d|3\d/)).toBeInTheDocument();
+    expect(screen.getByText(/your mother, [23]\d/)).toBeInTheDocument();
   });
 
   it("announces a new life stage after three years", async () => {
@@ -182,7 +199,11 @@ describe("App", () => {
       renderEnded([
         { id: "e2", textKey: "event.midlife.looking_back", helpTopic: "grief", sensitivity: "difficult", effects: [] },
       ]);
-      expect(screen.getByText(/findahelpline\.com lists free, confidential helplines/)).toBeInTheDocument();
+      expect(screen.getByText(/free, confidential helplines/)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "findahelpline.com" })).toHaveAttribute(
+        "href",
+        "https://findahelpline.com",
+      );
     });
 
     it("shows no help line for events without a help topic", () => {

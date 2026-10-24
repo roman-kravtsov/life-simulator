@@ -28,10 +28,10 @@ export function BirthScreen({ life, country, onContinue }: Props) {
         {t("birth.title", { country: place })}
         <span className="subtitle">{t("birth.year", { year: person.birthYear })}</span>
       </h1>
-      <p className={styles.story}>
+      <p className={styles.paragraph}>
         {t("birth.you", { name: person.name, sex: t(`birth.sex.${person.sex}`) })} {t(`birth.place.${person.location}`)}
       </p>
-      <p className={styles.story}>
+      <p className={styles.paragraph}>
         {t("birth.household", {
           band: t(`birth.band.${band}`),
           country: place,
@@ -39,7 +39,7 @@ export function BirthScreen({ life, country, onContinue }: Props) {
           year: incomeYear,
         })}
       </p>
-      <p className={styles.story}>
+      <p className={styles.paragraph}>
         {t("birth.parents", {
           mother: mother.name,
           motherAge: mother.age,

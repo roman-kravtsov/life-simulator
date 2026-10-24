@@ -12,6 +12,7 @@ interface Props {
 
 export function StartScreen({ status, onBegin, onSources }: Props) {
   const heading = useFocusOn<HTMLHeadingElement>();
+  const loading = status === "loading";
   return (
     <section>
       <Header />
@@ -23,10 +24,11 @@ export function StartScreen({ status, onBegin, onSources }: Props) {
       <p className="note" role="note">
         {t("start.contentNote")}
       </p>
-      <Button variant="primary" onPress={onBegin} isDisabled={status === "loading"}>
+      {/* Stays focusable while loading (aria-disabled, guarded handler) so focus is not dropped to the body. */}
+      <Button variant="primary" onPress={loading ? undefined : onBegin} aria-disabled={loading || undefined}>
         {t("start.begin")}
       </Button>
-      <div role="status">{status === "loading" && <p className="small">{t("start.loading")}</p>}</div>
+      <div role="status">{loading && <p className="small">{t("start.loading")}</p>}</div>
       {status === "error" && <p role="alert">{t("start.error")}</p>}
       <p className="small">{t("start.privacy")}</p>
       <Button onPress={onSources}>{t("start.sources")}</Button>
