@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "e2e": "playwright test",
-    "data": "tsx scripts/data/build.ts"
+    "data": "tsx scripts/data/build.ts",
+    "calibrate": "tsx scripts/calibrate.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

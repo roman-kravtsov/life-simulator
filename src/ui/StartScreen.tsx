@@ -1,9 +1,16 @@
 import { t } from "../i18n";
 import { Header } from "./Header";
 import { Button } from "./kit";
+import type { LoadStatus } from "./store";
 import { useFocusOn } from "./useFocusOn";
 
-export function StartScreen({ onBegin, onSources }: { onBegin: () => void; onSources: () => void }) {
+interface Props {
+  status: LoadStatus;
+  onBegin: () => void;
+  onSources: () => void;
+}
+
+export function StartScreen({ status, onBegin, onSources }: Props) {
   const heading = useFocusOn<HTMLHeadingElement>();
   return (
     <section>
@@ -16,9 +23,11 @@ export function StartScreen({ onBegin, onSources }: { onBegin: () => void; onSou
       <p className="note" role="note">
         {t("start.contentNote")}
       </p>
-      <button type="button" className="primary" onClick={onBegin}>
+      <Button variant="primary" onPress={onBegin} isDisabled={status === "loading"}>
         {t("start.begin")}
-      </button>
+      </Button>
+      <div role="status">{status === "loading" && <p className="small">{t("start.loading")}</p>}</div>
+      {status === "error" && <p role="alert">{t("start.error")}</p>}
       <p className="small">{t("start.privacy")}</p>
       <Button onPress={onSources}>{t("start.sources")}</Button>
       <p className="small">{t("start.preview")}</p>

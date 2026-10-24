@@ -1,20 +1,33 @@
 import { useSyncExternalStore } from "react";
 import { t } from "../i18n";
+import { BirthScreen } from "./BirthScreen";
 import { LifeScreen } from "./LifeScreen";
 import { SourcesScreen } from "./SourcesScreen";
 import { StartScreen } from "./StartScreen";
 import type { GameStore } from "./store";
 
 function CurrentScreen({ store }: { store: GameStore }) {
-  const { screen, life } = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  if (screen === "life" && life) {
+  const { screen, life, country, sources, status } = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  if (screen === "birth" && life && country) {
+    return <BirthScreen life={life} country={country} onContinue={store.startLife} />;
+  }
+  if (screen === "life" && life && country) {
     // Not keyed by year: the status region must stay mounted for screen readers to announce changes.
-    return <LifeScreen life={life} onContinue={store.continueYear} onBack={store.backToStart} />;
+    return (
+      <LifeScreen
+        life={life}
+        country={country}
+        sources={sources ?? {}}
+        onContinue={store.continueYear}
+        onAnother={store.begin}
+        onBack={store.backToStart}
+      />
+    );
   }
   if (screen === "sources") {
     return <SourcesScreen onBack={store.closeSources} />;
   }
-  return <StartScreen onBegin={store.begin} onSources={store.openSources} />;
+  return <StartScreen status={status} onBegin={store.begin} onSources={store.openSources} />;
 }
 
 export function App({ store }: { store: GameStore }) {

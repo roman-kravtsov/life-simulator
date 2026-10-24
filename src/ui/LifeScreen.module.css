@@ -59,7 +59,39 @@
 
 .story {
   min-height: 1.6em;
+}
+
+.story > p:first-child {
   font-style: italic;
+  margin-top: 0;
+}
+
+.thisYear {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.events,
+.family {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.events li,
+.family li {
+  margin-bottom: 0.5rem;
+}
+
+.note {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
 }
 
 .actions {
