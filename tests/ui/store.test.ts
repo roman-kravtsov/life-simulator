@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
-import type { LifeState, Person, Relationship } from "../../src/engine/types";
+import { DEFAULT_SETTINGS, type LifeState, type Person, type Relationship } from "../../src/engine/types";
 import { browserSeed, closenessBand, createGameStore, lifeOverview } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
@@ -54,7 +54,11 @@ describe("game store", () => {
     const store = setup();
     await store.begin();
     store.startLife();
-    for (let i = 0; i < 120 && store.getSnapshot().life?.person.alive; i++) store.continueYear();
+    for (let i = 0; i < 240 && store.getSnapshot().life?.person.alive; i++) {
+      const { card } = store.getSnapshot();
+      if (card) store.choose(card.choices.find((c) => !c.lockedReason)!.id);
+      else store.continueYear();
+    }
     const ended = store.getSnapshot();
     expect(ended.life?.person.alive).toBe(false);
     store.continueYear();
@@ -153,6 +157,119 @@ describe("game store", () => {
   });
 });
 
+describe("game store: plan, decisions and settings (DEC-001, DEC-003, EVENT-006, TIME-002)", () => {
+  const atDecision = async (seed: string) => {
+    const store = createGameStore(() => seed, testWorld(makeCountry({ region: "Western Africa" })));
+    await store.begin();
+    store.startLife();
+    while (store.getSnapshot().life?.person.alive && !store.getSnapshot().card) store.continueYear();
+    return store;
+  };
+
+  it("starts with the default settings, which a new life carries", async () => {
+    const store = setup();
+    expect(store.getSnapshot().settings).toEqual({ softening: false, pace: "quiet-years" });
+    await store.begin();
+    expect(store.getSnapshot().life?.settings).toEqual({ softening: false, pace: "quiet-years" });
+  });
+
+  it("keeps settings across lives and applies a change to the life in progress", async () => {
+    const store = setup();
+    store.setSettings({ softening: true });
+    await store.begin();
+    expect(store.getSnapshot().life?.settings.softening).toBe(true);
+    store.startLife();
+    store.setSettings({ pace: "every-year" });
+    expect(store.getSnapshot().settings).toEqual({ softening: true, pace: "every-year" });
+    expect(store.getSnapshot().life?.settings).toEqual({ softening: true, pace: "every-year" });
+    store.backToStart();
+    await store.begin();
+    expect(store.getSnapshot().life?.settings).toEqual({ softening: true, pace: "every-year" });
+  });
+
+  it("offers the plan from age six, with what the player places, and nothing before", async () => {
+    const store = setup();
+    store.setSettings({ pace: "every-year" });
+    await store.begin();
+    store.startLife();
+    expect(store.getSnapshot().plan).toBeNull();
+    for (let i = 0; i < 6; i++) store.continueYear();
+    const { plan, life, card } = store.getSnapshot();
+    expect(life?.person.alive).toBe(true);
+    expect(card).toBeNull();
+    expect(plan).toMatchObject({ free: 3, custom: false });
+    expect(Object.values(plan!.chosen).reduce((a, b) => a + b, 0)).toBe(3);
+  });
+
+  it("sends the plan to the engine, keeps it for the years after, and rejects one that does not fit", async () => {
+    const store = setup();
+    store.setSettings({ pace: "every-year" });
+    await store.begin();
+    store.startLife();
+    for (let i = 0; i < 6; i++) store.continueYear();
+    const plan = store.getSnapshot().plan!;
+    expect(plan).not.toBeNull();
+    const placed = { learn: 0, earn: 0, health: 0, bond: 0, rest: plan.free };
+    expect(() => store.continueYear({ ...placed, learn: 9 })).toThrow(/plan/);
+    store.continueYear(placed);
+    expect(store.getSnapshot().life?.plan).toEqual({ points: placed, custom: true });
+    expect(store.getSnapshot().life?.history.at(-1)?.plan?.rest).toBeGreaterThanOrEqual(plan.free);
+  });
+
+  it("holds the year at a decision: the card is derived, continue is ignored, the plan is withheld", async () => {
+    const store = await atDecision("seed-3");
+    const before = store.getSnapshot();
+    expect(before.card?.eventId).toBe("edu.higher_education");
+    expect(before.plan).toBeNull();
+    store.continueYear();
+    expect(store.getSnapshot()).toBe(before);
+  });
+
+  it("answers a decision: logs the choice, finishes the year and clears the card", async () => {
+    const store = await atDecision("seed-3");
+    const years = store.getSnapshot().life!.history.length;
+    store.choose("work");
+    const { life, card } = store.getSnapshot();
+    expect(card).toBeNull();
+    expect(life?.turn).toBeUndefined();
+    expect(life?.decisions).toEqual([{ year: 17, eventId: "edu.higher_education", choiceId: "work" }]);
+    expect(life?.history).toHaveLength(years + 1);
+    expect(life?.history.at(-1)?.events.at(-1)?.decision?.choiceId).toBe("work");
+  });
+
+  it("ignores a locked or unknown choice, and choose when nothing is waiting", async () => {
+    const store = await atDecision("seed-3");
+    const waiting = store.getSnapshot();
+    store.choose("scholarship"); // locked: the results are not strong enough
+    store.choose("no-such-choice");
+    expect(store.getSnapshot()).toBe(waiting);
+    store.choose("work");
+    const done = store.getSnapshot();
+    store.choose("work");
+    expect(store.getSnapshot()).toBe(done);
+  });
+
+  it("tells which years passed quietly, including the ones before a decision", async () => {
+    const store = createGameStore(() => "seed-0", testWorld(makeCountry({ region: "Western Africa" })));
+    await store.begin();
+    store.startLife();
+    let seen = false;
+    for (let i = 0; i < 40 && store.getSnapshot().life?.person.alive; i++) {
+      const before = store.getSnapshot().life!.history.length;
+      const { card } = store.getSnapshot();
+      if (card) store.choose(card.choices.find((c) => !c.lockedReason)!.id);
+      else store.continueYear();
+      const { life, quietRun } = store.getSnapshot();
+      const added = life!.history.length - before;
+      if (!life!.turn && added > 1) {
+        expect(quietRun).toEqual({ from: life!.history[before]!.age, to: life!.history.at(-2)!.age });
+        seen = true;
+      }
+    }
+    expect(seen).toBe(true);
+  });
+});
+
 const relative = (overrides: Partial<Relationship>): Relationship => ({
   id: "r",
   kind: "sibling",
@@ -168,6 +285,8 @@ const lifeOf = (overrides: Partial<Person>): LifeState => ({
   seed: "test",
   person: makePerson(overrides),
   history: [],
+  settings: DEFAULT_SETTINGS,
+  decisions: [],
 });
 
 describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, HEALTH)", () => {
@@ -247,7 +366,7 @@ describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, 
   });
 
   it("gives the daily and yearly income per person, the band, and the year of the data", () => {
-    const { money } = lifeOverview({ seed: "t", person: adultAt(11, country), history: [] }, country);
+    const { money } = lifeOverview({ ...lifeOf({}), person: adultAt(11, country) }, country);
     expect(money.daily).toBeCloseTo(6); // 1 + 10 * 0.5
     expect(money.yearly).toBeCloseTo(6 * 365);
     expect(money.band).toBe("low");
@@ -295,7 +414,7 @@ describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, 
       education: { level: "lower-secondary", inSchool: false, years: 9 },
       work: { status: "informal", sector: "agriculture", formal: false, yearsWorked: 0, attachment: 0.1 },
     });
-    const { money } = lifeOverview({ seed: "t", person, history: [] }, country);
+    const { money } = lifeOverview({ ...lifeOf({}), person }, country);
     expect(money.own).toBe(true);
     expect(money.daily).toBeCloseTo(dailyIncome(country, adultPercentile(person, country)));
     expect(money.daily).toBeLessThan(dailyIncome(country, 80));

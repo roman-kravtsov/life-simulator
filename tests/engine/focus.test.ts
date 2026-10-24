@@ -168,6 +168,20 @@ describe("focus units", () => {
     expect(units.health).toBeLessThan(0);
     expect(units.bond).toBeLessThan(0);
   });
+  it("do not make illness a bonus: a point the default plan already gave to Health is covered, not added", () => {
+    const view = resolvePlan(at(40, { conditions: [sick("hypertension", 3)] }));
+    expect(view.forced).toEqual([{ area: "health", points: 1, reason: "illness" }]);
+    expect(view.points).toEqual(plan({ earn: 1, health: 1, bond: 1 }));
+    const units = focusUnits(view);
+    for (const area of FOCUS_AREAS) expect(units[area]).toBe(0);
+  });
+  it("still show the cost of a bigger illness: the second point displaces another area", () => {
+    const view = resolvePlan(at(40, { conditions: [sick("pneumonia", 3)] }));
+    expect(view.points.health).toBe(2);
+    expect(planTotal(view.points)).toBe(FOCUS_BUDGET);
+    expect(focusUnits(view).health).toBeGreaterThan(0);
+    expect(focusUnits(view).bond + focusUnits(view).earn).toBeLessThan(0);
+  });
   it("show what circumstance costs: a working child gives up a point elsewhere", () => {
     const units = focusUnits(resolvePlan(at(10, { flags: { childLabour: true } })));
     expect(units.earn).toBeGreaterThan(0);

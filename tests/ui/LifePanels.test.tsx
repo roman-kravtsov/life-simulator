@@ -6,26 +6,23 @@ import { conditionDefs } from "../../src/content/healthConditions";
 import { hasString } from "../../src/i18n";
 import type { EducationLevel, Person, Relationship } from "../../src/engine/types";
 import { LifeScreen } from "../../src/ui/LifeScreen";
-import { makeCountry, testSources } from "../fixtures/country";
+import { makeCountry } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
+import { lifeOf, lifeScreenProps } from "./helpers";
 
 // All people here are SYNTHETIC fixtures. The synthetic income table gives the percentile p
 // 1 + (p - 1) * 0.5 dollars a day, so percentile 11 is $6.00.
 const country = makeCountry();
-const noop = () => {};
 
 function renderLife(overrides: Partial<Person> = {}, options: { showUsPrices?: boolean; onToggle?: () => void } = {}) {
   const person = makePerson(overrides);
   render(
     <LifeScreen
-      life={{ seed: "test", person, history: [] }}
-      country={country}
-      sources={testSources}
-      showUsPrices={options.showUsPrices ?? false}
-      onToggleUsPrices={options.onToggle ?? noop}
-      onContinue={noop}
-      onAnother={noop}
-      onBack={noop}
+      {...lifeScreenProps(country, {
+        life: lifeOf(person),
+        showUsPrices: options.showUsPrices ?? false,
+        ...(options.onToggle ? { onToggleUsPrices: options.onToggle } : {}),
+      })}
     />,
   );
 }

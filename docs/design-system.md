@@ -10,15 +10,24 @@ Birthright uses **React Aria Components** (Adobe, Apache-2.0) for the behaviour 
 
 ## Kit components
 
-| Component | Wraps                   | Planned use                                          |
-| --------- | ----------------------- | ---------------------------------------------------- |
-| `Button`  | `Button`                | All actions. `variant`: `primary` or `ghost`; `icon` |
-| `Switch`  | `Switch`                | Settings toggles: softening, reduced motion (UI-009); US-prices line (MONEY-007) |
-| `Slider`  | `Slider`                | Focus-point allocator (UI-005)                       |
-| `Tooltip` | `TooltipTrigger`        | Odds lens (UI-006)                                   |
-| `Dialog`  | `DialogTrigger`, `Modal`| Help resources, confirmations (UI-012, UI-009)       |
+| Component | Wraps                    | Use                                                                                     |
+| --------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| `Button`  | `Button`                 | All actions. `variant`: `primary`, `ghost` or `choice` (a full-width answer on a decision card; `aria-disabled` shows dashed); `icon` |
+| `Switch`  | `Switch`                 | Settings: softer telling and skip quiet years (EVENT-006, TIME-002); US-prices line (MONEY-007) |
+| `Stepper` | `NumberField`            | Placing the yearly focus points (UI-005): arrow keys on the field, minus and plus buttons for touch, an optional description tied to the field |
+| `Slider`  | `Slider`                 | Not used yet; kept for a later single-value setting                                      |
+| `Tooltip` | `TooltipTrigger`         | Odds lens hints, if the lens ever needs them (UI-006)                                    |
+| `Dialog`  | `DialogTrigger`, `Modal` | Confirmations (UI-009)                                                                   |
 
-Decision cards (UI-006) will use React Aria `RadioGroup` or `ListBox`; add a kit wrapper when that screen is built.
+`Stepper` renders React Aria's number field, which exposes a text input with a "Number field" role description (not `role="spinbutton"`); query it by role `textbox` and its label in tests.
+
+## Screen patterns
+
+- **Decision card** (UI-006, `src/ui/DecisionCardView.tsx`): a labelled region with an `h2` that takes focus when the card appears, the event text, then one `choice` button per choice. A locked choice keeps `aria-disabled` (still focusable) and its reason, cost and odds lens sit in a block tied to the button with `aria-describedby`. Odds are always words (`oddsWords` in `src/ui/words.ts`), money goes through `formatMoney`.
+- **Plan widget** (UI-005, `src/ui/PlanWidget.tsx`): controlled by the life screen, which sends a plan with Continue only when the player changed it (`planToSend` in the store). Forced points and locked areas are said in words.
+- **Help** (UI-012, `src/ui/HelpNote.tsx`): `HelpNote` follows any event, decision or condition with a help topic; `HelpLink` opens the directory in a new tab with `rel="noopener noreferrer"` and a screen-reader hint. The header carries an always-available "Need to talk?" link.
+- **One live region** (`role="status"`) per life screen holds the story; new status-like text elsewhere uses `aria-live="polite"` on a paragraph instead of a second status region.
+- `.visually-hidden` (in `src/styles.css`) is for text only screen readers need.
 
 ## Rules for adding or changing a component
 

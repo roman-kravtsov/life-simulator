@@ -1,0 +1,87 @@
+.stepper {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label group"
+    "description description";
+  align-items: center;
+  column-gap: 1rem;
+  font-family: var(--font-ui);
+}
+
+.label {
+  grid-area: label;
+  font-weight: 600;
+}
+
+.group {
+  grid-area: group;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+}
+
+.group[data-focus-within] {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.group[data-disabled] {
+  opacity: 0.5;
+}
+
+.input {
+  width: 2.5rem;
+  min-height: 2.75rem;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.input:focus {
+  outline: none;
+}
+
+.button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.button[data-hovered] {
+  background: var(--rule);
+}
+
+.button[data-pressed] {
+  background: var(--rule);
+  filter: brightness(0.95);
+}
+
+.button[data-focus-visible] {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.button[data-disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.description {
+  grid-area: description;
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}

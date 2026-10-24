@@ -1,9 +1,50 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const noHorizontalScroll = (page: Page) =>
+  page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+/**
+ * Lives one step: Continue, then, if the year stopped at a decision, answers it with the keyboard
+ * (the first choice that is open). Returns what happened, or "ended" when the life is over.
+ */
+async function liveStep(page: Page): Promise<"year" | "decided" | "ended"> {
+  const next = page.getByRole("button", { name: "Continue to the next year" });
+  const another = page.getByRole("button", { name: "Begin another life" });
+  const decision = page.getByRole("heading", { level: 2, name: "A decision" });
+  if (!(await next.isVisible())) return "ended";
+  await next.click();
+  await expect(next.or(decision).or(another)).toBeVisible();
+  if (!(await decision.isVisible())) return (await another.isVisible()) ? "ended" : "year";
+
+  // The card takes focus, and a long card must not push the page sideways.
+  await expect(decision).toBeFocused();
+  await expect(page.getByRole("status")).toContainText("A decision is waiting.");
+  expect(await noHorizontalScroll(page)).toBe(true);
+  const open = page
+    .getByRole("list", { name: "Your choices" })
+    .getByRole("button")
+    .and(page.locator(":not([aria-disabled='true'])"));
+  await open.first().focus();
+  await page.keyboard.press("Enter");
+  await expect(decision).toBeHidden();
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  return (await another.isVisible()) ? "ended" : "decided";
+}
+
+/** Makes the browser's random numbers a fixed sequence, so a test plays the same life every time. */
+async function fixedRandom(page: Page, start: number) {
+  await page.addInitScript((first) => {
+    let x = first;
+    crypto.getRandomValues = ((array: Uint32Array) => {
+      for (let i = 0; i < array.length; i++) array[i] = x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
+      return array;
+    }) as typeof crypto.getRandomValues;
+  }, start);
+}
 
 test("begins a life, shows the birth screen and plays years without errors or horizontal scroll", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  const noHorizontalScroll = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
   await page.goto("./");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Birthright");
@@ -15,21 +56,19 @@ test("begins a life, shows the birth screen and plays years without errors or ho
   await expect(page.getByText(/tenth of households in .+ about \$/)).toBeVisible();
   await expect(page.getByText(/^Your mother, .+, is \d+\. Your father, .+, is \d+\.$/)).toBeVisible();
   await expect(page.getByText(/^Life .+/)).toBeVisible();
-  expect(await noHorizontalScroll()).toBe(true);
+  expect(await noHorizontalScroll(page)).toBe(true);
 
   await page.getByRole("button", { name: "Begin this life" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 0");
   await expect(page.getByRole("heading", { name: "Family" })).toBeVisible();
 
-  // A life can end early, so stop when the continue button goes away.
-  const next = page.getByRole("button", { name: "Continue to the next year" });
-  for (let i = 0; i < 3; i++) {
-    if (!(await next.isVisible())) break;
-    await next.click();
+  // A life can end early, so stop when it does. Decisions come up in most childhoods: answer them.
+  for (let i = 0; i < 8; i++) {
+    if ((await liveStep(page)) === "ended") break;
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/Age \d+/);
   }
   await expect(page.getByRole("status")).toContainText(/\S/);
-  expect(await noHorizontalScroll()).toBe(true);
+  expect(await noHorizontalScroll(page)).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -45,17 +84,101 @@ test("shows the school, money and work panels on the life screen without horizon
   await expect(page.getByRole("switch", { name: "Compare with US prices" })).toBeVisible();
 
   // CAREER-001: work appears from age six. A life can end early, so stop when it does.
+  // Quiet years may pass in one step, so go on until the person is six.
   const next = page.getByRole("button", { name: "Continue to the next year" });
   const heading = page.getByRole("heading", { level: 1 });
-  for (let age = 0; age < 6 && (await next.isVisible()); age++) {
-    await next.click();
-    await expect(heading).toContainText(`Age ${age + 1}`);
+  for (let step = 0; step < 12 && (await next.isVisible()); step++) {
+    if ((await liveStep(page)) === "ended") break;
+    const age = Number(/Age (\d+)/.exec((await heading.textContent()) ?? "")?.[1]);
+    if (age >= 6) break;
   }
   if (await next.isVisible()) {
     await expect(page.getByRole("heading", { level: 2, name: "Work" })).toBeVisible();
   }
   await expect(page.getByRole("heading", { level: 2, name: "Money" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("the plan can be placed by keyboard and carries over, and the help link is always there (UI-005, UI-012)", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await fixedRandom(page, 20261024);
+
+  await page.goto("./");
+  // UI-012: the link is on the start screen, opens a new tab and is a real link.
+  const talk = page.getByRole("link", { name: "Need to talk?" });
+  await expect(talk).toHaveAttribute("href", "https://findahelpline.com");
+  await expect(talk).toHaveAttribute("target", "_blank");
+  await expect(talk).toHaveAttribute("rel", "noopener noreferrer");
+
+  // The settings are on the start screen too.
+  await expect(page.getByRole("switch", { name: "Softer telling" })).not.toBeChecked();
+  await expect(page.getByRole("switch", { name: "Skip quiet years" })).toBeChecked();
+
+  await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Begin this life" }).click();
+  await expect(talk).toBeVisible();
+
+  // No plan before six; from six the widget shows.
+  const region = page.getByRole("region", { name: "Where your attention goes" });
+  await expect(region).toBeHidden();
+  const next = page.getByRole("button", { name: "Continue to the next year" });
+  for (let step = 0; step < 14 && !(await region.isVisible()); step++) {
+    expect(await liveStep(page)).not.toBe("ended");
+  }
+  await expect(region).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
+
+  // Take a point off the first area that has one and give it to Rest, with the keyboard.
+  let taken = "";
+  for (const name of ["Learn", "Earn", "Health", "Bond"]) {
+    const field = region.getByRole("textbox", { name });
+    if ((await field.isEnabled()) && Number(await field.inputValue()) > 0) {
+      await field.focus();
+      await page.keyboard.press("ArrowDown");
+      taken = name;
+      break;
+    }
+  }
+  expect(taken).not.toBe("");
+  await expect(region.getByText(/1 point left to place/)).toBeVisible();
+  const rest = region.getByRole("textbox", { name: "Rest" });
+  const restBefore = Number(await rest.inputValue());
+  await rest.focus();
+  await page.keyboard.press("ArrowUp");
+  await expect(rest).toHaveValue(String(restBefore + 1));
+  await expect(region.getByText("All points placed.")).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
+
+  // Continue sends the plan, and it is still the player's after the next year.
+  await next.click();
+  const decision = page.getByRole("heading", { level: 2, name: "A decision" });
+  await expect(decision.or(next)).toBeVisible();
+  if (await decision.isVisible()) {
+    const open = page
+      .getByRole("list", { name: "Your choices" })
+      .getByRole("button")
+      .and(page.locator(":not([aria-disabled='true'])"));
+    await open.first().focus();
+    await page.keyboard.press("Enter");
+  }
+  if (await next.isVisible()) {
+    await expect(region.getByText(/These are the points you set/)).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
+test("a setting changed in the middle of a life stays changed", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Begin this life" }).click();
+  const softer = page.getByRole("switch", { name: "Softer telling" });
+  await softer.focus();
+  await page.keyboard.press("Space");
+  await expect(softer).toBeChecked();
+  if ((await liveStep(page)) !== "ended") await expect(softer).toBeChecked();
 });
 
 test("theme toggle switches between light and dark", async ({ page }) => {

@@ -150,9 +150,12 @@ export function resolvePlan(
       room -= take;
     }
   } else {
+    // A point circumstance has already put on an area the default plan wanted is not wanted twice: an
+    // illness takes a point of Health from a plan that had one for Health anyway, and gives no bonus.
+    const covered = new Set(forced.filter((f) => reference[f.area] > 0).map((f) => f.area));
     for (const area of wantedOrder(person)) {
       if (room <= 0) break;
-      if (locked[area]) continue;
+      if (locked[area] || covered.has(area)) continue;
       chosen[area]++;
       room--;
     }

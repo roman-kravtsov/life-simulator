@@ -3,14 +3,16 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { newLife } from "../../src/engine/life";
-import type { EventRecord, LifeState } from "../../src/engine/types";
+import type { EventRecord, LifeState, Settings } from "../../src/engine/types";
 import { App } from "../../src/ui/App";
 import { LifeScreen } from "../../src/ui/LifeScreen";
 import { createGameStore } from "../../src/ui/store";
-import { makeCountry, testSources, testWorld } from "../fixtures/country";
+import { makeCountry, testWorld } from "../fixtures/country";
+import { lifeScreenProps } from "./helpers";
 
-const setup = () => {
+const setup = (settings?: Partial<Settings>) => {
   const store = createGameStore(() => "test-seed", testWorld());
+  if (settings) store.setSettings(settings);
   render(<App store={store} />);
   return { user: userEvent.setup(), store };
 };
@@ -25,8 +27,26 @@ const startLife = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: "Begin this life" }));
 };
 
-const nextYear = (user: ReturnType<typeof userEvent.setup>) =>
-  user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+/** Tabs until the element has focus, so the test follows the real tab order and fails if it is unreachable. */
+const tabTo = async (user: ReturnType<typeof userEvent.setup>, element: HTMLElement) => {
+  for (let i = 0; i < 12 && document.activeElement !== element; i++) await user.tab();
+  expect(element).toHaveFocus();
+};
+
+/** Answers any decision that is waiting with the first choice that is open. */
+const answerDecisions = async (user: ReturnType<typeof userEvent.setup>) => {
+  while (screen.queryByRole("heading", { level: 2, name: "A decision" })) {
+    const open = within(screen.getByRole("list", { name: "Your choices" }))
+      .getAllByRole("button")
+      .filter((button) => button.getAttribute("aria-disabled") !== "true");
+    await user.click(open[0]!);
+  }
+};
+
+const nextYear = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+  await answerDecisions(user);
+};
 
 describe("App", () => {
   it("shows the title, the content note and a way to begin", () => {
@@ -103,7 +123,7 @@ describe("App", () => {
   });
 
   it("announces a new life stage after three years", async () => {
-    const { user, store } = setup();
+    const { user, store } = setup({ pace: "every-year" });
     await startLife(user);
     for (let i = 0; i < 3 && store.getSnapshot().life?.person.alive; i++) await nextYear(user);
     if (store.getSnapshot().life?.person.alive) {
@@ -144,7 +164,7 @@ describe("App", () => {
     const { user, store } = setup();
     await startLife(user);
     while (store.getSnapshot().life?.person.alive) await nextYear(user);
-    expect(screen.getByRole("status")).toHaveTextContent(/^Your life ends at \d+, of /);
+    expect(within(screen.getByRole("status")).getByText(/^Your life ends at \d+, of /)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Continue to the next year" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Begin another life" }));
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
@@ -157,14 +177,12 @@ describe("App", () => {
 
   it("is playable with the keyboard alone", async () => {
     const { user } = setup();
-    // Focus starts on the heading, so the next stop is the main action.
+    // Focus starts on the heading; the header (help link, theme) and the settings come before the main action.
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
-    await user.tab();
-    expect(screen.getByRole("button", { name: "Begin a life" })).toHaveFocus();
+    await tabTo(user, screen.getByRole("button", { name: "Begin a life" }));
     await user.keyboard("{Enter}");
     await screen.findByRole("button", { name: "Begin this life" });
-    await user.tab();
-    expect(screen.getByRole("button", { name: "Begin this life" })).toHaveFocus();
+    await tabTo(user, screen.getByRole("button", { name: "Begin this life" }));
     await user.keyboard("{Enter}");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Age 0");
   });
@@ -178,7 +196,6 @@ describe("App", () => {
 
   describe("the final year and its care", () => {
     const country = makeCountry({ region: "Western Africa" });
-    const noop = () => {};
     const renderEnded = (events: EventRecord[], age = 40): LifeState => {
       const base = newLife({ seed: "end", country });
       const life: LifeState = {
@@ -187,18 +204,7 @@ describe("App", () => {
         death: { age, cause: "cardiovascular" },
         history: [{ age, stage: "adulthood", stageChanged: false, stats: base.person.stats, events, died: true }],
       };
-      render(
-        <LifeScreen
-          life={life}
-          country={country}
-          sources={testSources}
-          showUsPrices={false}
-          onToggleUsPrices={noop}
-          onContinue={noop}
-          onAnother={noop}
-          onBack={noop}
-        />,
-      );
+      render(<LifeScreen {...lifeScreenProps(country, { life })} />);
       return life;
     };
 

@@ -3,5 +3,6 @@
 export { Button, type ButtonProps } from "./Button";
 export { Dialog, type DialogProps } from "./Dialog";
 export { Slider, type SliderProps } from "./Slider";
+export { Stepper, type StepperProps } from "./Stepper";
 export { Switch, type SwitchProps } from "./Switch";
 export { Tooltip, type TooltipProps } from "./Tooltip";

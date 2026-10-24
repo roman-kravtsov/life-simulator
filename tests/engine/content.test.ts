@@ -17,7 +17,7 @@ const money = (e: EventDef) =>
 
 describe("the event set's size (EVENT-007)", () => {
   it("has about 140 events, spread over the stages as docs/mvp.md says", () => {
-    expect(eventDefs.length).toBeGreaterThanOrEqual(140);
+    expect(eventDefs.length).toBeGreaterThanOrEqual(150);
     expect(inStages("infancy", "childhood").length).toBeGreaterThanOrEqual(30);
     expect(inStages("adolescence").length).toBeGreaterThanOrEqual(25);
     expect(inStages("youth").length).toBeGreaterThanOrEqual(30);
@@ -40,13 +40,15 @@ describe("the event set's size (EVENT-007)", () => {
     expect(eventDefs.filter(money).length).toBeGreaterThanOrEqual(6);
   });
   it("has about 25 data notes (EVENT-005)", () => {
-    expect(eventDefs.filter((e) => e.dataNote).length).toBeGreaterThanOrEqual(22);
+    expect(eventDefs.filter((e) => e.dataNote).length).toBeGreaterThanOrEqual(25);
   });
   it("has sensitive events that softening can leave out, each with a help topic", () => {
     const severe = eventDefs.filter((e) => e.sensitivity === "severe");
     expect(severe.length).toBeGreaterThanOrEqual(3);
-    for (const e of severe) expect(e.helpTopic, e.id).toBeDefined();
-    for (const e of eventDefs.filter((e) => e.sensitivity === "difficult")) expect(e.softText, e.id).toBeDefined();
+    for (const e of eventDefs.filter((e) => e.sensitivity === "severe" || e.sensitivity === "difficult")) {
+      expect(e.helpTopic, e.id).toBeDefined();
+      expect(e.softText, e.id).toBeDefined();
+    }
   });
 });
 
