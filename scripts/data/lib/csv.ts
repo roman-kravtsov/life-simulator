@@ -33,7 +33,7 @@ export async function* readCsv(path: string): AsyncGenerator<Record<string, stri
   let header: string[] | undefined;
   for await (const line of createInterface({ input, crlfDelay: Infinity })) {
     if (!line) continue;
-    const cells = splitCsvLine(header ? line : line.replace(/^﻿/, ""));
+    const cells = splitCsvLine(header ? line : line.replace(/^\uFEFF/, ""));
     if (!header) {
       header = cells;
       continue;

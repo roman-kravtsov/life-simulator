@@ -3,7 +3,7 @@
 import { advance, newLife } from "../engine/life";
 import type { LifeState } from "../engine/types";
 
-export type Screen = "start" | "life";
+export type Screen = "start" | "life" | "sources";
 
 export interface GameSnapshot {
   screen: Screen;
@@ -16,6 +16,8 @@ export interface GameStore {
   begin(): void;
   continueYear(): void;
   backToStart(): void;
+  openSources(): void;
+  closeSources(): void;
 }
 
 export function createGameStore(makeSeed: () => string): GameStore {
@@ -42,6 +44,12 @@ export function createGameStore(makeSeed: () => string): GameStore {
       set({ screen: "life", life: advance(snapshot.life, { kind: "continue" }).state });
     },
     backToStart() {
+      set({ screen: "start", life: null });
+    },
+    openSources() {
+      set({ screen: "sources", life: null });
+    },
+    closeSources() {
       set({ screen: "start", life: null });
     },
   };

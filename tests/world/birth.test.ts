@@ -9,9 +9,9 @@ const index: CountryIndex = {
   sources: {},
   excluded: [],
   countries: [
-    { iso3: "AAA", name: "A", region: "R", incomeGroup: "low", birthsPerYear: 600, population: 1_000 },
-    { iso3: "BBB", name: "B", region: "R", incomeGroup: "high", birthsPerYear: 300, population: 50_000 },
-    { iso3: "CCC", name: "C", region: "R", incomeGroup: "high", birthsPerYear: 100, population: 9_000 },
+    { iso3: "AAA", iso2: "XX", name: "A", region: "R", incomeGroup: "low", birthsPerYear: 600, population: 1_000 },
+    { iso3: "BBB", iso2: "XX", name: "B", region: "R", incomeGroup: "high", birthsPerYear: 300, population: 50_000 },
+    { iso3: "CCC", iso2: "XX", name: "C", region: "R", incomeGroup: "high", birthsPerYear: 100, population: 9_000 },
   ],
 };
 

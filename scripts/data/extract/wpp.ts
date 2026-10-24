@@ -24,14 +24,14 @@ export async function extractWpp(refresh: boolean): Promise<{ meta: CountryMeta[
 
   const out: Indicators = new Map();
   const names = new Map<string, string>();
-  const countries: { iso3: string; name: string; parent: string }[] = [];
+  const countries: { iso3: string; iso2: string; name: string; parent: string }[] = [];
 
   for await (const row of readCsv(files.indicators)) {
     if (row.Time !== String(YEAR) || row.Variant !== "Medium") continue;
     names.set(row.LocID!, row.Location!);
     if (row.LocTypeName !== "Country/Area" || !row.ISO3_code) continue;
     const iso3 = row.ISO3_code;
-    countries.push({ iso3, name: row.Location!, parent: row.ParentID! });
+    countries.push({ iso3, iso2: row.ISO2_code!, name: row.Location!, parent: row.ParentID! });
     const at = (value: number) => ({ source: "wpp", year: YEAR, value });
     put(out, iso3, "demography.birthsPerYear", at(Math.round(Number(row.Births) * 1000)));
     put(out, iso3, "demography.population", at(Math.round(Number(row.TPopulation1July) * 1000)));
@@ -58,6 +58,11 @@ export async function extractWpp(refresh: boolean): Promise<{ meta: CountryMeta[
     put(out, iso3, "demography.lifeTable", { source: "wpp", year: YEAR, value: { female, male } });
   }
 
-  const meta = countries.map(({ iso3, name, parent }) => ({ iso3, name, region: names.get(parent) ?? "Unknown" }));
+  const meta = countries.map(({ iso3, iso2, name, parent }) => ({
+    iso3,
+    iso2,
+    name,
+    region: names.get(parent) ?? "Unknown",
+  }));
   return { meta, indicators: out };
 }

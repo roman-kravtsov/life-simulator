@@ -12,6 +12,7 @@ export function syntheticLifeTable(): number[] {
 export function makeCountry(overrides: Partial<Country> = {}): Country {
   return {
     iso3: "AAA",
+    iso2: "AA",
     name: "Testland",
     region: "Test Region",
     incomeGroup: "lower-middle",

@@ -3,6 +3,7 @@ export type Indicators = Map<string, Record<string, unknown>>;
 
 export interface CountryMeta {
   iso3: string;
+  iso2: string;
   name: string;
   /** UN M49 sub-region name. */
   region: string;

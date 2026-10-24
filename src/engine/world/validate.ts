@@ -12,6 +12,7 @@ export function validateCountry(country: Country, sources: CountryIndex["sources
   const fail = (path: string, message: string) => errors.push(`${country.iso3} ${path}: ${message}`);
 
   if (!/^[A-Z]{3}$/.test(country.iso3)) fail("iso3", `must be three upper-case letters, got "${country.iso3}"`);
+  if (!/^[A-Z]{2}$/.test(country.iso2)) fail("iso2", `must be two upper-case letters, got "${country.iso2}"`);
   if (!country.name) fail("name", "is empty");
 
   // Every sourced value cites a known source and a plausible reference year.

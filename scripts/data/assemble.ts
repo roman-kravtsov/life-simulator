@@ -41,6 +41,7 @@ type IndicatorPath = (typeof CORE)[number] | (typeof SECONDARY)[number];
 
 export interface RawCountry {
   iso3: string;
+  iso2: string;
   name: string;
   region: string;
   incomeGroup?: IncomeGroup;
@@ -84,7 +85,7 @@ export function assemble(
   for (const raw of raws) {
     const missing: string[] = CORE.filter((path) => raw.indicators[path] === undefined);
     if (!raw.incomeGroup) missing.push("incomeGroup");
-    if (missing.length) excluded.push({ iso3: raw.iso3, name: raw.name, missing });
+    if (missing.length) excluded.push({ iso3: raw.iso3, iso2: raw.iso2, name: raw.name, missing });
     else included.push(raw);
   }
 
@@ -119,6 +120,7 @@ export function assemble(
     }
     const country: Record<string, unknown> = {
       iso3: raw.iso3,
+      iso2: raw.iso2,
       name: raw.name,
       region: raw.region,
       incomeGroup: raw.incomeGroup,
@@ -139,6 +141,7 @@ export function assemble(
       dataVersion,
       countries: countries.map((c) => ({
         iso3: c.iso3,
+        iso2: c.iso2,
         name: c.name,
         region: c.region,
         incomeGroup: c.incomeGroup,

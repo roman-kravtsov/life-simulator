@@ -13,7 +13,7 @@ function raw(overrides: Parameters<typeof makeCountry>[0] = {}, drop: string[] =
       if (!drop.includes(path)) (indicators as Record<string, unknown>)[path] = value;
     }
   }
-  return { iso3: c.iso3, name: c.name, region: c.region, incomeGroup: c.incomeGroup, indicators };
+  return { iso3: c.iso3, iso2: c.iso2, name: c.name, region: c.region, incomeGroup: c.incomeGroup, indicators };
 }
 
 const sources = { ...testSources };
@@ -31,7 +31,7 @@ describe("assemble", () => {
     (path) => {
       const { countries, index } = assemble([raw({}, [path])], sources, "v");
       expect(countries).toEqual([]);
-      expect(index.excluded).toEqual([{ iso3: "AAA", name: "Testland", missing: [path] }]);
+      expect(index.excluded).toEqual([{ iso3: "AAA", iso2: "AA", name: "Testland", missing: [path] }]);
     },
   );
 

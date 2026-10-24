@@ -13,15 +13,19 @@ Birthright is a browser game in which the player lives one person's life from bi
 ## Architecture
 
 ```
-public/data/        baked country data (JSON, one file per country), built by the pipeline   [M2]
-scripts/data/       data pipeline: download pinned sources, extract, fill gaps, write JSON    [M2]
+public/data/        baked country data (index.json + countries/<ISO3>.json), built by `npm run data`
+scripts/data/       data pipeline: lib/ (cache, csv), extract/ (one file per publisher), assemble.ts
+                    (completeness filter and fallbacks), sources.ts (licences), build.ts, report.ts
+                    Downloads go to the git-ignored .cache/data; the exclusion report is docs/data-report.md
 src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   rng.ts            seeded PRNG and independent streams per subsystem and period
   life.ts           public API: newLife(), advance(state, input) -> new state
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
+  world/            country schema (types.ts), validator, birth draw, data loader
 src/content/        game content as data: strings (en.ts), later events, names, prompts
 src/i18n.ts         t(key, vars) translator
+src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
   store.ts          holds engine state, exposes actions; React reads it via useSyncExternalStore
   App.tsx           switches screens by game state (no router)
@@ -45,6 +49,7 @@ Read these docs before starting work:
 
 ## How work flows
 
+- **One thread per phase, milestone or task (Roman, 2026-10-24).** When a thread finishes its phase it stops and does not continue into the next one. It reports to the coordinator that the phase is done, with a suggested prompt that starts a new thread for the next phase or task (branch, state, blockers, feature IDs, docs to read). The coordinator starts that thread.
 - **One PR per milestone** (M1, M2, ...). After MVP, one PR per feature, named by its feature ID. Roman reviews each PR before the next starts.
 - **Feature loop:** for "next" or a feature ID, restate the feature, list open questions, propose the approach in a few lines, then build it. If a feature is too vague, ask instead of guessing.
 - **New features** get the next free ID in their category. IDs never change and are never reused, even for dropped features.
@@ -59,6 +64,7 @@ Read these docs before starting work:
 - **Engine state is immutable:** functions return new state and never mutate their inputs.
 - **Interactive controls come from `src/ui/kit/`.** Do not import `react-aria-components` in screens, and do not use a raw `<button>`, `<input type="range">` or hand-made dialog for new UI. Style states with React Aria's data attributes (`[data-pressed]`, `[data-focus-visible]`, `[data-selected]`) in CSS Modules, using token variables only. See `docs/design-system.md`.
 - **All player-facing text goes through `t(key, vars)`** with keys in `src/content/strings/en.ts`. No hard-coded strings in components or content.
+- **Never invent data to get past a blocked download.** If a publisher is unreachable, say which host is blocked and carry on with the rest; do not stand in mock or made-up values. Test fixtures are synthetic and clearly marked.
 - **Real data only from the primary publishers** listed in `docs/analysis.md` 1.7, with source and year on every value. Never copy text, art, code or data from the reference game (1in8b.life).
 - **Sensitive content** (death, suicide, violence) is never graphic, always tagged with a sensitivity level, and followed by help resources where relevant. Suicide is never a player choice.
 - **No tracking, analytics or third-party requests** (fonts included). A guard test checks for common trackers.

@@ -36,10 +36,10 @@ export async function build(refresh: boolean) {
     await extractGho(refresh),
   ];
 
-  const raws: RawCountry[] = wpp.meta.map(({ iso3, name, region }) => {
+  const raws: RawCountry[] = wpp.meta.map(({ iso3, iso2, name, region }) => {
     const indicators: RawCountry["indicators"] = {};
     for (const extract of extracts) Object.assign(indicators, extract.get(iso3));
-    return { iso3, name, region, incomeGroup: incomeGroups.get(iso3), indicators };
+    return { iso3, iso2, name, region, incomeGroup: incomeGroups.get(iso3), indicators };
   });
 
   const sources = Object.fromEntries(SOURCE_IDS.map((id) => [id, sourceInfo(id)]));
