@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
 import type { LifeState, Person, Relationship } from "../../src/engine/types";
 import { browserSeed, closenessBand, createGameStore, lifeOverview } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
-import { makePerson, moneyAt } from "../fixtures/person";
+import { adultAt, makePerson, moneyAt } from "../fixtures/person";
 
 const seeds = () => {
   let n = 0;
@@ -200,6 +201,8 @@ describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, 
       level: "primary",
       years: 2,
     });
+    expect(at(6, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "too-young" });
+    expect(at(7, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "never" });
     expect(at(12, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "never" });
   });
 
@@ -244,7 +247,7 @@ describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, 
   });
 
   it("gives the daily and yearly income per person, the band, and the year of the data", () => {
-    const { money } = lifeOverview(lifeOf({ age: 30, money: moneyAt(11) }), country);
+    const { money } = lifeOverview({ seed: "t", person: adultAt(11, country), history: [] }, country);
     expect(money.daily).toBeCloseTo(6); // 1 + 10 * 0.5
     expect(money.yearly).toBeCloseTo(6 * 365);
     expect(money.band).toBe("low");
@@ -283,6 +286,19 @@ describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, 
     ).money;
     expect(student.holdings).toBeNull();
     expect(student.own).toBe(false);
+  });
+
+  it("shows the person's own standing from the day they are independent and out of school", () => {
+    const person = makePerson({
+      age: 18,
+      money: moneyAt(80, { luck: -3 }),
+      education: { level: "lower-secondary", inSchool: false, years: 9 },
+      work: { status: "informal", sector: "agriculture", formal: false, yearsWorked: 0, attachment: 0.1 },
+    });
+    const { money } = lifeOverview({ seed: "t", person, history: [] }, country);
+    expect(money.own).toBe(true);
+    expect(money.daily).toBeCloseTo(dailyIncome(country, adultPercentile(person, country)));
+    expect(money.daily).toBeLessThan(dailyIncome(country, 80));
   });
 
   it("lists conditions with their severity and onset", () => {

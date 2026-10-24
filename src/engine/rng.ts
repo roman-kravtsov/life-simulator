@@ -93,6 +93,7 @@ export type StreamName =
   | "person"
   | "parents"
   | "siblings"
+  | "siblings:birth"
   | "family"
   | "closeness"
   | "education"

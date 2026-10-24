@@ -254,7 +254,7 @@ export function stepConditions(
         conditions = conditions.filter((c) => c.id !== def.id);
       } else {
         const severity = asSeverity(current.severity - 1);
-        event(def, "eases", `event.condition.${def.id}.ends`, [
+        event(def, "eases", `event.condition.${def.id}.eases`, [
           { condition: "add", id: def.id, severity },
           { stat: "happiness", add: 1 },
         ]);

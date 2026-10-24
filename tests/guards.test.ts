@@ -42,6 +42,22 @@ describe("ANLT-001: no tracking", () => {
   });
 });
 
+// Money is shown through formatMoney in src/format.ts, so the unit and the rounding are the same everywhere (MONEY-007).
+const formatsNumbersItself = (source: string) =>
+  /Intl\s*\.\s*NumberFormat|\btoLocaleString\s*\(|\bcurrency\b/.test(source);
+
+describe("MONEY-007: amounts are formatted in one place", () => {
+  it("detects hand-made number formatting", () => {
+    expect(formatsNumbersItself('new Intl.NumberFormat("en", { style: "currency" })')).toBe(true);
+    expect(formatsNumbersItself("amount.toLocaleString()")).toBe(true);
+    expect(formatsNumbersItself("formatMoney(amount)")).toBe(false);
+  });
+
+  it.each(sourceFiles("src").filter((f) => f !== join("src", "format.ts")))("%s", (file) => {
+    expect(formatsNumbersItself(readFileSync(file, "utf8"))).toBe(false);
+  });
+});
+
 describe("L10N-001: every string key used in the code exists", () => {
   it.each(sourceFiles("src"))("%s", (file) => {
     const keys = [...readFileSync(file, "utf8").matchAll(/\bt\(\s*"([^"]+)"/g)].map((m) => m[1]!);

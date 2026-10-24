@@ -3,7 +3,7 @@
 // one piece of I/O a life needs: loading the world data, which it receives from outside.
 import { SCHOOL_START_AGE } from "../engine/education";
 import { advance, newLife } from "../engine/life";
-import { dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
+import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
 import type { EducationLevel, HealthCondition, LifeState, Relationship, Sector } from "../engine/types";
@@ -134,7 +134,7 @@ function educationSummary({ age, education }: LifeState["person"]): EducationSum
   if (inSchool && next && next !== "none") return { kind: "attending", level: next, years };
   if (level !== "none") return { kind: "completed", level, years };
   if (years > 0) return { kind: "left-early", level: "primary", years };
-  return age < SCHOOL_START_AGE ? { kind: "too-young" } : { kind: "never" };
+  return age <= SCHOOL_START_AGE ? { kind: "too-young" } : { kind: "never" };
 }
 
 function workSummary({ age, work }: LifeState["person"]): WorkSummary | null {
@@ -159,9 +159,10 @@ function workSummary({ age, work }: LifeState["person"]): WorkSummary | null {
 function moneySummary(person: LifeState["person"], country: Country): MoneySummary {
   // Same test as the engine's currentPercentile: independent and out of school.
   const own = person.age >= INDEPENDENCE_AGE && !person.education.inSchool;
-  const yearly = yearlyIncome(person, country);
-  const daily =
-    person.work.status === "retired" ? yearly / DAYS_IN_YEAR : dailyIncome(country, person.money.percentile);
+  // The percentile switches to the person's own inside the turn they turn independent, so ask the engine.
+  const standing = { ...person, money: { ...person.money, percentile: currentPercentile(person, country) } };
+  const yearly = yearlyIncome(standing, country);
+  const daily = yearly / DAYS_IN_YEAR;
   const { savings, debt } = person.money;
   return {
     daily,

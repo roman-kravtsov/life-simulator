@@ -120,6 +120,9 @@ describe("driftStats (SIM-004)", () => {
   it("grows skills far less for a child who is out of school (EDU-001)", () => {
     expect(skillGrowth(at(8))).toBeLessThan(skillGrowth(pupil(8)));
   });
+  it("counts a six-year-old as a first-year pupil, because school starts this year", () => {
+    expect(skillGrowth(at(6))).toBeCloseTo(skillGrowth(pupil(6)), 9);
+  });
   it("grows skills more in secondary and tertiary study than in nothing, at every level", () => {
     for (const age of [8, 13, 16, 19]) expect(skillGrowth(pupil(age))).toBeGreaterThan(skillGrowth(at(age)));
   });

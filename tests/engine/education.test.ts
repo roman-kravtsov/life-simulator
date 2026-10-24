@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  completionRates,
   LEVELS,
   attainmentShares,
   continuationProbability,
@@ -233,10 +234,10 @@ describe("the schooling model", () => {
 });
 
 describe("the schooling batch reproduces each country's completion rates (EDU-001)", () => {
-  // Whole cohorts through school with the real data. Tertiary uses enrolment, so it is checked
-  // as the enrolment rate times the assumed completion share (see TERTIARY_COMPLETION).
+  // Whole cohorts through school with the real data. Tertiary uses enrolment, so its target is the
+  // enrolment rate times the assumed completion share (see TERTIARY_COMPLETION, completionRates).
   const cohort = (c: Country, sex: "female" | "male", n: number) => {
-    const reached = { primary: 0, lower: 0, upper: 0 };
+    const reached = { primary: 0, lower: 0, upper: 0, tertiary: 0 };
     for (let i = 0; i < n; i++) {
       let person = makePerson({
         sex,
@@ -261,8 +262,14 @@ describe("the schooling batch reproduces each country's completion rates (EDU-00
       if (rank >= 1) reached.primary++;
       if (rank >= 2) reached.lower++;
       if (rank >= 3) reached.upper++;
+      if (rank >= 4) reached.tertiary++;
     }
-    return { primary: reached.primary / n, lower: reached.lower / n, upper: reached.upper / n };
+    return {
+      primary: reached.primary / n,
+      lower: reached.lower / n,
+      upper: reached.upper / n,
+      tertiary: reached.tertiary / n,
+    };
   };
   it.each(["NGA", "NER", "JPN", "IND", "USA"])(
     "%s",
@@ -270,13 +277,11 @@ describe("the schooling batch reproduces each country's completion rates (EDU-00
       const c = real(iso3);
       for (const sex of ["female", "male"] as const) {
         const got = cohort(c, sex, 1600);
-        const cap = (x: number) => Math.min(1, x);
-        const primary = cap(c.education.primaryCompletion.value[sex]);
-        const lower = Math.min(primary, cap(c.education.lowerSecondaryCompletion.value[sex]));
-        const upper = Math.min(lower, cap(c.education.upperSecondaryCompletion.value[sex]));
+        const [primary, lower, upper, tertiary] = completionRates(c, sex) as [number, number, number, number];
         expect(Math.abs(got.primary - primary), `${iso3} ${sex} primary`).toBeLessThan(0.05);
         expect(Math.abs(got.lower - lower), `${iso3} ${sex} lower secondary`).toBeLessThan(0.05);
         expect(Math.abs(got.upper - upper), `${iso3} ${sex} upper secondary`).toBeLessThan(0.05);
+        expect(Math.abs(got.tertiary - tertiary), `${iso3} ${sex} tertiary`).toBeLessThan(0.05);
       }
     },
     30_000,

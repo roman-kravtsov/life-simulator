@@ -7,7 +7,7 @@ import { hasString } from "../../src/i18n";
 import type { EducationLevel, Person, Relationship } from "../../src/engine/types";
 import { LifeScreen } from "../../src/ui/LifeScreen";
 import { makeCountry, testSources } from "../fixtures/country";
-import { makePerson, moneyAt } from "../fixtures/person";
+import { adultAt, makePerson, moneyAt } from "../fixtures/person";
 
 // All people here are SYNTHETIC fixtures. The synthetic income table gives the percentile p
 // 1 + (p - 1) * 0.5 dollars a day, so percentile 11 is $6.00.
@@ -144,7 +144,7 @@ describe("life panels", () => {
 
   describe("Money (MONEY-002, MONEY-004, MONEY-007)", () => {
     it("shows the daily and yearly income and what it means in words", () => {
-      renderLife({ age: 30, money: moneyAt(11) });
+      renderLife(adultAt(11, country));
       const money = within(panel("Money"));
       expect(money.getByText("$6.00")).toBeInTheDocument();
       expect(money.getByText("$2,190")).toBeInTheDocument();
@@ -214,7 +214,7 @@ describe("life panels", () => {
       expect(items.map((item) => item.textContent)).toEqual([
         "Malaria, moderate, since age 7",
         "A serious injury, severe, since age 25",
-        "A condition from birth, mild, from birth",
+        "A lasting condition, mild, from birth",
       ]);
     });
   });
@@ -237,10 +237,10 @@ describe("life panels", () => {
       expect(names).toEqual(["Ama", "Kofi", "Esi", "Kwame", "Yaw", "Abena"]);
     });
 
-    it("counts brothers and sisters in a heading line", () => {
+    it("counts the living brothers and sisters in a heading line", () => {
       renderLife({ age: 10, relationships: family });
       expect(
-        within(panel("Family")).getByRole("heading", { level: 3, name: "You have 3 brothers and sisters" }),
+        within(panel("Family")).getByRole("heading", { level: 3, name: "You have 2 brothers and sisters" }),
       ).toBeInTheDocument();
     });
 
@@ -261,23 +261,35 @@ describe("life panels", () => {
       expect(family_.getByText("Yaw, your brother, 3")).toBeInTheDocument();
     });
 
-    it("shows closeness in words next to a labelled meter", () => {
+    it("shows closeness in words, with a bar that is only a picture of them", () => {
       renderLife({ age: 10, relationships: family });
-      const meter = screen.getByRole("meter", { name: "Closeness with Yaw" });
-      expect(meter).toHaveAttribute("aria-valuetext", "very close");
-      expect(meter).toHaveAttribute("value", "85");
-      const item = meter.closest("li")!;
-      expect(within(item).getByText("very close")).toBeInTheDocument();
-      expect(screen.getByRole("meter", { name: "Closeness with Ama" })).toHaveAttribute("aria-valuetext", "strained");
-      expect(screen.getByRole("meter", { name: "Closeness with Kofi" })).toHaveAttribute("aria-valuetext", "close");
-      expect(screen.getByRole("meter", { name: "Closeness with Esi" })).toHaveAttribute("aria-valuetext", "friendly");
-      expect(screen.getByRole("meter", { name: "Closeness with Abena" })).toHaveAttribute("aria-valuetext", "distant");
+      const line = (name: string) => screen.getByText(new RegExp(`^${name},`)).closest("li")!;
+      for (const [name, word] of [
+        ["Yaw", "very close"],
+        ["Ama", "strained"],
+        ["Kofi", "close"],
+        ["Esi", "friendly"],
+        ["Abena", "distant"],
+      ] as const) {
+        expect(within(line(name)).getByText(word)).toBeInTheDocument();
+      }
+      const bar = line("Yaw").querySelector("meter")!;
+      expect(bar).toHaveAttribute("value", "85");
+      expect(bar).toHaveAttribute("aria-hidden", "true");
+      expect(within(panel("Family")).queryByRole("meter")).not.toBeInTheDocument();
+    });
+
+    it("says there are no living brothers or sisters when only the dead are left", () => {
+      renderLife({ age: 10, relationships: [relative({ id: "k", name: "Kwame", alive: false, age: 9 })] });
+      expect(
+        screen.getByRole("heading", { level: 3, name: "You have no living brothers or sisters." }),
+      ).toBeInTheDocument();
     });
 
     it("keeps the died-at line for the dead and gives them no meter", () => {
       renderLife({ age: 10, relationships: family });
       expect(within(panel("Family")).getByText("Kwame, your brother, died at 9")).toBeInTheDocument();
-      expect(screen.queryByRole("meter", { name: /Kwame/ })).not.toBeInTheDocument();
+      expect(screen.getByText("Kwame, your brother, died at 9").closest("li")!.querySelector("meter")).toBeNull();
     });
   });
 });
@@ -296,6 +308,7 @@ describe("strings built from data", () => {
     ...["very-close", "close", "friendly", "distant", "strained"].map((k) => `closeness.${k}`),
     ...["female", "male"].map((k) => `kind.sibling.${k}`),
     ...["one", "other"].flatMap((k) => [`common.years.${k}`, `family.siblings.${k}`]),
+    "family.siblings.noneLiving",
   ];
 
   it.each(keys)("%s exists", (key) => {

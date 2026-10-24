@@ -1,5 +1,7 @@
 // SYNTHETIC test fixture: an invented person for engine tests.
+import { adultPercentile } from "../../src/engine/money";
 import type { Person } from "../../src/engine/types";
+import type { Country } from "../../src/engine/world/types";
 
 /** A person's money at one household percentile, with the current standing equal to it. */
 export const moneyAt = (percentile: number, extra: Partial<Person["money"]> = {}): Person["money"] => ({
@@ -31,4 +33,21 @@ export function makePerson(overrides: Partial<Person> = {}): Person {
     flags: {},
     ...overrides,
   };
+}
+
+/**
+ * An independent adult whose own standing, as the engine works it out, is exactly `percentile`:
+ * the luck is searched for, so panel tests can name the income without restating the model.
+ */
+export function adultAt(percentile: number, country: Country, overrides: Partial<Person> = {}): Person {
+  const at = (luck: number) => makePerson({ age: 30, ...overrides, money: moneyAt(percentile, { luck }) });
+  let [low, high] = [-8, 8];
+  for (let i = 0; i < 40; i++) {
+    const mid = (low + high) / 2;
+    if (adultPercentile(at(mid), country) < percentile) low = mid;
+    else high = mid;
+  }
+  const person = at(high);
+  if (adultPercentile(person, country) !== percentile) throw new Error(`No luck gives percentile ${percentile}`);
+  return { ...person, money: { ...person.money, percentile } };
 }

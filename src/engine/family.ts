@@ -125,7 +125,8 @@ export function generateSiblings(
 
 /**
  * A younger sibling this year, if the mother is alive and in her fertile years: the yearly chance is
- * the birth rate of the mother's stream of births. Always draws four numbers.
+ * the birth rate of the mother's stream of births. None in the baby's own first year. Always draws
+ * four numbers.
  */
 export function rollSiblingBirth(person: Person, country: Country, rng: Rng): Relationship | undefined {
   const roll = rng.next();
@@ -133,7 +134,8 @@ export function rollSiblingBirth(person: Person, country: Country, rng: Rng): Re
   const nameRoll = rng.next();
   const closenessRoll = rng.next();
   const mother = person.relationships.find((r) => r.kind === "mother");
-  if (!mother?.alive || mother.age < FERTILE_AGES[0] || mother.age >= FERTILE_AGES[1]) return undefined;
+  if (person.age < 1 || !mother?.alive || mother.age < FERTILE_AGES[0] || mother.age >= FERTILE_AGES[1])
+    return undefined;
   if (roll >= 1 - Math.exp(-birthRate(country))) return undefined;
   return sibling(country, `sibling-born-${person.age}`, 0, sexRoll, nameRoll, closenessRoll);
 }

@@ -104,6 +104,7 @@ export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanel
   const hasHoldings = holdings !== null && !(isNothing(holdings.savings) && isNothing(holdings.debt));
   return (
     <Panel title={t("money.heading")}>
+      <p className="small">{t("money.note", { year: money.year })}</p>
       <dl className={styles.facts}>
         <Fact label={t(`money.field.daily.${who}`)}>{formatMoney(money.daily)}</Fact>
         <Fact label={t(`money.field.yearly.${who}`)}>{formatMoney(money.yearly)}</Fact>
@@ -116,7 +117,6 @@ export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanel
         )}
         {holdings && !hasHoldings && <Fact label={t("money.field.holdings")}>{t("money.none")}</Fact>}
       </dl>
-      <p className="small">{t("money.note", { year: money.year })}</p>
       <Switch isSelected={showUsPrices} onChange={() => onToggleUsPrices()}>
         {t("money.usSwitch")}
       </Switch>
@@ -156,9 +156,11 @@ function RelativeList({ relatives }: { relatives: readonly Relationship[] }) {
   return (
     <ul className={styles.list}>
       {relatives.map((relative) => (
-        <li key={relative.id} className={styles.relative}>
-          <span>{relativeLine(relative)}</span>
-          {relative.alive && <Closeness relative={relative} />}
+        <li key={relative.id}>
+          <div className={styles.relative}>
+            <span>{relativeLine(relative)}</span>
+            {relative.alive && <Closeness relative={relative} />}
+          </div>
         </li>
       ))}
     </ul>
@@ -169,17 +171,17 @@ function Closeness({ relative }: { relative: Relationship }) {
   const word = t(`closeness.${closenessBand(relative.closeness)}`);
   return (
     <span className={styles.closeness}>
-      <meter
-        className={styles.meter}
-        min={0}
-        max={100}
-        value={Math.round(relative.closeness)}
-        aria-label={t("family.closeness", { name: relative.name })}
-        aria-valuetext={word}
-      />
-      <span className={styles.word}>{word}</span>
+      {/* The word says it all to a screen reader; the bar is only a picture of it. */}
+      <meter className={styles.meter} min={0} max={100} value={Math.round(relative.closeness)} aria-hidden="true" />
+      <span>{word}</span>
     </span>
   );
+}
+
+function siblingsHeading(siblings: readonly Relationship[]): string {
+  const living = siblings.filter((s) => s.alive).length;
+  if (living > 0) return t(pluralKey("family.siblings", living), { count: living });
+  return t(siblings.length === 0 ? "family.siblings.none" : "family.siblings.noneLiving");
 }
 
 export function FamilyPanel({ family }: { family: FamilySummary }) {
@@ -192,11 +194,7 @@ export function FamilyPanel({ family }: { family: FamilySummary }) {
           <RelativeList relatives={parents} />
         </>
       )}
-      <h3 className={styles.group}>
-        {siblings.length === 0
-          ? t("family.siblings.none")
-          : t(pluralKey("family.siblings", siblings.length), { count: siblings.length })}
-      </h3>
+      <h3 className={styles.group}>{siblingsHeading(siblings)}</h3>
       <RelativeList relatives={siblings} />
       {others.length > 0 && (
         <>

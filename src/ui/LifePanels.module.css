@@ -63,10 +63,6 @@
   color: var(--ink-soft);
 }
 
-.word {
-  min-width: 6ch;
-}
-
 .meter {
   width: 6rem;
   height: 0.5rem;

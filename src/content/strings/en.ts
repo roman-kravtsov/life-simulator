@@ -170,78 +170,97 @@ export const en: Readonly<Record<string, string>> = {
 
   "event.family.sibling_born":
     "{name}, a new brother or sister, joins the household. There is one more mouth, and one more pair of hands to come.",
-  "condition.congenital_condition": "a condition from birth",
+  "condition.congenital_condition": "a lasting condition",
   "event.condition.congenital_condition.begins":
     "Something is different about your body from the very first days. The family learns what it needs, a step at a time.",
   "event.condition.congenital_condition.worsens": "It asks more of you this year than it did.",
+  "event.condition.congenital_condition.eases":
+    "It asks a little less of you this year, and the days have more room in them.",
   "event.condition.congenital_condition.ends": "It settles, and for a time it asks less.",
   "condition.undernutrition": "hunger in childhood",
   "event.condition.undernutrition.begins":
     "There is not always enough to eat, and your body holds back its growing to make do.",
   "event.condition.undernutrition.worsens": "The lean months are leaner this year.",
+  "event.condition.undernutrition.eases": "There is a little more to eat than there was, and you begin to feel it.",
   "event.condition.undernutrition.ends": "Food is steadier now, and you begin to catch up.",
   "condition.pneumonia": "pneumonia",
   "event.condition.pneumonia.begins":
     "A cough that will not leave turns into a chest that rattles, and breathing becomes the whole of the day.",
   "event.condition.pneumonia.worsens": "The fever returns and the nights are long.",
+  "event.condition.pneumonia.eases": "The fever breaks, though the cough lingers and you tire easily.",
   "event.condition.pneumonia.ends": "The cough loosens its hold, and breathing is something you forget about again.",
   "condition.malaria": "malaria",
   "event.condition.malaria.begins":
     "The fever comes in waves, shaking you hot and cold, and the days fall out of order.",
   "event.condition.malaria.worsens": "This bout is worse than the last, and it takes longer to rise from it.",
+  "event.condition.malaria.eases": "The fevers come less often, though you are not yet free of them.",
   "event.condition.malaria.ends": "The fevers come less often, and then stop.",
   "condition.tuberculosis": "tuberculosis",
   "event.condition.tuberculosis.begins":
     "A cough lingers for weeks, then months. People begin to keep a careful distance, and you feel it.",
   "event.condition.tuberculosis.worsens":
     "The illness takes more of you this year, and the cough comes with an ache you cannot place.",
+  "event.condition.tuberculosis.eases": "The medicine is working. The cough is quieter, though the course is not over.",
   "event.condition.tuberculosis.ends": "With the long course of medicine behind you, the cough is gone.",
   "condition.serious_injury": "a serious injury",
   "event.condition.serious_injury.begins":
     "One moment of carelessness, or none at all, and you are hurt badly enough to be carried home.",
   "event.condition.serious_injury.worsens": "The injury has not healed as it should, and it limits what you can do.",
+  "event.condition.serious_injury.eases": "The injury gives a little. Some movements come back, though not all.",
   "event.condition.serious_injury.ends": "The injury heals, slowly, and mostly well.",
   "condition.depression": "depression",
   "event.condition.depression.begins":
     "A heaviness settles over you that has no clear cause. Colours dull, and the things you used to look forward to are only things.",
   "event.condition.depression.worsens": "The heaviness is deeper this year, and harder to explain to anyone.",
+  "event.condition.depression.eases": "Some days the heaviness thins, and you notice the light in a room again.",
   "event.condition.depression.ends": "The heaviness lifts a little, as weather does. There is room in the days again.",
   "condition.chronic_back_pain": "back pain",
   "event.condition.chronic_back_pain.begins":
     "Years of lifting and bending have left a pain in your back that is there when you wake.",
   "event.condition.chronic_back_pain.worsens": "The pain is sharper now, and it sets the pace of your days.",
+  "event.condition.chronic_back_pain.eases":
+    "The pain is duller this year, and you plan your days around it a little less.",
   "event.condition.chronic_back_pain.ends": "The pain eases, and some mornings you forget it.",
   "condition.hypertension": "high blood pressure",
   "event.condition.hypertension.begins":
     "A health worker tells you your blood pressure is high, which explains the headaches and nothing about what to do next.",
   "event.condition.hypertension.worsens": "Your blood pressure climbs, and the advice gets more serious.",
+  "event.condition.hypertension.eases":
+    "Your blood pressure is lower than at the last visit, though the advice stays the same.",
   "event.condition.hypertension.ends": "Your blood pressure comes down a little, and the headaches fade.",
   "condition.diabetes": "diabetes",
   "event.condition.diabetes.begins":
     "You are told your body can no longer manage sugar on its own, and that food and time have become things you will have to count.",
   "event.condition.diabetes.worsens": "Keeping your blood sugar in check takes more effort this year.",
+  "event.condition.diabetes.eases": "Your sugar is steadier than it was, and the routine feels less like a siege.",
   "event.condition.diabetes.ends": "Your sugar is steadier, and the days are easier to plan.",
   "condition.heart_disease": "heart disease",
   "event.condition.heart_disease.begins":
     "Climbing a flight of steps leaves you breathless and with a tightness in the chest. A doctor, if you can reach one, uses a word you are afraid of.",
   "event.condition.heart_disease.worsens":
     "Your heart gives you less to work with than it did, and rest has to be planned.",
+  "event.condition.heart_disease.eases": "Your heart seems steadier, and the stairs are a little less of an argument.",
   "event.condition.heart_disease.ends": "Your heart is steadier this year, and you walk a little further.",
   "condition.chronic_lung_disease": "a chronic lung disease",
   "event.condition.chronic_lung_disease.begins":
     "Smoke, dust and years have left your lungs tired. You cough in the mornings and stop for breath on the stairs.",
   "event.condition.chronic_lung_disease.worsens": "Your breathing is shorter this year, and the cough stays.",
+  "event.condition.chronic_lung_disease.eases":
+    "Your breathing is easier for a stretch, though the cough has not gone.",
   "event.condition.chronic_lung_disease.ends": "Your breathing is easier for a while.",
   "condition.liver_disease": "liver disease",
   "event.condition.liver_disease.begins":
     "You are tired in a way sleep does not touch, and a doctor tells you your liver is struggling.",
   "event.condition.liver_disease.worsens":
     "Your liver is struggling more this year, and you feel it in your whole body.",
+  "event.condition.liver_disease.eases":
+    "The tests are a little better, and you are told to keep doing what you are doing.",
   "event.condition.liver_disease.ends": "Your liver has some rest, and you are a little less tired.",
   "condition.cancer": "cancer",
   "event.condition.cancer.begins":
     "A lump, a test, a long wait, and then a word that changes the shape of the years ahead.",
   "event.condition.cancer.worsens": "The illness has moved, and the talk around you is lower and more careful.",
+  "event.condition.cancer.eases": "The news is better than it was: smaller, slower, a reason for cautious hope.",
   "event.condition.cancer.ends":
     "The tests come back better than anyone expected. You are told to be glad, and you are, carefully.",
 
@@ -348,10 +367,10 @@ export const en: Readonly<Record<string, string>> = {
 
   "family.parents": "Parents",
   "family.siblings.none": "You have no brothers or sisters.",
+  "family.siblings.noneLiving": "You have no living brothers or sisters.",
   "family.siblings.one": "You have {count} brother or sister",
   "family.siblings.other": "You have {count} brothers and sisters",
   "family.others": "Others in your life",
-  "family.closeness": "Closeness with {name}",
   "closeness.very-close": "very close",
   "closeness.close": "close",
   "closeness.friendly": "friendly",

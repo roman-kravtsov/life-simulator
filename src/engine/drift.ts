@@ -102,7 +102,8 @@ function belongingNorm(person: Person): number {
 export function skillGrowth(person: Person): number {
   const { age } = person;
   let gain: number;
-  const level = person.education.inSchool ? levelAtAge(age) : undefined;
+  // School starts at six: the enrolment comes later in the same turn, but this year is a pupil's.
+  const level = person.education.inSchool || age === SCHOOL_START_AGE ? levelAtAge(age) : undefined;
   if (level) gain = SKILL_GAIN.schoolLevel[level.id];
   else if (age < SCHOOL_START_AGE) gain = SKILL_GAIN.infancy;
   else if (age < 18) gain = SKILL_GAIN.outOfSchool;

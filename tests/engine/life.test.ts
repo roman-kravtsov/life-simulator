@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { en } from "../../src/content/strings/en";
 import { advance, newLife, type NewLifeOptions } from "../../src/engine/life";
+import { dailyIncome, yearlyIncome } from "../../src/engine/money";
 import { createCatalog, type EventDef } from "../../src/engine/events";
 import type { LifeState } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
@@ -321,6 +322,17 @@ describe("the life systems in the yearly turn (M4)", () => {
         if (s.person.age > 22) expect(s.person.education.inSchool).toBe(false);
       }
     }
+  });
+  it("pays less once retired than the table pays a worker at the same standing (CAREER-006)", () => {
+    let retirements = 0;
+    for (let i = 0; i < 20; i++) {
+      for (const { person } of walk(`retire-${i}`)) {
+        if (person.work.status !== "retired") continue;
+        retirements++;
+        expect(yearlyIncome(person, country)).toBeLessThan(dailyIncome(country, person.money.percentile) * 365);
+      }
+    }
+    expect(retirements).toBeGreaterThan(0);
   });
   it("sets literacy for every adult", () => {
     for (const seed of ["lit-1", "lit-2", "lit-3"]) {

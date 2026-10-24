@@ -97,9 +97,18 @@ export const currentPercentile = (person: Person, country: Country): number =>
 /** Retirement income as a share of the working income at the same percentile (authored; pensions and family support vary). */
 const RETIRED_INCOME = 0.7;
 
-/** What the person's own money brings in a year, in PPP dollars: the table at their percentile. */
+/** An adult at home or without a job lives on family support, not earnings (authored). */
+const UNEMPLOYED_INCOME = 0.5;
+
+const INCOME_SHARE: Partial<Record<Person["work"]["status"], number>> = {
+  retired: RETIRED_INCOME,
+  caregiver: UNEMPLOYED_INCOME,
+  unemployed: UNEMPLOYED_INCOME,
+};
+
+/** What the person's own money brings in a year, in PPP dollars: the table at their percentile, by work status. */
 export function yearlyIncome(person: Person, country: Country): number {
-  const share = person.work.status === "retired" ? RETIRED_INCOME : 1;
+  const share = INCOME_SHARE[person.work.status] ?? 1;
   return dailyIncome(country, person.money.percentile) * DAYS * share;
 }
 

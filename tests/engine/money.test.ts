@@ -111,6 +111,13 @@ describe("income (MONEY-002)", () => {
     expect(yearlyIncome(retired, country)).toBeLessThan(yearlyIncome(adult(), country));
     expect(yearlyIncome(retired, country)).toBeGreaterThan(0);
   });
+  it("pays a caregiver or an unemployed adult less than a worker, from household support rather than a job", () => {
+    for (const status of ["caregiver", "unemployed"] as const) {
+      const out = adult({ work: { status, yearsWorked: 5, attachment: 0.9 } });
+      expect(yearlyIncome(out, country)).toBeLessThan(yearlyIncome(adult(), country));
+      expect(yearlyIncome(out, country)).toBeGreaterThan(0);
+    }
+  });
   it("is the household's share for a child or student, not the person's own", () => {
     const child = makePerson({ age: 8, money: moneyAt(30, { percentile: 30 }) });
     expect(yearlyIncome(child, country)).toBeCloseTo(dailyIncome(country, 30) * 365, 6);

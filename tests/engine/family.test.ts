@@ -204,6 +204,11 @@ describe("siblings (FAM-002)", () => {
     for (let i = 0; i < 300; i++) expect(births({ ...mother(30), alive: false }, i)).toBeUndefined();
     for (let i = 0; i < 300; i++) expect(births(mother(14), i)).toBeUndefined();
   });
+  it("brings no younger sibling in a baby's first year", () => {
+    const baby = makePerson({ age: 0, relationships: [mother(28)] });
+    for (let i = 0; i < 300; i++)
+      expect(rollSiblingBirth(baby, sibCountry(8), createRng(`first-${i}`))).toBeUndefined();
+  });
   it("makes a newborn sibling age 0 with a name", () => {
     const person = makePerson({ age: 3, relationships: [mother(28)] });
     for (let i = 0; i < 200; i++) {

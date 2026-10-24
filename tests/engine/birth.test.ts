@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generatePerson } from "../../src/engine/person";
 import { dailyIncome, householdBand, drawHouseholdPercentile } from "../../src/engine/money";
-import { generateParents } from "../../src/engine/family";
+import { generateParents, generateSiblings } from "../../src/engine/family";
 import { createRng, stream } from "../../src/engine/rng";
 import { TRAIT_IDS } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
@@ -187,5 +187,13 @@ describe("a newborn's whole story (M4)", () => {
       if (siblings.length > 0) withSiblings++;
     }
     expect(withSiblings).toBeGreaterThan(20);
+  });
+  it("draws the older siblings from their own stream, not the yearly one", () => {
+    for (let i = 0; i < 20; i++) {
+      const seed = `sib-stream-${i}`;
+      const p = generatePerson(seed, country);
+      const { siblings } = generateSiblings(stream(seed, "siblings:birth", 0), country, p.relationships[0]!.age);
+      expect(p.relationships.slice(2)).toEqual(siblings);
+    }
   });
 });

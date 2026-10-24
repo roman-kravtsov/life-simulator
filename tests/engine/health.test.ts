@@ -47,12 +47,13 @@ describe("the conditions in the game (HEALTH-004)", () => {
       expect(severe, d.id).toBeGreaterThan(mild);
     }
   });
-  it("names each one and writes its three moments in the strings", () => {
+  it("names each one and writes its four moments in the strings", () => {
     for (const d of conditionCatalog.all) {
       for (const key of [
         `condition.${d.id}`,
         `event.condition.${d.id}.begins`,
         `event.condition.${d.id}.worsens`,
+        `event.condition.${d.id}.eases`,
         `event.condition.${d.id}.ends`,
       ]) {
         expect(en, key).toHaveProperty([key]);
@@ -210,6 +211,7 @@ describe("stepConditions", () => {
   it("eases a condition on a high roll, ending it from severity 1", () => {
     const eased = step(at(30, { conditions: [has("a", 2)] }), 0.99);
     expect(eased.events[0]!.effects).toEqual(expect.arrayContaining([{ condition: "add", id: "a", severity: 1 }]));
+    expect(eased.events[0]!.textKey).toBe("event.condition.a.eases");
     const ended = step(at(30, { conditions: [has("a", 1)] }), 0.99);
     expect(ended.events.map((e) => e.id)).toEqual(["health.a.ends"]);
     expect(ended.events[0]!.effects).toEqual(expect.arrayContaining([{ condition: "remove", id: "a" }]));

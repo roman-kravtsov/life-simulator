@@ -2,6 +2,7 @@
 // data: life expectancy, and the school, work, income and family systems of M4. Marriage age
 // joins with relationships in M5.
 import { normalQuantile } from "./dist";
+import { completionRates } from "./education";
 import { advance, newLife } from "./life";
 import { lifeExpectancy } from "./mortality";
 import type { LifeState, Sex } from "./types";
@@ -76,7 +77,7 @@ interface Tally {
 
 const emptyTally = (): Tally => ({
   lives: 0,
-  reached: { 1: 0, 2: 0, 3: 0 },
+  reached: { 1: 0, 2: 0, 3: 0, 4: 0 },
   literate: 0,
   adults: 0,
   personYears: 0,
@@ -134,7 +135,7 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
       if (person.age === READ_AT.attainment) {
         tally.adults++;
         const rank = LEVEL_RANK[person.education.level];
-        for (const level of [1, 2, 3]) if (rank >= level) tally.reached[level]!++;
+        for (const level of [1, 2, 3, 4]) if (rank >= level) tally.reached[level]!++;
         if (person.education.literate) tally.literate++;
       }
       if (person.age === READ_AT.siblings) {
@@ -153,17 +154,15 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
 
   const out: Comparison[] = [];
   const { education, work } = country;
-  const cap = (x: number) => Math.min(1, Math.max(0, x));
   for (const sex of SEXES) {
     const t = bySex[sex];
-    const primary = cap(education.primaryCompletion.value[sex]);
-    const lower = Math.min(primary, cap(education.lowerSecondaryCompletion.value[sex]));
-    const upper = Math.min(lower, cap(education.upperSecondaryCompletion.value[sex]));
+    const [primary, lower, upper, tertiary] = completionRates(country, sex) as [number, number, number, number];
     const share = (n: number) => (t.adults ? n / t.adults : 0);
     out.push(
       { name: `${sex} primary completion`, expected: primary, simulated: share(t.reached[1]!), tolerance: 0.07 },
       { name: `${sex} lower secondary completion`, expected: lower, simulated: share(t.reached[2]!), tolerance: 0.07 },
       { name: `${sex} upper secondary completion`, expected: upper, simulated: share(t.reached[3]!), tolerance: 0.07 },
+      { name: `${sex} tertiary completion`, expected: tertiary, simulated: share(t.reached[4]!), tolerance: 0.07 },
       {
         name: `${sex} adult literacy`,
         expected: education.literacy.value[sex],
