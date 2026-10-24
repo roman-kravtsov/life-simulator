@@ -2,14 +2,35 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Button, Dialog, Slider, Switch } from "../../src/ui/kit";
+import { Button, Dialog, Slider, Switch, Tooltip } from "../../src/ui/kit";
 
 describe("kit", () => {
-  it("Button fires onPress and keeps its accessible name", async () => {
+  it("Button fires onPress by mouse and by keyboard", async () => {
+    const user = userEvent.setup();
     const onPress = vi.fn();
     render(<Button onPress={onPress}>Go</Button>);
-    await userEvent.setup().click(screen.getByRole("button", { name: "Go" }));
+    const button = screen.getByRole("button", { name: "Go" });
+    await user.click(button);
     expect(onPress).toHaveBeenCalledTimes(1);
+    expect(button).toHaveFocus(); // a press moves focus to the button
+    await user.keyboard("{Enter}");
+    await user.keyboard(" ");
+    expect(onPress).toHaveBeenCalledTimes(3);
+  });
+
+  it("Tooltip appears on keyboard focus, describes its trigger and closes with Escape", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip text="Raises your odds a little">
+        <Button>Learn</Button>
+      </Tooltip>,
+    );
+    await user.tab();
+    const tip = await screen.findByRole("tooltip");
+    expect(tip).toHaveTextContent("Raises your odds a little");
+    expect(screen.getByRole("button", { name: "Learn" })).toHaveAccessibleDescription("Raises your odds a little");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("Switch toggles with the keyboard", async () => {

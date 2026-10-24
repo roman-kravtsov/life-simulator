@@ -8,11 +8,11 @@ import {
 } from "react-aria-components";
 import styles from "./Slider.module.css";
 
-export interface SliderProps extends Omit<AriaSliderProps<number>, "className" | "children"> {
+export interface SliderProps extends Omit<AriaSliderProps<number>, "className" | "children" | "orientation"> {
   label: string;
 }
 
-/** A labelled single-value slider that shows its current value. Used for the yearly focus points. */
+/** A labelled, horizontal, single-value slider that shows its current value. Used for the yearly focus points. */
 export function Slider({ label, ...props }: SliderProps) {
   return (
     <AriaSlider {...props} className={styles.slider}>
