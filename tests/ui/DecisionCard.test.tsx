@@ -52,9 +52,14 @@ describe("decision card from the engine (UI-006, DEC-001, DEC-002, DEC-005)", ()
     render(<App store={store} />);
     const locked = screen.getByRole("button", { name: "Try for a scholarship" });
     const region = screen.getByRole("region", { name: "A decision" }).querySelector("[aria-live=polite]");
-    expect(region).toHaveTextContent("");
+    expect(region).toHaveTextContent(/^$/);
     locked.focus();
     await user.keyboard("{Enter}");
+    expect(region).toHaveTextContent(/^Not open to you: Scholarships go to those with strong results/);
+    // A second press is announced again: the notice is a new node each time.
+    const first = region?.firstElementChild;
+    await user.keyboard("{Enter}");
+    expect(region?.firstElementChild).not.toBe(first);
     expect(region).toHaveTextContent(/^Not open to you: Scholarships go to those with strong results/);
   });
 

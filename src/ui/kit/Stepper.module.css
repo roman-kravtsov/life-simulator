@@ -68,7 +68,7 @@
 }
 
 .button[data-hovered] {
-  background: var(--paper);
+  background: color-mix(in srgb, var(--rule) 40%, transparent);
 }
 
 .button[data-pressed] {
@@ -83,10 +83,6 @@
 .button[data-disabled] {
   color: var(--ink-soft);
   cursor: default;
-}
-
-.button[data-disabled][data-hovered] {
-  background: transparent;
 }
 
 .description {

@@ -71,7 +71,7 @@ export function DecisionCardView({ card, sources, onChoose }: Props) {
   const choicesId = useId();
   const textId = useId();
   // Pressing a locked choice does nothing, so say why; the reason is also in its description.
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState({ text: "", presses: 0 });
   return (
     <section aria-labelledby={`${choicesId}-heading`} className={styles.card}>
       <h2
@@ -90,11 +90,17 @@ export function DecisionCardView({ card, sources, onChoose }: Props) {
       {card.helpTopic && <HelpNote topic={card.helpTopic} />}
       <ul aria-label={t("decision.choices")} className={styles.choices}>
         {card.choices.map((choice) => (
-          <Choice key={choice.id} choice={choice} onChoose={onChoose} onLocked={setNotice} />
+          <Choice
+            key={choice.id}
+            choice={choice}
+            onChoose={onChoose}
+            onLocked={(text) => setNotice((before) => ({ text, presses: before.presses + 1 }))}
+          />
         ))}
       </ul>
       <div aria-live="polite" className="visually-hidden">
-        {notice}
+        {/* A new node for every press, so pressing the same locked choice again is announced again. */}
+        <span key={notice.presses}>{notice.text}</span>
       </div>
     </section>
   );

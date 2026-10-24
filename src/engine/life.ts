@@ -85,7 +85,8 @@ function withoutKeys<T extends object, K extends keyof T>(value: T, ...keys: K[]
 export const withSettings = (state: LifeState, changes: Partial<Settings>): LifeState => ({
   ...state,
   settings: { ...state.settings, ...changes },
-  settingsLog: [...(state.settingsLog ?? []), { age: state.person.age, changes }],
+  // While a decision waits, the year's events are already chosen, so the change starts with the next year.
+  settingsLog: [...(state.settingsLog ?? []), { age: state.turn ? state.person.age + 1 : state.person.age, changes }],
 });
 
 /** How much resilience cushions a setback to happiness: each point changes it by this share. */

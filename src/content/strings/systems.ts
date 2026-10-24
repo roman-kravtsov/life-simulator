@@ -62,7 +62,7 @@ export const systemStrings: Readonly<Record<string, string>> = {
   "outcome.health.wait": "You put it off. Other things need doing, and you hope it will ease on its own.",
   "lens.condition_worsens": "it gets worse this year",
   "lens.condition_eases": "it gets better this year",
-  "lock.cannot_afford": "You could not find that much, even by borrowing.",
+  "lock.cannot_afford": "That is more than you or your household could find, even by borrowing.",
 
   "event.rel.meet_partner":
     "Over this past year you have come to know {partner}. Something is growing between you, and it could be allowed to, or not.",

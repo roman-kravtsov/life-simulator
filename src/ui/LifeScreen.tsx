@@ -154,7 +154,7 @@ export function LifeScreen({
           </>
         )}
       </div>
-      {card && <DecisionCardView card={card} sources={sources} onChoose={onChoose} />}
+      {card && <DecisionCardView key={card.eventId} card={card} sources={sources} onChoose={onChoose} />}
       {plan && draft && !card && (
         <PlanWidget plan={plan} draft={draft} onChange={(next) => setEdit({ age: person.age, draft: next })} />
       )}

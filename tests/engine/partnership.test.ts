@@ -14,6 +14,7 @@ import {
   MEET_DECISION,
   YOUNG_MARRIAGE_DECISION,
 } from "../../src/engine/partnership";
+import { applyEffectsToPerson } from "../../src/engine/effects";
 import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { Person, Relationship, Sex } from "../../src/engine/types";
@@ -137,6 +138,10 @@ describe("courtship and marriage (REL-003)", () => {
       },
     ).events[0]!.ask!.payload!.relative as Relationship;
     expect(later.id).not.toBe(earlier.id);
+    // The dead one is still on the list, and the new one is added all the same.
+    const person = adult(wed, { relationships: [{ ...earlier, alive: false }] });
+    const added = applyEffectsToPerson(person, [{ relationship: "add", relative: later }], "choice", country).person;
+    expect(added.relationships.filter((r) => r.kind === "partner")).toHaveLength(2);
   });
   it("offers a chance to meet someone a year before the wedding age, when the year has room", () => {
     const step = stepPartnership(adult(wed - 1), country, createRng("meet"), { open: true });

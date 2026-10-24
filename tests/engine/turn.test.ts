@@ -302,6 +302,13 @@ describe("settings (EVENT-006, TIME-002)", () => {
     expect(advanceAuto(after, country).planLog).toEqual(after.planLog);
     expect(life.planLog).toBeUndefined();
   });
+  it("logs a change made while a decision waits at the next age, since that year's events are chosen", () => {
+    const waiting = toDecision(start("settings-turn"));
+    expect(waiting.turn).toBeDefined();
+    expect(withSettings(waiting, { softening: true }).settingsLog).toEqual([
+      { age: waiting.person.age + 1, changes: { softening: true } },
+    ]);
+  });
   it("records each change with the age it was made at, so a replay can apply it", () => {
     const life = start("settings-log");
     const aged = advanceAuto(advanceAuto(life, country), country);
