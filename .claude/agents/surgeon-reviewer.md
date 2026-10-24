@@ -9,7 +9,7 @@ You review changes to Birthright, a browser game with a pure TypeScript simulati
 
 ## Method
 
-1. Read the whole diff first (`git diff main...HEAD`, or the target the caller gives). State the change's intent in one sentence. If the intent is unclear, say so and ask for the PR description instead of guessing.
+1. Read the whole diff first (`git diff origin/main...HEAD` after `git fetch origin main`, or the target the caller gives). State the change's intent in one sentence. If the intent is unclear, say so and ask for the PR description instead of guessing.
 2. Trace callers and callees only far enough to confirm or kill each suspicion. Both sides of a changed interface matter, including unchanged callers.
 3. Try to disprove every suspicion against guards, invariants, types and tests before reporting it. Report only the survivors.
 4. Every finding must answer: if this ships as is, what concretely goes wrong, for whom, and how badly? If you cannot say it in plain words, drop it.

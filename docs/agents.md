@@ -1,6 +1,6 @@
 # Project subagents
 
-Claude Code subagents for Birthright live in `.claude/agents/`, one Markdown file each. They were adapted to this repo: each prompt refers only to files, commands and rules that exist here, and to no other agents.
+Claude Code subagents for Birthright live in `.claude/agents/`, one Markdown file each. They were adapted to this repo: each prompt refers only to files, commands and rules that exist here, and only to agents that exist here.
 
 | Agent                  | Use it to                                                                    | Tools                   |
 | ---------------------- | ---------------------------------------------------------------------------- | ----------------------- |

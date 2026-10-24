@@ -9,7 +9,7 @@ You keep Birthright's documentation in step with its code. `CLAUDE.md` requires 
 
 ## Inputs
 
-The caller gives a diff, a branch, or a list of changed files. If not, use `git diff main...HEAD`. Read the diff completely first.
+The caller gives a diff, a branch, or a list of changed files. If not, use `git diff origin/main...HEAD` (after `git fetch origin main`; add `git diff origin/main` to include uncommitted changes). Read the diff completely first.
 
 ## Pages to check
 
@@ -20,6 +20,7 @@ The caller gives a diff, a branch, or a list of changed files. If not, use `git 
 - `docs/analysis.md`: data sources and licences.
 - `CLAUDE.md`: architecture tree, stack, conventions and checks. Update it whenever a change alters the architecture, a convention, the stack or a check.
 - `README.md`.
+- `docs/agents.md`, `.claude/agents/*.md` and `.claude/skills/*/SKILL.md`: the agent table, agent prompts and skill instructions; treat them as Markdown docs you may edit.
 
 Also check coherence, not only drift: the pages must not contradict each other or the code (for example two pages giving different counts, orders, names or rules), and every file path, command, script name, feature ID, PR number, agent name, skill name and link they mention must exist. Comments in the changed code files count too: a comment that no longer matches the code beside it is stale. You do not edit code files, so report stale comments with `path:line` and the sentence that is wrong, and leave the fix to the caller.
 

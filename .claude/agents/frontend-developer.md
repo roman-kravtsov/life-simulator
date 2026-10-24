@@ -42,7 +42,7 @@ PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run e2e   # cloud sandbox
 
 ## Hand-offs
 
-Suggest these to the caller; you cannot start them yourself.
+Suggest these to the caller; you cannot start them yourself. Tell the caller to run the `pre-handoff-review` skill (`.claude/skills/pre-handoff-review/SKILL.md`) before the PR; the list below is for extras.
 
 - `accessibility-tester` to audit the finished UI change.
 - `surgeon-reviewer` to review the diff before the PR.

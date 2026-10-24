@@ -102,7 +102,7 @@ npm run e2e            # in the cloud sandbox: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-
 
 ## Independent review before hand-off
 
-Before opening a PR, and before asking Roman to review, run the `pre-handoff-review` skill (`.claude/skills/pre-handoff-review/SKILL.md`) after the checks above pass. Only the implementing agent runs it; reviewer agents never spawn reviewers. The hand-off includes its review summary.
+Before opening a PR, and before asking Roman to review, run the `pre-handoff-review` skill (`.claude/skills/pre-handoff-review/SKILL.md`) after the checks above pass. The agent that implemented the work runs it; when a subagent such as `frontend-developer` implemented it, the caller runs it, because subagents cannot start reviewers. The hand-off includes its review summary.
 
 ## Commits and PRs
 
