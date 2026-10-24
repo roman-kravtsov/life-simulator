@@ -132,41 +132,6 @@ h1 {
   color: var(--ink-soft);
 }
 
-button {
-  font: inherit;
-  font-family: var(--font-ui);
-  cursor: pointer;
-  border-radius: var(--radius);
-  min-height: 2.75rem; /* comfortable touch target */
-}
-
-button.primary {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border: none;
-  padding: 0.6rem 1.25rem;
-  margin: 0.75rem 0;
-}
-
-button.ghost {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  padding: 0.4rem 0.9rem;
-}
-
-button.icon {
-  display: inline-grid;
-  place-items: center;
-  width: 2.75rem;
-  padding: 0;
-}
-
-button.icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

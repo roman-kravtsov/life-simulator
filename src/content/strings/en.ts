@@ -11,7 +11,41 @@ export const en: Readonly<Record<string, string>> = {
   "start.begin": "Begin a life",
   "start.privacy": "Everything stays in your browser. Nothing is tracked or sent anywhere.",
   "start.sources": "Where the numbers come from",
-  "start.preview": "Early preview: the world, family and events arrive in the next milestones.",
+  "start.preview": "Early preview: school, work, relationships and decisions arrive in the next milestones.",
+  "start.loading": "Finding where you are born…",
+  "start.error": "The world could not be loaded. Check your connection and try again.",
+
+  "birth.title": "You are born in {country}",
+  "birth.year": "Born in {year}",
+  "birth.you": "You are {name}, a {sex}.",
+  "birth.sex.female": "girl",
+  "birth.sex.male": "boy",
+  "birth.place.rural": "Your family lives in the countryside.",
+  "birth.place.urban": "Your family lives in a town or city.",
+  "birth.household":
+    "Your household is among the {band} in {country}. Each person in it lives on about {income} a day (international dollars, {year}).",
+  "birth.band.1": "poorest tenth of households",
+  "birth.band.2": "second poorest tenth of households",
+  "birth.band.3": "third poorest tenth of households",
+  "birth.band.4": "fourth poorest tenth of households",
+  "birth.band.5": "lower middle tenth of households",
+  "birth.band.6": "upper middle tenth of households",
+  "birth.band.7": "fourth richest tenth of households",
+  "birth.band.8": "third richest tenth of households",
+  "birth.band.9": "second richest tenth of households",
+  "birth.band.10": "richest tenth of households",
+  "birth.parents": "Your mother, {mother}, is {motherAge}. Your father, {father}, is {fatherAge}.",
+  "birth.seed": "Life {seed}",
+  "birth.continue": "Begin this life",
+
+  "kind.mother": "mother",
+  "kind.father": "father",
+  "kind.sibling": "sibling",
+  "kind.partner": "partner",
+  "kind.spouse": "spouse",
+  "kind.child": "child",
+  "kind.friend": "friend",
+  "kind.mentor": "mentor",
 
   "life.age": "Age {age}",
   "life.stage.infancy": "Infancy",
@@ -29,6 +63,76 @@ export const en: Readonly<Record<string, string>> = {
   "life.stageReached": "A new chapter begins: {stage}.",
   "life.yearPassed": "You turn {age}.",
   "life.backToStart": "Back to start",
+  "life.where": "{country}, {place}",
+  "life.place.rural": "countryside",
+  "life.place.urban": "town or city",
+  "life.family": "Family",
+  "life.relative.alive": "{name}, your {kind}, {age}",
+  "life.relative.dead": "{name}, your {kind}, died at {age}",
+  "life.thisYear": "This year",
+  "life.quietYear": "A quiet year.",
+  "life.note": "{note} ({source}, {year})",
+  "life.died": "Your life ends at {age}, of {cause}.",
+  "life.ended": "Life ended",
+  "help.link": "findahelpline.com",
+  "help.grief": "If the loss is weighing on you, free, confidential helplines exist around the world.",
+  "help.suicide":
+    "If thoughts of ending a life are close to you, please reach out. Free, confidential helplines exist around the world, and you do not have to carry this alone.",
+  "help.violence": "If this touches something you have lived, free, confidential helplines exist around the world.",
+  "help.abuse": "If this is close to your own life, free, confidential helplines exist around the world.",
+  "help.addiction": "If drink or drugs feel hard to put down, free, confidential helplines exist around the world.",
+  "life.another": "Begin another life",
+
+  "cause.infectious": "an infectious disease",
+  "cause.respiratoryInfection": "a respiratory infection",
+  "cause.neonatal": "complications around birth",
+  "cause.nutritional": "hunger and malnutrition",
+  "cause.cancer": "cancer",
+  "cause.diabetes": "diabetes",
+  "cause.cardiovascular": "heart and circulatory disease",
+  "cause.chronicRespiratory": "a chronic lung disease",
+  "cause.digestive": "a digestive illness",
+  "cause.congenital": "a condition present from birth",
+  "cause.unintentionalInjury": "an accident",
+  "cause.violence": "violence",
+  "cause.conflict": "war",
+  "cause.other": "a cause not listed here",
+
+  "note.unemployment": "Here, about {share} of the people who look for work cannot find it",
+
+  "event.family.mother_died": "{name}, your mother, dies. The house is a different size afterwards.",
+  "event.family.father_died":
+    "{name}, your father, dies. People bring food and speak quietly, and you are not sure where to stand.",
+  "event.family.relative_died": "{name} dies. The family gathers, and the gap in it is plain to everyone.",
+  "event.check.child_labour_starts":
+    "There is work to be done and not enough hands, so yours are needed. School, if there is school, fits in around it.",
+  "event.check.child_labour_ends": "The work you did as a child is behind you now.",
+
+  "event.infancy.first_steps":
+    "You take your first steps from one pair of hands to the next. Everyone watching laughs.",
+  "event.infancy.lullaby": "The same song, every night, until it is the sound of being safe.",
+  "event.infancy.fever": "A fever keeps the household awake for three nights. It breaks before dawn on the fourth.",
+  "event.childhood.long_walk":
+    "The way to water, to school, to anywhere, is long. You learn the road by its stones and by who you meet on it.",
+  "event.childhood.teacher_notices":
+    "A teacher stops at your work and is quiet for a moment, then says your name as if it were praise.",
+  "event.childhood.harvest_help":
+    "The harvest needs every pair of hands, and yours are among them. You are tired and proud in about equal parts.",
+  "event.adolescence.first_friend":
+    "Someone sits beside you without being asked. By the end of the year you cannot remember not knowing them.",
+  "event.adolescence.growth_spurt": "You grow out of your clothes and into a body that is yours only by half.",
+  "event.youth.restless_year":
+    "You are restless. You read what you can find, ask questions nobody has time for, and sleep badly with the window open.",
+  "event.adulthood.unemployed_year":
+    "For a stretch of the year there is no steady work, and the days lose their edges.",
+  "event.adulthood.hard_times": "Money is tight everywhere. People lean on each other more than they say.",
+  "event.adulthood.quiet_evening":
+    "One evening the work is done early. You sit outside while the light goes, and nothing is asked of you.",
+  "event.midlife.old_injury": "An old strain comes back and stays. You learn to plan your days around it.",
+  "event.midlife.looking_back":
+    "You catch yourself telling a story you have never told. It sounds, for once, like a life.",
+  "event.elder.stories": "The young ones come to be told things. You tell them, and some of it is even true.",
+  "event.elder.slower_mornings": "Mornings start slower. The body keeps its own calendar now.",
 
   "sources.title": "Where the numbers come from",
   "sources.intro":

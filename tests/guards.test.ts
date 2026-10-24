@@ -72,3 +72,17 @@ describe("L10N-001: no hard-coded text in the UI", () => {
     expect(hardCodedJsxText(body)).toEqual([]);
   });
 });
+
+describe("TIME-001: the game only moves when the player acts", () => {
+  const timers = (source: string) => /\b(setTimeout|setInterval|requestAnimationFrame)\s*\(/.test(source);
+
+  it("detects timers", () => {
+    expect(timers("setInterval(tick, 1000)")).toBe(true);
+    expect(timers("requestAnimationFrame(loop)")).toBe(true);
+    expect(timers("advance(state, input)")).toBe(false);
+  });
+
+  it.each(sourceFiles("src"))("%s starts no timers", (file) => {
+    expect(timers(readFileSync(file, "utf8"))).toBe(false);
+  });
+});

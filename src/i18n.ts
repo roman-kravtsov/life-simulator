@@ -20,3 +20,6 @@ export function createTranslator(strings: Strings) {
 }
 
 export const t = createTranslator(en);
+
+/** True when a string key exists, for keys built from data such as a cause-of-death id. */
+export const hasString = (key: string) => key in en;

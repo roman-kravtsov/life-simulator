@@ -19,15 +19,24 @@ scripts/data/       data pipeline: lib/ (cache, csv), extract/ (one file per pub
                     Downloads go to the git-ignored .cache/data; the exclusion report is docs/data-report.md
 src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   rng.ts            seeded PRNG and independent streams per subsystem and period
-  life.ts           public API: newLife(), advance(state, input) -> new state
+  life.ts           public API: newLife({seed, country}), advance(state, input, country) -> new state
+                    (the yearly turn, design 3.2); the caller loads the country, the engine does no I/O
+  person.ts, family.ts, money.ts   the newborn, parents, family ageing and deaths, household percentile
+  drift.ts, mortality.ts, checks.ts   stat drift and health norm, life-table mortality and cause of death, statistical checks
+  conditions.ts, events.ts   the event condition language, event schema, catalog and selection
+  calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
+  dist.ts           small distribution helpers (normal, clamp)
+  seed.ts           readable seeds ("amber-river-4821")
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
   world/            country schema (types.ts), validator, birth draw, data loader
-src/content/        game content as data: strings (en.ts), later events, names, prompts
+src/content/        game content as data: strings (en.ts), events/ (typed event defs), names.ts (name lists by region)
+src/data.ts         loads the baked country files in the browser (fetch), outside the engine
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
-  store.ts          holds engine state, exposes actions; React reads it via useSyncExternalStore
+  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear);
+                    React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
   kit/              styled wrappers around React Aria Components (Button, Switch, Slider, Tooltip, Dialog)
 src/styles.css      design tokens (light and dark) and shared base styles
@@ -69,6 +78,9 @@ Read these docs before starting work:
 
 - **Engine (`src/engine/`) is pure TypeScript:** no React, no DOM, no I/O. The UI talks to it through `src/ui/store.ts`.
 - **No unseeded randomness in the engine.** Never use `Math.random` or `crypto` there; draw from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. Use a separate stream per subsystem so that new content does not shift other rolls. ESLint and a guard test enforce this.
+- **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `family`, `drift`, `labour`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `mortality`, `cause`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
+- **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard or drift, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`).
+- **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.
 - **Engine state is immutable:** functions return new state and never mutate their inputs.
 - **Interactive controls come from `src/ui/kit/`.** Do not import `react-aria-components` in screens, and do not use a raw `<button>`, `<input type="range">` or hand-made dialog for new UI. Style states with React Aria's data attributes (`[data-pressed]`, `[data-focus-visible]`, `[data-selected]`) in CSS Modules, using token variables only. See `docs/design-system.md`.

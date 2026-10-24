@@ -83,3 +83,27 @@ export const testSources: CountryIndex["sources"] = {
     accessed: "2026-10-24",
   },
 };
+
+/** A world loader backed by one synthetic country, for store and UI tests. */
+export function testWorld(country: Country = makeCountry({ region: "Western Africa" })) {
+  const index: CountryIndex = {
+    dataVersion: "test",
+    countries: [
+      {
+        iso3: country.iso3,
+        iso2: country.iso2,
+        name: country.name,
+        region: country.region,
+        incomeGroup: country.incomeGroup,
+        birthsPerYear: country.demography.birthsPerYear.value,
+        population: country.demography.population.value,
+      },
+    ],
+    excluded: [],
+    sources: testSources,
+  };
+  return {
+    loadIndex: () => Promise.resolve(index),
+    loadCountry: () => Promise.resolve(country),
+  };
+}

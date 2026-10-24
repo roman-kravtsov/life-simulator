@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { applyEffects } from "../../src/engine/effects";
 import { newLife } from "../../src/engine/life";
+import { makeCountry } from "../fixtures/country";
 
-const life = () => newLife({ seed: "effects", sex: "female", name: "Test" });
+const life = () => newLife({ seed: "effects", country: makeCountry({ region: "Western Africa" }) });
 
 describe("applyEffects", () => {
   it("adds to a stat", () => {
