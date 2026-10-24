@@ -181,6 +181,7 @@ export function stepPartnership(
           {
             id: "rel.young_marriage_arranged",
             textKey: "event.rel.young_marriage_arranged",
+            softTextKey: "event.rel.young_marriage_arranged.soft",
             vars: { partner: candidate.name },
             sensitivity: "difficult",
             helpTopic: "abuse",
@@ -202,6 +203,7 @@ export function stepPartnership(
         {
           id: YOUNG_MARRIAGE_DECISION,
           textKey: "event.rel.young_marriage",
+          softTextKey: "event.rel.young_marriage.soft",
           vars: { partner: candidate.name },
           sensitivity: "difficult",
           helpTopic: "abuse",

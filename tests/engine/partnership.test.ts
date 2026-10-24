@@ -19,6 +19,7 @@ import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { Person, Relationship, Sex } from "../../src/engine/types";
 import type { Country } from "../../src/engine/world/types";
+import { en } from "../../src/content/strings/en";
 import { makeCountry } from "../fixtures/country";
 import { makePerson } from "../fixtures/person";
 
@@ -205,6 +206,11 @@ describe("courtship and marriage (REL-003)", () => {
     const arranged = stepPartnership({ ...girl, age }, country, createRng("y"), { open: false }).events[0]!;
     expect(arranged.id).toBe("rel.young_marriage_arranged");
     expect(arranged.effects).toContainEqual({ set: "marriedAt", value: age });
+    // Both are difficult, so both have a shorter telling for softening.
+    for (const event of [asked, arranged]) {
+      expect(event.softTextKey, event.id).toBeDefined();
+      expect(en[event.softTextKey!], event.id).toBeDefined();
+    }
   });
   it("makes asking to wait likelier for the better off, the abler and a girl still at school, within bounds", () => {
     const girl = at(15, { sex: "female" });

@@ -76,6 +76,9 @@ export const systemStrings: Readonly<Record<string, string>> = {
     "A marriage has been arranged for you, to {partner}, and soon. You are young, and the people who decided did so out of love, or fear, or habit, and often all three.",
   "event.rel.young_marriage_arranged":
     "A marriage has been arranged for you, to {partner}, and it goes ahead. You are young, and you learn the shape of the new household quickly.",
+  "event.rel.young_marriage.soft": "A marriage has been arranged for you, to {partner}, and soon. You are young.",
+  "event.rel.young_marriage_arranged.soft":
+    "A marriage has been arranged for you, to {partner}, and it goes ahead. You are young.",
   "choice.rel.young_accept": "Accept it",
   "choice.rel.young_wait": "Ask to wait",
   "outcome.rel.young_accept": "You marry. The household around you changes shape, and you learn the new one quickly.",

@@ -183,6 +183,22 @@ describe("higher education (EDU-003)", () => {
     expect(debtAfter(paying)).toBeGreaterThanOrEqual(tertiaryYearlyCost(country));
     expect(debtAfter(funded)).toBe(funded.money.debt);
   });
+  it("charges the last year of a course too, and stops the fees once the studies end", () => {
+    const c = ctx(leaver);
+    const paying = applyEffectsToPerson(
+      leaver,
+      resolveChoice(def, "try", c, always(0)).effects,
+      "choice",
+      country,
+    ).person;
+    const graduate = { ...paying, age: 21, education: { ...paying.education, inSchool: false } };
+    const worth = (p: Person) => p.money.savings - p.money.debt;
+    const charged = stepMoney(graduate, country, always(0), true).person;
+    const free = stepMoney(graduate, country, always(0), false).person;
+    expect(worth(free) - worth(charged)).toBeCloseTo(tertiaryYearlyCost(country), 6);
+    expect(charged.flags.tuition).toBe(false);
+    expect(stepMoney(charged, country, always(0), false).person.flags.tuition).toBe(false);
+  });
   it("shows no cost to a child that the household would bear", () => {
     const child = at(14, { education: { level: "primary", inSchool: true, years: 8 } });
     const pneumoniaChild = { ...child, conditions: [{ id: "pneumonia", severity: 2 as const, since: 13 }] };

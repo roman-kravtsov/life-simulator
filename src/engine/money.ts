@@ -158,12 +158,26 @@ export interface MoneyStep {
  * takes their own percentile, earns the table's income there, spends a share of it, pays down debt
  * first and saves what is left, or draws on savings and then borrows. Always draws two numbers.
  */
-export function stepMoney(person: Person, country: Country, rng: Rng): MoneyStep {
+export function stepMoney(
+  person: Person,
+  country: Country,
+  rng: Rng,
+  /** Whether the person began the year at school: the year they finish is still a year of fees. */
+  wasInSchool: boolean = person.education.inSchool,
+): MoneyStep {
   const noise = normal(rng, 0, SPENDING_NOISE);
   const percentile = currentPercentile(person, country);
+  // A student who took the fees on pays them by borrowing; one with a scholarship or a family to pay does not.
+  const fees =
+    person.age >= INDEPENDENCE_AGE && person.flags[TUITION_FLAG] === true && wasInSchool
+      ? tertiaryYearlyCost(country)
+      : 0;
+  // The fees end with the studies.
+  const settledFlags =
+    person.flags[TUITION_FLAG] && !person.education.inSchool
+      ? { ...person.flags, [TUITION_FLAG]: false }
+      : person.flags;
   if (person.age < INDEPENDENCE_AGE || person.education.inSchool) {
-    // A student who took the fees on pays them by borrowing; one with a scholarship or a family to pay does not.
-    const fees = person.age >= INDEPENDENCE_AGE && person.flags[TUITION_FLAG] ? tertiaryYearlyCost(country) : 0;
     return {
       person: {
         ...person,
@@ -172,10 +186,11 @@ export function stepMoney(person: Person, country: Country, rng: Rng): MoneyStep
       events: [],
     };
   }
-  const standing: Person = { ...person, money: { ...person.money, percentile } };
+  const standing: Person = { ...person, flags: settledFlags, money: { ...person.money, percentile } };
   const income = yearlyIncome(standing, country);
   // Points on Earn above the default plan are saved; fewer are spent (DEC-003).
-  const net = income * (1 - spendingShare(percentile) - noise + FOCUS_EFFECT.earn.saving * (person.focus?.earn ?? 0));
+  const net =
+    income * (1 - spendingShare(percentile) - noise + FOCUS_EFFECT.earn.saving * (person.focus?.earn ?? 0)) - fees;
   let { savings, debt } = person.money;
   debt *= 1 + DEBT_INTEREST;
   if (net >= 0) {

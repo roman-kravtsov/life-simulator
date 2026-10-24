@@ -253,10 +253,11 @@ function beginYear(state: LifeState, plan: Plan | undefined, country: Country, c
     );
   }
 
+  const startedAtSchool = person.education.inSchool;
   for (const step of [
     () => stepEducation(person, country, stream(seed, "education", year), { open }),
     () => stepWork(person, country, stream(seed, "work", year)),
-    () => stepMoney(person, country, stream(seed, "money", year)),
+    () => stepMoney(person, country, stream(seed, "money", year), startedAtSchool),
     () => stepConditions(person, country, (id) => stream(seed, `condition:${id}`, year), conditionCatalog, { open }),
     () => stepCare(person, stream(seed, "care", year)),
     () => stepFriends(person, country, stream(seed, "friends", year)),
