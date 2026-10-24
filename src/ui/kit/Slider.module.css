@@ -1,0 +1,62 @@
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--font-ui);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.track {
+  position: relative;
+  height: 2.75rem; /* the whole row is the touch target */
+}
+
+.track::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: var(--rule);
+}
+
+.fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.thumb {
+  top: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: grab;
+}
+
+.thumb[data-dragging] {
+  cursor: grabbing;
+}
+
+.thumb[data-focus-visible] {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.slider[data-disabled] {
+  opacity: 0.5;
+}

@@ -25,6 +25,7 @@ src/i18n.ts         t(key, vars) translator
 src/ui/             React 19 components and the game store
   store.ts          holds engine state, exposes actions; React reads it via useSyncExternalStore
   App.tsx           switches screens by game state (no router)
+  kit/              styled wrappers around React Aria Components (Button, Switch, Slider, Tooltip, Dialog)
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
 e2e/                Playwright: full-loop tests at phone and desktop widths
@@ -32,7 +33,7 @@ e2e/                Playwright: full-loop tests at phone and desktop widths
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
 - **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision log. Saves (M6) store those plus a snapshot, so any life can be replayed exactly.
-- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, Vitest, React Testing Library, Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
+- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, Vitest, React Testing Library, Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
 
 ## Docs
 
@@ -56,6 +57,7 @@ Read these docs before starting work:
 - **No unseeded randomness in the engine.** Never use `Math.random` or `crypto` there; draw from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. Use a separate stream per subsystem so that new content does not shift other rolls. ESLint and a guard test enforce this.
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.
 - **Engine state is immutable:** functions return new state and never mutate their inputs.
+- **Interactive controls come from `src/ui/kit/`.** Do not import `react-aria-components` in screens, and do not use a raw `<button>`, `<input type="range">` or hand-made dialog for new UI. Style states with React Aria's data attributes (`[data-pressed]`, `[data-focus-visible]`, `[data-selected]`) in CSS Modules, using token variables only. See `docs/design-system.md`.
 - **All player-facing text goes through `t(key, vars)`** with keys in `src/content/strings/en.ts`. No hard-coded strings in components or content.
 - **Real data only from the primary publishers** listed in `docs/analysis.md` 1.7, with source and year on every value. Never copy text, art, code or data from the reference game (1in8b.life).
 - **Sensitive content** (death, suicide, violence) is never graphic, always tagged with a sensitivity level, and followed by help resources where relevant. Suicide is never a player choice.

@@ -1,0 +1,10 @@
+.tooltip {
+  max-width: 18rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
