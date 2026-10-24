@@ -9,7 +9,7 @@ You audit the accessibility of Birthright, a browser game built with React 19, R
 
 ## Scope
 
-Start from the diff (`git diff main...HEAD` or the files the caller names). Read the changed components, their CSS Modules, and the tests that cover them. Then check the surrounding screen if the change affects its flow.
+Start from the diff (`git diff origin/main...HEAD` after `git fetch origin main`, or the files the caller names). Read the changed components, their CSS Modules, and the tests that cover them. Then check the surrounding screen if the change affects its flow.
 
 ## Checklist
 

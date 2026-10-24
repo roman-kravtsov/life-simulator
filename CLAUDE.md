@@ -40,6 +40,7 @@ src/ui/             React 19 components and the game store
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
+.claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review
 e2e/                Playwright: full-loop tests at phone and desktop widths
 ```
 
@@ -109,7 +110,11 @@ npm test
 npm run e2e            # in the cloud sandbox: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run e2e
 ```
 
+## Independent review before hand-off
+
+Before opening a PR, and before asking Roman to review, run the `pre-handoff-review` skill (`.claude/skills/pre-handoff-review/SKILL.md`) after the checks above pass. The agent that implemented the work runs it; when a subagent such as `frontend-developer` implemented it, the caller runs it, because subagents cannot start reviewers. The hand-off includes its review summary.
+
 ## Commits and PRs
 
 - Clear commit messages that say what changed and why.
-- PR descriptions list the feature IDs delivered, the checks run, and anything Roman needs to do.
+- PR descriptions list the feature IDs delivered, the checks run, the review summary from the `pre-handoff-review` skill, and anything Roman needs to do.
