@@ -47,7 +47,7 @@ Every capability maps to at least one feature, so no new features were needed. A
 | Death passages | **About 12 cause groups**, each with a normal and a softened version | Every death gets a fitting closing (DEATH-002). |
 | Data notes | **About 25** "here, about 1 in N..." lines | Enough to ground the major events in data (EVENT-005). |
 | Name lists | **About 20 regional lists**, at least 40 names per sex each | Covers every included country (CHAR-002). |
-| Help resources | An international directory link plus **about 30** country-specific lines | Shown after sensitive events (UI-012). |
+| Help resources | An international directory link (findahelpline.com); country-specific lines are an open question for Roman (design 7) | Shown after sensitive events (UI-012). |
 
 All text is written by us in English, in the voice of design 1.2.
 

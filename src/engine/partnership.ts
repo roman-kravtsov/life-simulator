@@ -5,7 +5,7 @@
 // nobody flickers between partners from one year to the next. The spread is lognormal above age 12 with
 // the published mean age at first marriage for the person's sex and, for the lower tail, the published
 // share of women married before 18. A small share never marries (authored). Sociability and time spent
-// on Bond bring the wedding a little earlier, and a declined partner puts it off.
+// on Belonging bring the wedding a little earlier, and a declined partner puts it off.
 //
 // The course of a courtship: a year before the wedding age a possible partner appears and the player
 // accepts or declines (REL-003); at the wedding age the partner becomes a spouse (REL-004). Where the
@@ -36,7 +36,7 @@ export const MIN_COURTING_AGE = 14;
 /** A wedding age under this is an arranged marriage with no courtship. */
 export const ADULT_AGE = 18;
 
-/** Years put off by each sociability point lost, and by each unit of Bond focus. Symmetric, so the mean holds. */
+/** Years put off by each sociability point lost, and by each unit of Belonging focus. Symmetric, so the mean holds. */
 const SOCIABILITY_YEARS = 0.4;
 
 export const oppositeSex = (sex: Sex): Sex => (sex === "female" ? "male" : "female");
@@ -99,7 +99,7 @@ export function weddingAge(person: Person, country: Country): number | null {
   // An arranged marriage is not brought forward by the person's nature; and a courtship never starts one.
   if (base < ADULT_AGE - 0.5) return Math.max(MIN_COURTING_AGE, Math.round(base + delay));
   const earlier =
-    SOCIABILITY_YEARS * person.traits.sociability + FOCUS_EFFECT.bond.meeting * 2 * (person.focus?.bond ?? 0);
+    SOCIABILITY_YEARS * person.traits.sociability + FOCUS_EFFECT.belonging.meeting * 2 * (person.focus?.belonging ?? 0);
   return Math.max(ADULT_AGE, Math.round(base - earlier + delay));
 }
 
@@ -116,7 +116,8 @@ export function makePartner(person: Person, country: Country, rolls: Rng): Relat
   const gap = country.family.meanAgeFirstMarriage.value[sex] - country.family.meanAgeFirstMarriage.value[person.sex];
   const age = Math.max(MIN_COURTING_AGE, Math.round(person.age + gap + normal(rolls, 0, 2)));
   return {
-    id: "partner",
+    // Unique by age, so a partner who died before the wedding does not keep a later one from being added.
+    id: `partner-${person.age}`,
     kind: "partner",
     name: list[Math.min(list.length - 1, Math.floor(rolls.next() * list.length))]!,
     sex,

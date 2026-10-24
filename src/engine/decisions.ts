@@ -4,6 +4,7 @@
 import { allHold, holds, type Condition, type ConditionContext } from "./conditions";
 import type { Effect } from "./effects";
 import type { PendingEvent } from "./events";
+import { ownsMoney } from "./money";
 import type { Rng } from "./rng";
 import type { Cause, DecisionRecord, EventRecord, HelpTopic, Person, Plan, Relationship, Sensitivity } from "./types";
 
@@ -66,6 +67,8 @@ export interface ChoiceDef {
 export interface Cost {
   amount: number;
   perYear?: boolean;
+  /** Charged to a student's own account too (tuition); other costs fall on the household of a child or student and are not shown. */
+  borneInSchool?: boolean;
 }
 
 export interface LensLine {
@@ -192,7 +195,8 @@ export function lensFor(choice: ChoiceDef, ctx: DecisionContext): ChoiceView["le
 export function choiceViews(def: DecisionSource, ctx: DecisionContext): ChoiceView[] {
   return visibleChoices(def, ctx).map((choice) => {
     const lockedReason = lockReason(choice, ctx);
-    const cost = choice.cost?.(ctx);
+    const asked = choice.cost?.(ctx);
+    const cost = asked && (asked.borneInSchool || ownsMoney(ctx.person)) ? asked : undefined;
     return {
       id: choice.id,
       textKey: choice.text,

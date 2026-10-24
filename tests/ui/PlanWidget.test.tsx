@@ -13,12 +13,12 @@ import { lifeOf, lifeScreenProps } from "./helpers";
 
 // SYNTHETIC people and plans: the overview is derived from the engine's own rules (DEC-003, DEC-004).
 const country = makeCountry();
-const areas = ["learn", "earn", "health", "bond", "rest"] as const;
+const areas = ["learn", "earn", "health", "belonging", "rest"] as const;
 
 const overview = (changes: Partial<PlanOverview> = {}): PlanOverview => ({
   areas,
   free: 3,
-  chosen: { learn: 1, earn: 0, health: 1, bond: 1, rest: 0 },
+  chosen: { learn: 1, earn: 0, health: 1, belonging: 1, rest: 0 },
   forced: [],
   locked: {},
   custom: false,
@@ -64,14 +64,28 @@ describe("plan widget (UI-005, DEC-003)", () => {
     expect(screen.getByText("All points placed.")).toBeInTheDocument();
     await user.keyboard("{ArrowUp}");
     expect(field("Health")).toHaveValue("2");
-    expect(onDraft).toHaveBeenLastCalledWith({ learn: 0, earn: 0, health: 2, bond: 1, rest: 0 });
+    expect(onDraft).toHaveBeenLastCalledWith({ learn: 0, earn: 0, health: 2, belonging: 1, rest: 0 });
+  });
+
+  it("treats a cleared field as zero points, so the plan never holds a number that is not a number", async () => {
+    const user = userEvent.setup();
+    const onDraft = vi.fn();
+    render(<Harness plan={overview()} onDraft={onDraft} />);
+    await user.clear(field("Learn"));
+    await user.tab();
+    expect(field("Learn")).toHaveValue("0");
+    expect(screen.getByText(/1 point left to place/)).toBeInTheDocument();
+    for (const [draft] of onDraft.mock.calls) {
+      for (const area of areas) expect(Number.isFinite(draft[area])).toBe(true);
+    }
+    expect(onDraft).toHaveBeenLastCalledWith({ learn: 0, earn: 0, health: 1, belonging: 1, rest: 0 });
   });
 
   it("can be operated by touch with the plus and minus buttons", async () => {
     const user = userEvent.setup();
     render(<Harness plan={overview()} />);
-    await user.click(screen.getByRole("button", { name: /Decrease Bond/ }));
-    expect(field("Bond")).toHaveValue("0");
+    await user.click(screen.getByRole("button", { name: /Decrease Belonging/ }));
+    expect(field("Belonging")).toHaveValue("0");
     await user.click(screen.getByRole("button", { name: /Increase Rest/ }));
     expect(field("Rest")).toHaveValue("1");
     // Every point is placed, so no area can take another until one is given back.
@@ -85,7 +99,7 @@ describe("plan widget (UI-005, DEC-003)", () => {
     expect(field("Learn")).toHaveAccessibleDescription("Skills and school.");
     expect(field("Earn")).toHaveAccessibleDescription(/Income and work\./);
     expect(field("Health")).toHaveAccessibleDescription("Health and care.");
-    expect(field("Bond")).toHaveAccessibleDescription("Belonging and friends.");
+    expect(field("Belonging")).toHaveAccessibleDescription("Family, friends and community.");
     expect(field("Rest")).toHaveAccessibleDescription("Happiness and resilience.");
   });
 
@@ -94,10 +108,10 @@ describe("plan widget (UI-005, DEC-003)", () => {
       <Harness
         plan={overview({
           free: 1,
-          chosen: { learn: 1, earn: 0, health: 0, bond: 0, rest: 0 },
+          chosen: { learn: 1, earn: 0, health: 0, belonging: 0, rest: 0 },
           forced: [
             { area: "health", points: 1, reason: "illness" },
-            { area: "bond", points: 1, reason: "caregiving" },
+            { area: "belonging", points: 1, reason: "caregiving" },
           ],
         })}
       />,
@@ -106,7 +120,7 @@ describe("plan widget (UI-005, DEC-003)", () => {
     const lines = within(taken).getAllByRole("listitem");
     expect(lines[0]).toHaveTextContent("Health, 1 point. Your illness takes it first.");
     expect(lines[1]).toHaveTextContent(
-      "Bond, 1 point. Someone in your family needs looking after, and that comes first.",
+      "Belonging, 1 point. Someone in your family needs looking after, and that comes first.",
     );
     // Only one point is the player's to place.
     expect(screen.getByText("All points placed.")).toBeInTheDocument();
@@ -141,23 +155,31 @@ describe("what Continue sends", () => {
   });
 
   it("sends the draft once it differs", () => {
-    const draft = { learn: 2, earn: 0, health: 0, bond: 1, rest: 0 };
+    const draft = { learn: 2, earn: 0, health: 0, belonging: 1, rest: 0 };
     expect(planToSend(view, draft)).toEqual(draft);
   });
 
   it("puts points left unplaced into Rest, so the plan spends exactly the points available", () => {
-    expect(planToSend(view, { learn: 0, earn: 0, health: 1, bond: 1, rest: 0 })).toEqual({
+    expect(planToSend(view, { learn: 0, earn: 0, health: 1, belonging: 1, rest: 0 })).toEqual({
       learn: 0,
       earn: 0,
       health: 1,
-      bond: 1,
+      belonging: 1,
       rest: 1,
     });
   });
 
+  it("treats a value that is not a whole number as zero and never sends more than the points available", () => {
+    const sent = planToSend(view, { learn: Number.NaN, earn: 0, health: 1.5, belonging: 1, rest: 0 });
+    expect(sent).toEqual({ learn: 0, earn: 0, health: 0, belonging: 1, rest: 2 });
+    const over = planToSend(view, { learn: 5, earn: 0, health: 1, belonging: 1, rest: 0 });
+    expect(over).toBeDefined();
+    expect(Object.values(over ?? {}).reduce((sum, n) => sum + n, 0)).toBe(view.free);
+  });
+
   it("sends nothing when unplaced points would only restore the current plan", () => {
-    const resting = overview({ chosen: { learn: 1, earn: 0, health: 1, bond: 0, rest: 1 } });
-    expect(planToSend(resting, { learn: 1, earn: 0, health: 1, bond: 0, rest: 0 })).toBeUndefined();
+    const resting = overview({ chosen: { learn: 1, earn: 0, health: 1, belonging: 0, rest: 1 } });
+    expect(planToSend(resting, { learn: 1, earn: 0, health: 1, belonging: 0, rest: 0 })).toBeUndefined();
   });
 });
 
@@ -178,12 +200,12 @@ describe("the plan on the life screen", () => {
     const user = userEvent.setup();
     const props = lifeScreenProps(country, { life, plan: planOverview(life) });
     render(<LifeScreen {...props} />);
-    // A child of eight follows Learn, Health, Bond; Earn is locked for them.
+    // A child of eight follows Learn, Health, Belonging; Earn is locked for them.
     expect(field("Earn")).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: /Decrease Bond/ }));
+    await user.click(screen.getByRole("button", { name: /Decrease Belonging/ }));
     await user.click(screen.getByRole("button", { name: /Increase Rest/ }));
     await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
-    expect(props.onContinue).toHaveBeenCalledWith({ learn: 1, earn: 0, health: 1, bond: 0, rest: 1 });
+    expect(props.onContinue).toHaveBeenCalledWith({ learn: 1, earn: 0, health: 1, belonging: 0, rest: 1 });
   });
 
   it("shows nothing before age six", () => {
@@ -197,9 +219,9 @@ describe("the plan on the life screen", () => {
     const user = userEvent.setup();
     const props = lifeScreenProps(country, { life, plan: planOverview(life) });
     const { rerender } = render(<LifeScreen {...props} />);
-    await user.click(screen.getByRole("button", { name: /Decrease Bond/ }));
+    await user.click(screen.getByRole("button", { name: /Decrease Belonging/ }));
     const older = lifeOf(makePerson({ age: 9 }));
     rerender(<LifeScreen {...props} life={older} plan={planOverview(older)} />);
-    expect(field("Bond")).toHaveValue("1");
+    expect(field("Belonging")).toHaveValue("1");
   });
 });

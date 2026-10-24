@@ -16,7 +16,8 @@ export function HelpLink({ children, className }: { children: string; className?
       <a href={HELP_URL} target="_blank" rel="noopener noreferrer" aria-describedby={hintId} className={className}>
         {children}
       </a>
-      <span id={hintId} className="visually-hidden">
+      {/* Hidden outright: it is only a description, so it is never read as content (or announced in a live region). */}
+      <span id={hintId} hidden>
         {t("help.newTab")}
       </span>
     </>

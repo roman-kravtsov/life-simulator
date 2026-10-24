@@ -40,7 +40,7 @@ export const adolescenceEvents: readonly EventDef[] = [
     roles: ["friend"],
     chance: { kind: "weight", base: 4 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adolescence.late_night_talk",
     effects: [
       { relationship: "closeness", amount: 6, role: "friend" },
@@ -279,7 +279,7 @@ export const adolescenceEvents: readonly EventDef[] = [
     conditions: [{ age: [13, 17] }],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adolescence.friend_secret",
     choices: [
       {

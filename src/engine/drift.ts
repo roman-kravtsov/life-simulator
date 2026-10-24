@@ -95,7 +95,7 @@ export const happinessNorm = (person: Person, country: Country) =>
   FOCUS_EFFECT.rest.norm * (person.focus?.rest ?? 0);
 
 function belongingNorm(person: Person): number {
-  return baseBelongingNorm(person) + FOCUS_EFFECT.bond.norm * (person.focus?.bond ?? 0);
+  return baseBelongingNorm(person) + FOCUS_EFFECT.belonging.norm * (person.focus?.belonging ?? 0);
 }
 
 function baseBelongingNorm(person: Person): number {

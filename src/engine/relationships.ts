@@ -1,6 +1,6 @@
 // How close the people around the person are, and how that changes (REL-001). Closeness runs from
 // 0 to 100. Each year it moves part of the way toward a norm that depends on who the relative is and
-// how sociable the person is, with a little noise. Events and, from M5, the Bond focus move it too
+// how sociable the person is, with a little noise. Events and, from M5, the Belonging focus move it too
 // (the `relationship` effects in effects.ts).
 import { namesForRegion } from "../content/names";
 import { clamp } from "./dist";
@@ -38,10 +38,10 @@ export function closenessNorm(relative: Relationship, person: Person): number {
   let norm = BASE_NORM[relative.kind] + SOCIABILITY_PULL * person.traits.sociability;
   const parent = relative.kind === "mother" || relative.kind === "father";
   if (parent && person.age >= TEEN_AGES[0] && person.age <= TEEN_AGES[1]) norm -= TEEN_DISTANCE;
-  // Time with the people who matter keeps them close (Bond); a friend who is not kept up with drifts away.
-  const bond = person.focus?.bond ?? 0;
-  norm += FOCUS_EFFECT.bond.closeness * bond;
-  if (relative.kind === "friend") norm -= UNKEPT_FRIEND * clamp(-bond, 0, 1);
+  // Time with the people who matter keeps them close (Belonging); a friend who is not kept up with drifts away.
+  const belonging = person.focus?.belonging ?? 0;
+  norm += FOCUS_EFFECT.belonging.closeness * belonging;
+  if (relative.kind === "friend") norm -= UNKEPT_FRIEND * clamp(-belonging, 0, 1);
   return clamp(norm, 0, 100);
 }
 
@@ -64,12 +64,12 @@ export function driftCloseness(relationships: readonly Relationship[], person: P
 /** Friends are made from this age. */
 export const FRIEND_FROM_AGE = 5;
 const MAX_FRIENDS = 6;
-/** The yearly chance of making a friend with none yet, before school, work, nature and Bond change it. Authored. */
+/** The yearly chance of making a friend with none yet, before school, work, nature and Belonging change it. Authored. */
 const FRIEND_CHANCE = 0.2;
 /** A friendship that has faded below this closeness ends. */
 export const FRIENDSHIP_ENDS_BELOW = 18;
 
-/** The chance of making a friend this year (REL-002): likelier at school and at work, for the sociable, with time for Bond, and less so the more friends there are. */
+/** The chance of making a friend this year (REL-002): likelier at school and at work, for the sociable, with time for Belonging, and less so the more friends there are. */
 export function friendChance(person: Person): number {
   if (person.age < FRIEND_FROM_AGE) return 0;
   const friends = person.relationships.filter((r) => r.alive && r.kind === "friend").length;
@@ -78,9 +78,9 @@ export function friendChance(person: Person): number {
     : person.work.status === "employed" || person.work.status === "informal"
       ? 1.2
       : 1;
-  const bond = Math.max(0.2, 1 + FOCUS_EFFECT.bond.meeting * (person.focus?.bond ?? 0));
+  const belonging = Math.max(0.2, 1 + FOCUS_EFFECT.belonging.meeting * (person.focus?.belonging ?? 0));
   const sociable = 1 + 0.25 * person.traits.sociability;
-  return clamp(FRIEND_CHANCE * settings * bond * sociable * Math.max(0, 1 - friends / MAX_FRIENDS), 0, 0.9);
+  return clamp(FRIEND_CHANCE * settings * belonging * sociable * Math.max(0, 1 - friends / MAX_FRIENDS), 0, 0.9);
 }
 
 export interface FriendStep {

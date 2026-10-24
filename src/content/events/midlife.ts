@@ -44,7 +44,7 @@ export const midlifeEvents: readonly EventDef[] = [
     roles: ["friend"],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.midlife.reunion",
     effects: [
       { relationship: "closeness", amount: 6, role: "friend" },
@@ -278,7 +278,7 @@ export const midlifeEvents: readonly EventDef[] = [
     conditions: [{ has: "child" }],
     chance: { kind: "weight", base: 2 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.midlife.take_in_grandchild",
     choices: [
       {
@@ -316,7 +316,7 @@ export const midlifeEvents: readonly EventDef[] = [
     roles: ["sibling"],
     chance: { kind: "weight", base: 2 },
     cooldownYears: 8,
-    focus: "bond",
+    focus: "belonging",
     text: "event.midlife.reach_out_sibling",
     choices: [
       {

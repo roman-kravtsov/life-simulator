@@ -1,7 +1,7 @@
 // The yearly focus plan (DEC-003, DEC-004, FAM-005, CAREER-004, CAREER-006). From six, each year the
-// player spends three focus points across Learn, Earn, Health, Bond and Rest. Circumstances take some
+// player spends three focus points across Learn, Earn, Health, Belonging and Rest. Circumstances take some
 // points before the player chooses: a child who must work has a point on Earn, an ill person has one
-// on Health, and someone looking after a sick relative or a baby has one on Bond. Points in one area
+// on Health, and someone looking after a sick relative or a baby has one on Belonging. Points in one area
 // have diminishing returns. The effect of a plan is measured against the default plan for the
 // person's situation (units above or below it), so the default is neutral and the calibration of the
 // models behind it holds; moving points trades one area for another.
@@ -9,7 +9,7 @@ import { conditionCatalog } from "../content/healthConditions";
 import { focusPointsLost, type ConditionCatalog } from "./health";
 import type { FocusArea, Person, Plan, StoredPlan } from "./types";
 
-export const FOCUS_AREAS: readonly FocusArea[] = ["learn", "earn", "health", "bond", "rest"];
+export const FOCUS_AREAS: readonly FocusArea[] = ["learn", "earn", "health", "belonging", "rest"];
 
 /** Points to spend each year. */
 export const FOCUS_BUDGET = 3;
@@ -37,8 +37,8 @@ export const FOCUS_EFFECT = {
   earn: { saving: 0.03, finding: 0.35, losing: 0.15 },
   /** Health: points on the health the person drifts toward, log hazard of death and share off the onset of conditions. */
   health: { norm: 3, hazard: 0.1, onset: 0.12 },
-  /** Bond: points on the belonging norm, on closeness, and share added to the odds of making friends and meeting a partner. */
-  bond: { norm: 4, closeness: 3, meeting: 0.3 },
+  /** Belonging: points on the belonging norm, on closeness, and share added to the odds of making friends and meeting a partner. */
+  belonging: { norm: 4, closeness: 3, meeting: 0.3 },
   /** Rest: points on the happiness norm and share taken off the sting of bad news. */
   rest: { norm: 3, buffer: 0.1 },
 } as const;
@@ -67,7 +67,7 @@ export interface PlanView {
   default: Plan;
 }
 
-export const emptyPlan = (): Plan => ({ learn: 0, earn: 0, health: 0, bond: 0, rest: 0 });
+export const emptyPlan = (): Plan => ({ learn: 0, earn: 0, health: 0, belonging: 0, rest: 0 });
 
 const planOf = (areas: readonly FocusArea[]): Plan => {
   const plan = emptyPlan();
@@ -103,7 +103,7 @@ export function forcedPoints(person: Person, catalog: ConditionCatalog = conditi
   const ill = focusPointsLost(person.conditions, catalog);
   if (ill > 0) wanted.push({ area: "health", points: ill, reason: "illness" });
   if (person.flags.childLabour === true) wanted.push({ area: "earn", points: 1, reason: "childLabour" });
-  if (caregivingDuty(person)) wanted.push({ area: "bond", points: 1, reason: "caregiving" });
+  if (caregivingDuty(person)) wanted.push({ area: "belonging", points: 1, reason: "caregiving" });
   const out: ForcedPoint[] = [];
   let room = MAX_FORCED;
   for (const f of wanted) {
@@ -116,9 +116,9 @@ export function forcedPoints(person: Person, catalog: ConditionCatalog = conditi
 
 /** Where a person with nothing set aside would put their points, most wanted first. */
 function wantedOrder(person: Person): FocusArea[] {
-  if (person.work.status === "retired") return ["health", "bond", "rest"];
-  if (person.age >= 18 && !person.education.inSchool) return ["earn", "health", "bond"];
-  return ["learn", "health", "bond"];
+  if (person.work.status === "retired") return ["health", "belonging", "rest"];
+  if (person.age >= 18 && !person.education.inSchool) return ["earn", "health", "belonging"];
+  return ["learn", "health", "belonging"];
 }
 
 /** The default plan for the person's situation, before circumstance takes any points. */

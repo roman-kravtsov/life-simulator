@@ -49,7 +49,7 @@ export interface Relationship {
 }
 
 /** The five yearly focus areas (DEC-003). */
-export type FocusArea = "learn" | "earn" | "health" | "bond" | "rest";
+export type FocusArea = "learn" | "earn" | "health" | "belonging" | "rest";
 
 /** Focus points by area. */
 export type Plan = Record<FocusArea, number>;
@@ -207,6 +207,20 @@ export interface DecisionLogEntry {
   choiceId: string;
 }
 
+/** One change of settings made in the middle of a life. Softening changes which events can come, so a replay needs it. */
+export interface SettingsLogEntry {
+  /** The age at which the change was made; it applies from the next year on. */
+  age: number;
+  changes: Partial<Settings>;
+}
+
+/** A plan the player set; plans carry over until the next one, so these are all the plan input a replay needs. */
+export interface PlanLogEntry {
+  /** The age lived in the year the plan was set for. */
+  age: number;
+  plan: Plan;
+}
+
 export interface LifeState {
   seed: string;
   person: Person;
@@ -217,4 +231,8 @@ export interface LifeState {
   /** The year in progress, waiting for the player to answer a decision (DEC-001). */
   turn?: Turn;
   decisions: DecisionLogEntry[];
+  /** Settings changed during the life, with the age at which each took effect; a replay applies them in order (design 2.4). */
+  settingsLog?: SettingsLogEntry[];
+  /** Plans the player set, in order (design 2.4). */
+  planLog?: PlanLogEntry[];
 }

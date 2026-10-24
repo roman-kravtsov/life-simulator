@@ -148,7 +148,7 @@ describe("a year that waits for a decision (DEC-001)", () => {
 });
 
 describe("the yearly plan (DEC-003)", () => {
-  const plan = (p: Partial<Plan>): Plan => ({ learn: 0, earn: 0, health: 0, bond: 0, rest: 0, ...p });
+  const plan = (p: Partial<Plan>): Plan => ({ learn: 0, earn: 0, health: 0, belonging: 0, rest: 0, ...p });
   const at = (age: number) => {
     let s = start("plan-1");
     while (s.person.age < age) s = advanceAuto(s, country, empty);
@@ -164,7 +164,7 @@ describe("the yearly plan (DEC-003)", () => {
     expect(Object.values(s.history.at(-1)!.plan!).reduce((a, b) => a + b, 0)).toBe(3);
   });
   it("keeps the chosen plan until the player changes it", () => {
-    const chosen = plan({ rest: 2, bond: 1 });
+    const chosen = plan({ rest: 2, belonging: 1 });
     let s = advance(at(7), { kind: "continue", plan: chosen }, country, empty).state;
     expect(s.plan).toEqual({ points: chosen, custom: true });
     s = advance(s, continueYear, country, empty).state;
@@ -287,7 +287,29 @@ describe("settings (EVENT-006, TIME-002)", () => {
     const life = start("settings");
     const changed = withSettings(life, { softening: true });
     expect(changed.settings).toEqual({ softening: true, pace: "every-year" });
-    expect({ ...changed, settings: life.settings }).toEqual(life);
+    expect({ ...changed, settings: life.settings, settingsLog: undefined }).toEqual({
+      ...life,
+      settingsLog: undefined,
+    });
     expect(life.settings.softening).toBe(false);
+  });
+  it("records each plan the player sets, so a replay can apply it", () => {
+    let life = start("plan-log");
+    while (life.person.age < 6) life = advanceAuto(life, country);
+    const chosen: Plan = { learn: resolvePlan(life.person, life.plan).free, earn: 0, health: 0, belonging: 0, rest: 0 };
+    const after = advance(life, { kind: "continue", plan: chosen }, country).state;
+    expect(after.planLog).toEqual([{ age: life.person.age, plan: chosen }]);
+    expect(advanceAuto(after, country).planLog).toEqual(after.planLog);
+    expect(life.planLog).toBeUndefined();
+  });
+  it("records each change with the age it was made at, so a replay can apply it", () => {
+    const life = start("settings-log");
+    const aged = advanceAuto(advanceAuto(life, country), country);
+    const changed = withSettings(withSettings(aged, { softening: true }), { pace: "quiet-years" });
+    expect(changed.settingsLog).toEqual([
+      { age: aged.person.age, changes: { softening: true } },
+      { age: aged.person.age, changes: { pace: "quiet-years" } },
+    ]);
+    expect(life.settingsLog).toBeUndefined();
   });
 });

@@ -8,12 +8,6 @@
 }
 
 .heading {
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
   margin: 0 0 0.5rem;
 }
 
@@ -21,6 +15,7 @@
   outline: none;
 }
 
+/* Deliberate: the heading takes focus when the card appears, and the ring shows where it went. */
 .heading:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;

@@ -31,7 +31,8 @@ import {
 } from "../../src/engine/relationships";
 import { createRng, stream, type Rng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
-import { systemDecision, tertiaryYearlyCost } from "../../src/engine/systemDecisions";
+import { stepMoney, tertiaryYearlyCost } from "../../src/engine/money";
+import { systemDecision } from "../../src/engine/systemDecisions";
 import type { Person, Relationship } from "../../src/engine/types";
 import type { CauseMix } from "../../src/engine/world/types";
 import { makeCountry } from "../fixtures/country";
@@ -92,7 +93,7 @@ describe("leaving school to work (EDU-004)", () => {
     const base = stayOdds(poor);
     expect(stayOdds({ ...poor, money: moneyAt(60) })).toBeGreaterThan(base);
     expect(stayOdds({ ...poor, traits: { ...poor.traits, aptitude: 2 } })).toBeGreaterThan(base);
-    expect(stayOdds({ ...poor, focus: { learn: 1, earn: 0, health: 0, bond: 0, rest: 0 } })).toBeGreaterThan(base);
+    expect(stayOdds({ ...poor, focus: { learn: 1, earn: 0, health: 0, belonging: 0, rest: 0 } })).toBeGreaterThan(base);
     expect(stayOdds({ ...poor, flags: { childLabour: true } })).toBeLessThan(base);
     expect(stayOdds(poor)).toBeGreaterThanOrEqual(0.1);
     expect(stayOdds({ ...poor, money: moneyAt(100), traits: { ...poor.traits, aptitude: 2 } })).toBeLessThanOrEqual(
@@ -138,7 +139,7 @@ describe("higher education (EDU-003)", () => {
   it("shows the cost and the odds of finishing", () => {
     const views = choiceViews(def, ctx(leaver));
     const enrol = views.find((v) => v.id === "try")!;
-    expect(enrol.cost).toEqual({ amount: tertiaryYearlyCost(ctx(leaver)), perYear: true });
+    expect(enrol.cost).toEqual({ amount: tertiaryYearlyCost(ctx(leaver).country), perYear: true, borneInSchool: true });
     expect(enrol.lens[0]?.key).toBe("lens.finish_degree");
   });
   it("locks the scholarship until the results are strong enough", () => {
@@ -160,6 +161,34 @@ describe("higher education (EDU-003)", () => {
     );
     expect(p[0]).toBeCloseTo(scholarshipOdds(leaver), 10);
     expect(p[0]! + p[1]!).toBeCloseTo(1, 10);
+  });
+  it("charges the fees to a student who takes them on, and not to one with a scholarship", () => {
+    const c = ctx(leaver);
+    const paying = applyEffectsToPerson(
+      leaver,
+      resolveChoice(def, "try", c, always(0)).effects,
+      "choice",
+      country,
+    ).person;
+    const funded = applyEffectsToPerson(
+      leaver,
+      resolveChoice(def, "scholarship", c, always(0)).effects,
+      "choice",
+      country,
+    ).person;
+    expect(paying.education.inSchool).toBe(true);
+    expect(funded.education.inSchool).toBe(true);
+    const student = (p: Person) => ({ ...p, age: 19 });
+    const debtAfter = (p: Person) => stepMoney(student(p), country, always(0)).person.money.debt;
+    expect(debtAfter(paying)).toBeGreaterThanOrEqual(tertiaryYearlyCost(country));
+    expect(debtAfter(funded)).toBe(funded.money.debt);
+  });
+  it("shows no cost to a child that the household would bear", () => {
+    const child = at(14, { education: { level: "primary", inSchool: true, years: 8 } });
+    const pneumoniaChild = { ...child, conditions: [{ id: "pneumonia", severity: 2 as const, since: 13 }] };
+    const care = choiceViews(systemDecision(CARE_DECISION)!, ctx(pneumoniaChild, { condition: "pneumonia" }));
+    expect(care.find((v) => v.id === "best")?.cost).toBeUndefined();
+    expect(care.find((v) => v.id === "best")).toBeDefined();
   });
   it("enrols on the first two courses and finishes studying on the third", () => {
     const c = ctx(leaver);
@@ -213,6 +242,18 @@ describe("care (HEALTH-005, MONEY-005)", () => {
     expect(applied.money.savings - applied.money.debt).toBeLessThan(ill.money.savings - ill.money.debt);
     const wait = resolveChoice(def, "wait", c, always(0));
     expect(careLevel(applyEffectsToPerson(ill, wait.effects, "choice", country).person, "pneumonia")).toBe(-1);
+  });
+  it("shows the odds of the usual care at the level it sets, even for someone who had the best", () => {
+    const best = { ...ill, flags: { ...ill.flags, "care.pneumonia": 1 } };
+    const usual = choiceViews(def, ctx(best, { condition: "pneumonia" })).find((v) => v.id === "usual")!;
+    expect(usual.lens[0]?.p).toBeCloseTo(conditionOdds(pneumonia, 2, 0).worsen, 10);
+    const applied = applyEffectsToPerson(
+      best,
+      resolveChoice(def, "usual", ctx(best, { condition: "pneumonia" }), always(0)).effects,
+      "choice",
+      country,
+    ).person;
+    expect(careLevel(applied, "pneumonia")).toBe(0);
   });
   it("makes the usual care the default", () => {
     expect(defaultChoiceId(def, c)).toBe("usual");
@@ -290,13 +331,13 @@ describe("friends (REL-002)", () => {
   it("are not made before the age of five", () => {
     expect(friendChance(at(3))).toBe(0);
   });
-  it("are likelier at school, for the sociable, and when Bond has points", () => {
+  it("are likelier at school, for the sociable, and when Belonging has points", () => {
     const plain = at(10);
     expect(friendChance(school)).toBeGreaterThan(friendChance(plain));
     expect(friendChance({ ...plain, traits: { ...plain.traits, sociability: 2 } })).toBeGreaterThan(
       friendChance(plain),
     );
-    expect(friendChance({ ...plain, focus: { learn: 0, earn: 0, health: 0, bond: 1, rest: 0 } })).toBeGreaterThan(
+    expect(friendChance({ ...plain, focus: { learn: 0, earn: 0, health: 0, belonging: 1, rest: 0 } })).toBeGreaterThan(
       friendChance(plain),
     );
   });
@@ -352,7 +393,7 @@ describe("looking after the family (FAM-005)", () => {
     for (let i = 0; i < 3; i++) twin.next();
     expect(rng.next()).toBe(twin.next());
   });
-  it("shows as a point of Bond taken from the plan", async () => {
+  it("shows as a point of Belonging taken from the plan", async () => {
     const { caregivingDuty } = await import("../../src/engine/focus");
     expect(caregivingDuty(at(35, { relationships: [{ ...parent, ill: true }] }))).toBe(true);
     expect(caregivingDuty(at(35, { relationships: [parent] }))).toBe(false);

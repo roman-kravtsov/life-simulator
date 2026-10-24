@@ -18,9 +18,11 @@
   grid-area: group;
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--ink-soft);
   border-radius: var(--radius);
   background: var(--paper-raised);
+  /* Round the corners of the button backgrounds; the focus ring is the group's own outline, so it is not clipped. */
+  overflow: hidden;
 }
 
 .group[data-focus-within] {
@@ -28,12 +30,17 @@
   outline-offset: 2px;
 }
 
+.group[data-invalid] {
+  border-style: dashed;
+  border-color: var(--rust);
+}
+
 .group[data-disabled] {
   opacity: 0.5;
 }
 
 .input {
-  width: 2.5rem;
+  width: 2.75rem;
   min-height: 2.75rem;
   border: none;
   background: transparent;
@@ -61,12 +68,11 @@
 }
 
 .button[data-hovered] {
-  background: var(--rule);
+  background: var(--paper);
 }
 
 .button[data-pressed] {
   background: var(--rule);
-  filter: brightness(0.95);
 }
 
 .button[data-focus-visible] {
@@ -75,8 +81,12 @@
 }
 
 .button[data-disabled] {
-  opacity: 0.4;
+  color: var(--ink-soft);
   cursor: default;
+}
+
+.button[data-disabled][data-hovered] {
+  background: transparent;
 }
 
 .description {

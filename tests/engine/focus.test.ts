@@ -47,16 +47,16 @@ describe("focus value (DEC-003)", () => {
 });
 
 describe("the default plan", () => {
-  it("spends the whole budget on learning, health and bond for a child or a student", () => {
-    expect(defaultPlan(at(8))).toEqual(plan({ learn: 1, health: 1, bond: 1 }));
+  it("spends the whole budget on learning, health and belonging for a child or a student", () => {
+    expect(defaultPlan(at(8))).toEqual(plan({ learn: 1, health: 1, belonging: 1 }));
     expect(defaultPlan(at(20, { education: { level: "upper-secondary", inSchool: true, years: 14 } }))).toEqual(
-      plan({ learn: 1, health: 1, bond: 1 }),
+      plan({ learn: 1, health: 1, belonging: 1 }),
     );
   });
   it("puts a point on earning for an adult out of school, and on rest for someone retired", () => {
-    expect(defaultPlan(at(35))).toEqual(plan({ earn: 1, health: 1, bond: 1 }));
+    expect(defaultPlan(at(35))).toEqual(plan({ earn: 1, health: 1, belonging: 1 }));
     expect(defaultPlan(at(70, { work: { status: "retired", yearsWorked: 40, attachment: 0.5 } }))).toEqual(
-      plan({ health: 1, bond: 1, rest: 1 }),
+      plan({ health: 1, belonging: 1, rest: 1 }),
     );
   });
   it.each([6, 12, 18, 40, 66])("always totals the budget (age %i)", (age) => {
@@ -85,9 +85,9 @@ describe("points circumstance takes (DEC-004)", () => {
       { area: "health", points: 2, reason: "illness" },
     ]);
   });
-  it("puts a point on Bond for caring for a sick parent, a small sibling or a baby (FAM-005)", () => {
+  it("puts a point on Belonging for caring for a sick parent, a small sibling or a baby (FAM-005)", () => {
     const sickMother = at(30, { relationships: [relative({ ill: true })] });
-    expect(forcedPoints(sickMother)).toEqual([{ area: "bond", points: 1, reason: "caregiving" }]);
+    expect(forcedPoints(sickMother)).toEqual([{ area: "belonging", points: 1, reason: "caregiving" }]);
     const smallSibling = at(13, { relationships: [relative({ id: "s", kind: "sibling", age: 3 })] });
     expect(caregivingDuty(smallSibling)).toBe(true);
     const baby = at(27, { relationships: [relative({ id: "c", kind: "child", age: 1 })] });
@@ -119,18 +119,18 @@ describe("locked areas (DEC-004, CAREER-006)", () => {
   });
   it("lets points set aside in a locked area rest instead", () => {
     const retired = at(70, { work: { status: "retired", yearsWorked: 40, attachment: 0.5 } });
-    const view = resolvePlan(retired, { points: plan({ earn: 2, bond: 1 }), custom: true });
-    expect(view.chosen).toEqual(plan({ bond: 1, rest: 2 }));
+    const view = resolvePlan(retired, { points: plan({ earn: 2, belonging: 1 }), custom: true });
+    expect(view.chosen).toEqual(plan({ belonging: 1, rest: 2 }));
   });
 });
 
 describe("resolving the plan", () => {
   it("follows the default for the situation until the player changes it", () => {
     const child = at(10);
-    expect(resolvePlan(child).points).toEqual(plan({ learn: 1, health: 1, bond: 1 }));
+    expect(resolvePlan(child).points).toEqual(plan({ learn: 1, health: 1, belonging: 1 }));
     const grown = at(30);
-    expect(resolvePlan(grown, { points: plan({ learn: 1, health: 1, bond: 1 }), custom: false }).points).toEqual(
-      plan({ earn: 1, health: 1, bond: 1 }),
+    expect(resolvePlan(grown, { points: plan({ learn: 1, health: 1, belonging: 1 }), custom: false }).points).toEqual(
+      plan({ earn: 1, health: 1, belonging: 1 }),
     );
   });
   it("carries a plan the player set", () => {
@@ -152,7 +152,9 @@ describe("resolving the plan", () => {
       at(12, { flags: { childLabour: true } }),
       at(60, { conditions: [sick("pneumonia", 3)] }),
     ]) {
-      expect(planTotal(resolvePlan(person, { points: plan({ bond: 3 }), custom: true }).points)).toBe(FOCUS_BUDGET);
+      expect(planTotal(resolvePlan(person, { points: plan({ belonging: 3 }), custom: true }).points)).toBe(
+        FOCUS_BUDGET,
+      );
     }
   });
 });
@@ -166,12 +168,12 @@ describe("focus units", () => {
     const units = focusUnits(resolvePlan(at(10), { points: plan({ learn: 3 }), custom: true }));
     expect(units.learn).toBeGreaterThan(0);
     expect(units.health).toBeLessThan(0);
-    expect(units.bond).toBeLessThan(0);
+    expect(units.belonging).toBeLessThan(0);
   });
   it("do not make illness a bonus: a point the default plan already gave to Health is covered, not added", () => {
     const view = resolvePlan(at(40, { conditions: [sick("hypertension", 3)] }));
     expect(view.forced).toEqual([{ area: "health", points: 1, reason: "illness" }]);
-    expect(view.points).toEqual(plan({ earn: 1, health: 1, bond: 1 }));
+    expect(view.points).toEqual(plan({ earn: 1, health: 1, belonging: 1 }));
     const units = focusUnits(view);
     for (const area of FOCUS_AREAS) expect(units[area]).toBe(0);
   });
@@ -180,21 +182,21 @@ describe("focus units", () => {
     expect(view.points.health).toBe(2);
     expect(planTotal(view.points)).toBe(FOCUS_BUDGET);
     expect(focusUnits(view).health).toBeGreaterThan(0);
-    expect(focusUnits(view).bond + focusUnits(view).earn).toBeLessThan(0);
+    expect(focusUnits(view).belonging + focusUnits(view).earn).toBeLessThan(0);
   });
   it("show what circumstance costs: a working child gives up a point elsewhere", () => {
     const units = focusUnits(resolvePlan(at(10, { flags: { childLabour: true } })));
     expect(units.earn).toBeGreaterThan(0);
-    expect(units.bond).toBeLessThan(0);
+    expect(units.belonging).toBeLessThan(0);
   });
 });
 
 describe("valid choices", () => {
   it("accept exactly the free points and nothing in a locked area", () => {
-    expect(isValidChoice(at(10), plan({ learn: 2, bond: 1 }))).toBe(true);
+    expect(isValidChoice(at(10), plan({ learn: 2, belonging: 1 }))).toBe(true);
     expect(isValidChoice(at(10), plan({ learn: 2 }))).toBe(false);
     expect(isValidChoice(at(10), plan({ earn: 1, learn: 2 }))).toBe(false);
     expect(isValidChoice(at(10, { flags: { childLabour: true } }), plan({ learn: 2 }))).toBe(true);
-    expect(isValidChoice(at(10), plan({ learn: 1.5, bond: 1.5 }))).toBe(false);
+    expect(isValidChoice(at(10), plan({ learn: 1.5, belonging: 1.5 }))).toBe(false);
   });
 });

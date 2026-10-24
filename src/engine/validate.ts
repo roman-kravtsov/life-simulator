@@ -128,6 +128,8 @@ export function validateEvents({
     };
     for (const effect of def.effects ?? []) checkEffect(effect, "an effect");
 
+    if (def.choices && (def.effects?.length ?? 0) > 0)
+      bad("a decision's effects belong to its choices' outcomes; the event's own effects would be dropped");
     if (def.choices)
       validateChoices(def.choices, {
         bad,
@@ -160,6 +162,8 @@ function validateChoices(choices: readonly ChoiceDef[], tools: ChoiceTools): voi
   const { bad, key, checkConditions, checkEffect, strings, country, person, exercise, roles } = tools;
   if (choices.length < 2) bad("a decision needs at least two choices");
   if (choices.filter((c) => c.default).length > 1) bad("only one choice can be the default");
+  if (!choices.some((c) => !c.requires?.length && !c.locks?.length))
+    bad("a decision needs a choice that is always open, or the year could not go on");
   const seen = new Set<string>();
   const roleIds = Object.fromEntries([...roles].map((role) => [role, `${role}-sample`]));
   const sample: Relationship = {

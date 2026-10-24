@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { DecisionCard } from "../engine/decisions";
 import type { CountryIndex, Country } from "../engine/world/types";
 import type { EventRecord, LifeState, Plan, Settings, StatId } from "../engine/types";
@@ -90,7 +90,11 @@ export function LifeScreen({
   const events = last?.events ?? [];
   // A death by suicide is stated plainly, and the help is always there, whatever else the year held.
   const deathHelp = death?.cause === "selfHarm" && !events.some((e) => e.helpTopic === "suicide");
-  const { education, literacy, work, money, conditions, family } = lifeOverview(life, country);
+  // The panels only change with the life, not with a plan being placed.
+  const { education, literacy, work, money, conditions, family } = useMemo(
+    () => lifeOverview(life, country),
+    [life, country],
+  );
 
   // Another life once this one has ended; otherwise the next year, unless a decision is waiting.
   const goOn = person.alive && !card;
@@ -125,7 +129,7 @@ export function LifeScreen({
           </div>
         ))}
       </dl>
-      <div role="status" className={styles.story}>
+      <div role="status">
         {quietRun && <p className={styles.storyLine}>{quietRunLine(quietRun)}</p>}
         {card ? (
           <p className={styles.storyLine}>{t("decision.waiting")}</p>
@@ -135,7 +139,7 @@ export function LifeScreen({
             {deathHelp && <HelpNote topic="suicide" />}
             {last && (
               <>
-                <h2 className={styles.sectionHeading}>{t("life.thisYear")}</h2>
+                <h2 className={`eyebrow ${styles.sectionHeading}`}>{t("life.thisYear")}</h2>
                 {events.length === 0 ? (
                   <p>{t("life.quietYear")}</p>
                 ) : (

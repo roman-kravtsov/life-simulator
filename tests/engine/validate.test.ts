@@ -170,6 +170,18 @@ describe("validateEvents (ADMIN-001)", () => {
   it("needs at least two choices, so that a decision is a choice", () => {
     expect(check(decision([choice()])).join()).toMatch(/at least two/);
   });
+  it("needs a choice that is always open, and no effects on the event itself", () => {
+    const locked = (id: string) =>
+      choice({ id, text: `choice.${id}`, locks: [{ when: () => true, reason: "lock.a" }] });
+    expect(check(decision([locked("a"), locked("b")])).join()).toMatch(/always open/);
+    expect(check(decision([locked("a"), choice({ id: "b", text: "choice.b" })])).join()).not.toMatch(/always open/);
+    expect(
+      check({
+        ...decision([choice(), choice({ id: "b", text: "choice.b" })]),
+        effects: [{ stat: "health", add: 1 }],
+      }).join(),
+    ).toMatch(/belong to its choices/);
+  });
   it("finds a duplicate event id", () => {
     expect(check(base, base).join()).toMatch(/twice/);
   });

@@ -126,6 +126,16 @@ h1 {
   padding: 0.25rem 0 0.25rem 0.75rem;
 }
 
+/* The small uppercase label above a section; the module keeps its own margin. */
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
 .small {
   font-family: var(--font-ui);
   font-size: 0.875rem;

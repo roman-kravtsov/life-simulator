@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
 import { DEFAULT_SETTINGS, type LifeState, type Person, type Relationship } from "../../src/engine/types";
-import { browserSeed, closenessBand, createGameStore, lifeOverview } from "../../src/ui/store";
+import { browserSeed, closenessBand, createGameStore, lifeOverview, planToSend } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
 
@@ -209,7 +209,7 @@ describe("game store: plan, decisions and settings (DEC-001, DEC-003, EVENT-006,
     for (let i = 0; i < 6; i++) store.continueYear();
     const plan = store.getSnapshot().plan!;
     expect(plan).not.toBeNull();
-    const placed = { learn: 0, earn: 0, health: 0, bond: 0, rest: plan.free };
+    const placed = { learn: 0, earn: 0, health: 0, belonging: 0, rest: plan.free };
     expect(() => store.continueYear({ ...placed, learn: 9 })).toThrow(/plan/);
     store.continueYear(placed);
     expect(store.getSnapshot().life?.plan).toEqual({ points: placed, custom: true });
@@ -485,5 +485,26 @@ describe("closenessBand (FAM-002)", () => {
 describe("browserSeed (RNG-003)", () => {
   it("makes a readable seed", () => {
     expect(browserSeed()).toMatch(SEED_PATTERN);
+  });
+});
+
+describe("planToSend", () => {
+  const plan = {
+    areas: ["learn", "earn", "health", "belonging", "rest"] as const,
+    free: 3,
+    chosen: { learn: 1, earn: 0, health: 1, belonging: 1, rest: 0 },
+    forced: [],
+    locked: {},
+    custom: false,
+  };
+
+  it("counts a value that is not a number as 0, so the plan still spends the points available", () => {
+    expect(planToSend(plan, { learn: Number.NaN, earn: 0, health: 1, belonging: 1, rest: 0 })).toEqual({
+      learn: 0,
+      earn: 0,
+      health: 1,
+      belonging: 1,
+      rest: 1,
+    });
   });
 });

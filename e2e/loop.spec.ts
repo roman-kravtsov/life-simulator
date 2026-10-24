@@ -3,6 +3,10 @@ import { expect, test, type Page } from "@playwright/test";
 const noHorizontalScroll = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
+/** The first choice on the decision card that is open to the player. */
+const openChoice = (page: Page) =>
+  page.getByRole("list", { name: "Your choices" }).locator("button:not([aria-disabled='true'])").first();
+
 /**
  * Lives one step: Continue, then, if the year stopped at a decision, answers it with the keyboard
  * (the first choice that is open). Returns what happened, or "ended" when the life is over.
@@ -20,11 +24,7 @@ async function liveStep(page: Page): Promise<"year" | "decided" | "ended"> {
   await expect(decision).toBeFocused();
   await expect(page.getByRole("status")).toContainText("A decision is waiting.");
   expect(await noHorizontalScroll(page)).toBe(true);
-  const open = page
-    .getByRole("list", { name: "Your choices" })
-    .getByRole("button")
-    .and(page.locator(":not([aria-disabled='true'])"));
-  await open.first().focus();
+  await openChoice(page).focus();
   await page.keyboard.press("Enter");
   await expect(decision).toBeHidden();
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
@@ -125,15 +125,19 @@ test("the plan can be placed by keyboard and carries over, and the help link is 
   const region = page.getByRole("region", { name: "Where your attention goes" });
   await expect(region).toBeHidden();
   const next = page.getByRole("button", { name: "Continue to the next year" });
-  for (let step = 0; step < 14 && !(await region.isVisible()); step++) {
-    expect(await liveStep(page)).not.toBe("ended");
+  const heading = page.getByRole("heading", { level: 1 });
+  const ageNow = async () => Number(/Age (\d+)/.exec((await heading.textContent()) ?? "")?.[1]);
+  // Quiet years may pass in one step: live on until the age is six or more, and the widget must be there.
+  for (let step = 0; step < 14 && (await ageNow()) < 6; step++) {
+    await liveStep(page);
   }
+  expect(await ageNow()).toBeGreaterThanOrEqual(6);
   await expect(region).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
 
   // Take a point off the first area that has one and give it to Rest, with the keyboard.
   let taken = "";
-  for (const name of ["Learn", "Earn", "Health", "Bond"]) {
+  for (const name of ["Learn", "Earn", "Health", "Belonging"]) {
     const field = region.getByRole("textbox", { name });
     if ((await field.isEnabled()) && Number(await field.inputValue()) > 0) {
       await field.focus();
@@ -152,21 +156,18 @@ test("the plan can be placed by keyboard and carries over, and the help link is 
   await expect(region.getByText("All points placed.")).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
 
-  // Continue sends the plan, and it is still the player's after the next year.
+  // Continue sends the plan, and it is still the player's after the next year. A decision may stop the
+  // year first: answer it (a few can follow one another) until the life screen asks for Continue again.
   await next.click();
   const decision = page.getByRole("heading", { level: 2, name: "A decision" });
-  await expect(decision.or(next)).toBeVisible();
-  if (await decision.isVisible()) {
-    const open = page
-      .getByRole("list", { name: "Your choices" })
-      .getByRole("button")
-      .and(page.locator(":not([aria-disabled='true'])"));
-    await open.first().focus();
+  for (let answered = 0; answered < 5; answered++) {
+    await expect(decision.or(next)).toBeVisible();
+    if (!(await decision.isVisible())) break;
+    await openChoice(page).focus();
     await page.keyboard.press("Enter");
   }
-  if (await next.isVisible()) {
-    await expect(region.getByText(/These are the points you set/)).toBeVisible();
-  }
+  await expect(next).toBeVisible();
+  await expect(region.getByText(/These are the points you set/)).toBeVisible();
   expect(errors).toEqual([]);
 });
 

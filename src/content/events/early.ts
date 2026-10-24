@@ -210,7 +210,7 @@ export const earlyEvents: readonly EventDef[] = [
     conditions: [{ age: [5, 11] }],
     chance: { kind: "weight", base: 4 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.childhood.best_friend",
     effects: [
       { relationship: "closeness", amount: 8, role: "friend" },
@@ -449,7 +449,7 @@ export const earlyEvents: readonly EventDef[] = [
     conditions: [{ age: [7, 11] }],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.childhood.friend_in_trouble",
     choices: [
       {

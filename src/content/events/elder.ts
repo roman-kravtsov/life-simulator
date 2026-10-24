@@ -29,7 +29,7 @@ export const elderEvents: readonly EventDef[] = [
     conditions: [{ has: "child" }],
     chance: { kind: "weight", base: 5 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.elder.grandchildren_visit",
     effects: [
       { stat: "happiness", add: 3 },
@@ -181,7 +181,7 @@ export const elderEvents: readonly EventDef[] = [
     tier: "major",
     chance: { kind: "weight", base: 4 },
     cooldownYears: 8,
-    focus: "bond",
+    focus: "belonging",
     text: "event.elder.family_gathering",
     effects: [
       { stat: "belonging", add: 3 },
@@ -235,7 +235,7 @@ export const elderEvents: readonly EventDef[] = [
     roles: ["child"],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 12,
-    focus: "bond",
+    focus: "belonging",
     text: "event.elder.live_with_family",
     choices: [
       {
@@ -313,7 +313,7 @@ export const elderEvents: readonly EventDef[] = [
     roles: ["friend"],
     chance: { kind: "weight", base: 2 },
     cooldownYears: 12,
-    focus: "bond",
+    focus: "belonging",
     text: "event.elder.make_amends",
     choices: [
       {

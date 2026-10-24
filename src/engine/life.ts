@@ -85,6 +85,7 @@ function withoutKeys<T extends object, K extends keyof T>(value: T, ...keys: K[]
 export const withSettings = (state: LifeState, changes: Partial<Settings>): LifeState => ({
   ...state,
   settings: { ...state.settings, ...changes },
+  settingsLog: [...(state.settingsLog ?? []), { age: state.person.age, changes }],
 });
 
 /** How much resilience cushions a setback to happiness: each point changes it by this share. */
@@ -444,7 +445,10 @@ export function advance(
   if (input.kind !== "continue") throw new Error(`Unknown input: ${String((input as { kind: string }).kind)}`);
   if (state.turn) throw new Error("A decision is waiting");
 
-  let next = beginYear(state, input.plan, country, catalog);
+  const logged = input.plan
+    ? { ...state, planLog: [...(state.planLog ?? []), { age: state.person.age, plan: input.plan }] }
+    : state;
+  let next = beginYear(logged, input.plan, country, catalog);
   for (let run = 1; run < MAX_QUIET_RUN && state.settings.pace === "quiet-years"; run++) {
     const last = next.history.at(-1);
     if (next.turn || !next.person.alive || !last || !isQuietYear(last)) break;

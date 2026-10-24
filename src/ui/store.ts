@@ -81,11 +81,18 @@ export function planOverview(life: LifeState): PlanOverview | null {
 
 /**
  * The plan to send with Continue: nothing while the draft is what the plan already is, otherwise the
- * draft with any point left unplaced resting, so the plan spends exactly the points available.
+ * draft with any point left unplaced resting, so the plan spends exactly the points available. A value
+ * that is not a whole number (an emptied field) counts as 0, and no more than the free points are kept.
  */
 export function planToSend(plan: PlanOverview, draft: Plan): Plan | undefined {
-  const placed = plan.areas.reduce((sum, area) => sum + draft[area], 0);
-  const full = { ...draft, rest: draft.rest + Math.max(0, plan.free - placed) };
+  const full = { ...draft };
+  let placed = 0;
+  for (const area of plan.areas) {
+    const value = Number.isInteger(draft[area]) ? Math.max(0, draft[area]) : 0;
+    full[area] = Math.min(value, Math.max(0, plan.free - placed));
+    placed += full[area];
+  }
+  full.rest += Math.max(0, plan.free - placed);
   return plan.areas.some((area) => full[area] !== plan.chosen[area]) ? full : undefined;
 }
 

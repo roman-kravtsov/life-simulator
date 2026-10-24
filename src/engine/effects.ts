@@ -1,4 +1,4 @@
-import { INDEPENDENCE_AGE, yearlyIncome } from "./money";
+import { ownsMoney, yearlyIncome } from "./money";
 import type {
   Cause,
   EducationLevel,
@@ -57,9 +57,6 @@ function addCondition(person: Person, effect: Extract<Effect, { condition: "add"
   if (effect.raises) added.raises = effect.raises;
   return [...person.conditions, added];
 }
-
-/** Money a person has of their own: independent and out of school. */
-const ownsMoney = (person: Person) => person.age >= INDEPENDENCE_AGE && !person.education.inSchool;
 
 const isWorking = (person: Person) => person.work.status === "employed" || person.work.status === "informal";
 

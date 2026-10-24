@@ -37,6 +37,27 @@ describe("decision card from the engine (UI-006, DEC-001, DEC-002, DEC-005)", ()
     expect(screen.queryByRole("region", { name: "Where your attention goes" })).not.toBeInTheDocument();
   });
 
+  it("reads the situation with the focused heading, so a screen reader hears what the decision is about", async () => {
+    const store = await storeAtDecision("seed-3");
+    render(<App store={store} />);
+    const heading = screen.getByRole("heading", { level: 2, name: "A decision" });
+    expect(heading).toHaveAccessibleDescription(/\S{3,}/);
+    const text = heading.getAttribute("aria-describedby");
+    expect(document.getElementById(text ?? "")).toBe(heading.parentElement?.querySelector("p"));
+  });
+
+  it("says why a locked choice cannot be taken when it is pressed", async () => {
+    const user = userEvent.setup();
+    const store = await storeAtDecision("seed-3");
+    render(<App store={store} />);
+    const locked = screen.getByRole("button", { name: "Try for a scholarship" });
+    const region = screen.getByRole("region", { name: "A decision" }).querySelector("[aria-live=polite]");
+    expect(region).toHaveTextContent("");
+    locked.focus();
+    await user.keyboard("{Enter}");
+    expect(region).toHaveTextContent(/^Not open to you: Scholarships go to those with strong results/);
+  });
+
   it("shows a locked choice with its reason in words, reachable by keyboard and by screen reader", async () => {
     const user = userEvent.setup();
     const store = await storeAtDecision("seed-3");

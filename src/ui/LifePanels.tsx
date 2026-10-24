@@ -21,7 +21,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className={styles.panel}>
-      <h2 id={headingId} className={styles.heading}>
+      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
         {title}
       </h2>
       {children}

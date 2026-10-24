@@ -73,7 +73,7 @@ export const youthEvents: readonly EventDef[] = [
     roles: ["friend"],
     chance: { kind: "weight", base: 4 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.youth.old_friend_visits",
     effects: [
       { relationship: "closeness", amount: 5, role: "friend" },
@@ -141,7 +141,7 @@ export const youthEvents: readonly EventDef[] = [
     chance: { kind: "weight", base: 5 },
     cooldownYears: 2,
     quiet: true,
-    focus: "bond",
+    focus: "belonging",
     text: "event.youth.sunday_family",
     effects: [{ stat: "belonging", add: 2 }],
   },
@@ -592,7 +592,7 @@ export const youthEvents: readonly EventDef[] = [
     conditions: [{ age: [18, 29] }],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.youth.volunteer",
     choices: [
       {

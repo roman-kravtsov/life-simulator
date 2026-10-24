@@ -90,12 +90,12 @@ describe("age at first marriage (REL-004)", () => {
     }
     expect(shareMarriedBy(12, "female", country)).toBe(0);
   });
-  it("is nudged by nature and by Bond, and put off by a partner turned away", () => {
+  it("is nudged by nature and by Belonging, and put off by a partner turned away", () => {
     const base = at(20, { marriageDraw: 0.5 });
     const wed = weddingAge(base, country)!;
     expect(weddingAge({ ...base, traits: { ...base.traits, sociability: 2 } }, country)!).toBeLessThan(wed);
     expect(weddingAge({ ...base, traits: { ...base.traits, sociability: -2 } }, country)!).toBeGreaterThan(wed);
-    expect(weddingAge({ ...base, focus: { bond: 1 } }, country)!).toBeLessThanOrEqual(wed);
+    expect(weddingAge({ ...base, focus: { belonging: 1 } }, country)!).toBeLessThanOrEqual(wed);
     expect(weddingAge({ ...base, flags: { marriageDelay: 2 } }, country)!).toBe(wed + 2);
     expect(weddingAge(at(20, { marriageDraw: 0.99 }), country)).toBeNull();
   });
@@ -103,7 +103,11 @@ describe("age at first marriage (REL-004)", () => {
     const young = at(10, { marriageDraw: 0.01, traits: { ...makePerson().traits, sociability: 2 } });
     const plain = at(10, { marriageDraw: 0.01 });
     expect(weddingAge(young, country)).toBe(weddingAge(plain, country));
-    const early = at(10, { marriageDraw: 0.3, traits: { ...makePerson().traits, sociability: 2 }, focus: { bond: 3 } });
+    const early = at(10, {
+      marriageDraw: 0.3,
+      traits: { ...makePerson().traits, sociability: 2 },
+      focus: { belonging: 3 },
+    });
     expect(weddingAge(early, country)!).toBeGreaterThanOrEqual(ADULT_AGE);
   });
 });
@@ -120,6 +124,19 @@ describe("courtship and marriage (REL-003)", () => {
       for (let i = 0; i < 4; i++) control.next();
       expect(rng.next()).toBe(control.next());
     }
+  });
+  it("gives each possible partner an id of their own, so one who died before the wedding does not block the next", () => {
+    const earlier = stepPartnership(adult(wed - 1), country, createRng("meet"), { open: true }).events[0]!.ask!.payload!
+      .relative as Relationship;
+    const later = stepPartnership(
+      adult(wed, { relationships: [{ ...earlier, alive: false }] }),
+      country,
+      createRng("meet"),
+      {
+        open: true,
+      },
+    ).events[0]!.ask!.payload!.relative as Relationship;
+    expect(later.id).not.toBe(earlier.id);
   });
   it("offers a chance to meet someone a year before the wedding age, when the year has room", () => {
     const step = stepPartnership(adult(wed - 1), country, createRng("meet"), { open: true });

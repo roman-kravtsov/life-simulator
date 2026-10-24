@@ -12,12 +12,12 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "plan.area.learn": "Learn",
   "plan.area.earn": "Earn",
   "plan.area.health": "Health",
-  "plan.area.bond": "Bond",
+  "plan.area.belonging": "Belonging",
   "plan.area.rest": "Rest",
   "plan.what.learn": "Skills and school.",
   "plan.what.earn": "Income and work.",
   "plan.what.health": "Health and care.",
-  "plan.what.bond": "Belonging and friends.",
+  "plan.what.belonging": "Family, friends and community.",
   "plan.what.rest": "Happiness and resilience.",
   "plan.forced.heading": "Already taken",
   "plan.forced.line": "{area}, {points}. {reason}",
@@ -57,5 +57,5 @@ export const uiStrings: Readonly<Record<string, string>> = {
 
   // Help (UI-012).
   "help.talk": "Need to talk?",
-  "help.newTab": "Opens in a new tab.",
+  "help.newTab": "Free helplines directory. Opens in a new tab.",
 };

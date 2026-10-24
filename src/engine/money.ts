@@ -26,6 +26,21 @@ export const householdBand = (percentile: number) => Math.ceil(percentile / 10);
 /** From this age, and out of school, the person's own standing replaces the household's. */
 export const INDEPENDENCE_AGE = 18;
 
+/** Money a person has of their own: independent and out of school. */
+export const ownsMoney = (person: Person) => person.age >= INDEPENDENCE_AGE && !person.education.inSchool;
+
+/**
+ * Tertiary fees for a year, as a share of what a person at the middle of the country lives on in a
+ * year. An authored estimate: fees are not in the source data, so the lens states it as a cost for
+ * the household and does not present it as a statistic (EDU-003).
+ */
+export const TERTIARY_COST_SHARE = 0.4;
+
+export const tertiaryYearlyCost = (country: Country) => TERTIARY_COST_SHARE * dailyIncome(country, 50) * 365;
+
+/** The flag a student carries while paying their own fees: they borrow the year's fees (EDU-003, MONEY-005). */
+export const TUITION_FLAG = "tuition";
+
 const DAYS = 365;
 
 // The numbers below are modelling choices, not published statistics. They are tuned so the mix keeps
@@ -147,7 +162,15 @@ export function stepMoney(person: Person, country: Country, rng: Rng): MoneyStep
   const noise = normal(rng, 0, SPENDING_NOISE);
   const percentile = currentPercentile(person, country);
   if (person.age < INDEPENDENCE_AGE || person.education.inSchool) {
-    return { person: { ...person, money: { ...person.money, percentile } }, events: [] };
+    // A student who took the fees on pays them by borrowing; one with a scholarship or a family to pay does not.
+    const fees = person.age >= INDEPENDENCE_AGE && person.flags[TUITION_FLAG] ? tertiaryYearlyCost(country) : 0;
+    return {
+      person: {
+        ...person,
+        money: { ...person.money, percentile, debt: person.money.debt * (fees ? 1 + DEBT_INTEREST : 1) + fees },
+      },
+      events: [],
+    };
   }
   const standing: Person = { ...person, money: { ...person.money, percentile } };
   const income = yearlyIncome(standing, country);

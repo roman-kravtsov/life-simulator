@@ -88,7 +88,7 @@ export const adulthoodEvents: readonly EventDef[] = [
     roles: ["parent"],
     chance: { kind: "weight", base: 4 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adulthood.parent_visit",
     effects: [
       { relationship: "closeness", amount: 4, role: "parent" },
@@ -127,7 +127,7 @@ export const adulthoodEvents: readonly EventDef[] = [
     chance: { kind: "weight", base: 4 },
     cooldownYears: 3,
     quiet: true,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adulthood.neighbour_help",
     effects: [{ stat: "belonging", add: 3 }],
   },
@@ -164,7 +164,7 @@ export const adulthoodEvents: readonly EventDef[] = [
     roles: ["partner"],
     chance: { kind: "weight", base: 4 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adulthood.partner_evening",
     effects: [
       { relationship: "closeness", amount: 4, role: "partner" },
@@ -289,7 +289,7 @@ export const adulthoodEvents: readonly EventDef[] = [
     roles: ["friend"],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 10,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adulthood.long_friendship",
     effects: [
       { relationship: "closeness", amount: 8, role: "friend" },
@@ -382,7 +382,7 @@ export const adulthoodEvents: readonly EventDef[] = [
     roles: ["partner"],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 6,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adulthood.partner_argument",
     choices: [
       {
@@ -530,7 +530,7 @@ export const adulthoodEvents: readonly EventDef[] = [
     conditions: [{ age: [35, 49] }],
     chance: { kind: "weight", base: 3 },
     cooldownYears: 12,
-    focus: "bond",
+    focus: "belonging",
     text: "event.adulthood.parent_needs_care",
     choices: [
       {

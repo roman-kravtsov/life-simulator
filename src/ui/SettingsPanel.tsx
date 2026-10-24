@@ -17,7 +17,7 @@ export function SettingsPanel({ settings, onChange }: Props) {
   const paceAbout = useId();
   return (
     <section aria-labelledby={headingId} className={styles.settings}>
-      <h2 id={headingId} className={styles.heading}>
+      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
         {t("settings.heading")}
       </h2>
       <div className={styles.setting}>

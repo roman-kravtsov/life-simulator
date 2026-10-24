@@ -3,12 +3,6 @@
 }
 
 .heading {
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
   margin: 1.25rem 0 0.5rem;
 }
 

@@ -35,7 +35,7 @@ describe("help resources (UI-012)", () => {
         expect(link).toHaveAttribute("href", "https://findahelpline.com");
         expect(link).toHaveAttribute("target", "_blank");
         expect(link).toHaveAttribute("rel", "noopener noreferrer");
-        expect(link).toHaveAccessibleDescription("Opens in a new tab.");
+        expect(link).toHaveAccessibleDescription("Free helplines directory. Opens in a new tab.");
         link.focus();
         expect(link).toHaveFocus();
       };

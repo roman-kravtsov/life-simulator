@@ -3,16 +3,8 @@
 // the models, so they live with the engine. A system asks for one by id; the turn keeps the id.
 // Their text is in src/content/strings/en.ts under the keys named here.
 import { conditionCatalog } from "../content/healthConditions";
-import {
-  CARE_DECISION,
-  careCost,
-  careLevel,
-  careShare,
-  conditionOdds,
-  type CareLevel,
-  type ConditionDef,
-} from "./health";
-import { INDEPENDENCE_AGE, dailyIncome, yearlyIncome } from "./money";
+import { CARE_DECISION, careCost, careShare, conditionOdds, type CareLevel, type ConditionDef } from "./health";
+import { INDEPENDENCE_AGE, TUITION_FLAG, tertiaryYearlyCost, yearlyIncome } from "./money";
 import {
   HIGHER_DECISION,
   LEAVE_DECISION,
@@ -38,15 +30,6 @@ const decision = (def: Pick<EventDef, "id" | "text" | "choices"> & Partial<Event
 
 /** A household this poor and a child already at work cannot spare the child for school (EDU-004). */
 const POOREST_FOR_SCHOOL = 15;
-
-/**
- * Tertiary fees for a year, as a share of what a person at the middle of the country lives on in a
- * year. An authored estimate: fees are not in the source data, so the lens states it as a cost for
- * the household and does not present it as a statistic (EDU-003).
- */
-export const TERTIARY_COST_SHARE = 0.4;
-
-export const tertiaryYearlyCost = (ctx: DecisionContext) => TERTIARY_COST_SHARE * dailyIncome(ctx.country, 50) * 365;
 
 const levelOf = (ctx: DecisionContext): Exclude<EducationLevel, "none"> => {
   const level = ctx.payload.level as Exclude<EducationLevel, "none"> | undefined;
@@ -171,9 +154,15 @@ const defs: readonly EventDef[] = [
         id: "try",
         text: "choice.edu.higher.try",
         default: true,
-        cost: (ctx) => ({ amount: tertiaryYearlyCost(ctx), perYear: true }),
+        cost: (ctx) => ({ amount: tertiaryYearlyCost(ctx.country), perYear: true, borneInSchool: true }),
         lens: ({ person, country }) => [{ key: "lens.finish_degree", p: tertiaryFinishOdds(person, country) }],
-        outcomes: [{ p: 1, text: "outcome.edu.higher.try", effects: [{ school: "enrol-tertiary" }] }],
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.edu.higher.try",
+            effects: [{ school: "enrol-tertiary" }, { set: TUITION_FLAG, value: true }],
+          },
+        ],
       },
       {
         id: "scholarship",
@@ -213,7 +202,7 @@ const defs: readonly EventDef[] = [
         text: "choice.health.usual",
         default: true,
         cost: (ctx) => ({ amount: careCost(conditionOf(ctx), "usual", ctx.country) }),
-        lens: (ctx) => careLens(ctx, careLevel(ctx.person, conditionOf(ctx).id) === 1 ? 1 : 0),
+        lens: (ctx) => careLens(ctx, 0),
         outcomes: [{ p: 1, text: "outcome.health.usual", effects: (ctx) => careEffects(ctx, "usual", 0) }],
       },
       {

@@ -36,7 +36,7 @@ export function PlanWidget({ plan, draft, onChange }: Props) {
 
   return (
     <section aria-labelledby={headingId} className={styles.plan}>
-      <h2 id={headingId} className={styles.heading}>
+      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
         {t("plan.heading")}
       </h2>
       <p className="small">{t("plan.intro", { points: points(free) })}</p>
@@ -69,7 +69,8 @@ export function PlanWidget({ plan, draft, onChange }: Props) {
             minValue={0}
             maxValue={locked[area] ? 0 : draft[area] + left}
             isDisabled={Boolean(locked[area])}
-            onChange={(value) => onChange({ ...draft, [area]: value })}
+            // An emptied field reports NaN; it means no points here.
+            onChange={(value) => onChange({ ...draft, [area]: Number.isFinite(value) ? value : 0 })}
           />
         ))}
       </div>
