@@ -256,9 +256,11 @@ export function stepEducation(person: Person, country: Country, rng: Rng): Educa
   else if (education.inSchool && level) {
     const chance = continuationProbability({ ...person, education }, country, level.id);
     const noPlace = chance === 0 && age === level.from;
-    if (noPlace || stay >= chance) {
-      // A level the country gives no chance to finish is not entered, so no year is counted.
-      education = { ...education, inSchool: false, years: noPlace ? education.years : education.years + 1 };
+    if (noPlace) {
+      // A level the country gives no chance to finish is not entered: no year counted, nothing to tell.
+      education = { ...education, inSchool: false };
+    } else if (stay >= chance) {
+      education = { ...education, inSchool: false, years: education.years + 1 };
       events.push({
         id: "school.left",
         textKey: `event.school.left.${level.id}`,

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { attainmentShares } from "../../src/engine/education";
+import { attainmentShares, literacyChance } from "../../src/engine/education";
 import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { EducationLevel, Person, Sector } from "../../src/engine/types";
@@ -203,6 +203,12 @@ describe("sector and informality (CAREER-002, WORLD-009)", () => {
       informalOdds(person("tertiary", "urban"), "industry", country),
     );
   });
+  it("makes informal work likelier for someone who cannot read (EDU-002)", () => {
+    const reader = at(30, { education: { level: "primary", inSchool: false, years: 6, literate: true } });
+    const nonReader = at(30, { education: { level: "primary", inSchool: false, years: 6, literate: false } });
+    for (const sector of sectors)
+      expect(informalOdds(nonReader, sector, country)).toBeGreaterThan(informalOdds(reader, sector, country));
+  });
   it("hits the country's informal share on average over its workers", () => {
     const c = real("NGA");
     const sex = "female";
@@ -211,10 +217,17 @@ describe("sector and informality (CAREER-002, WORLD-009)", () => {
     let informal = 0;
     for (const level of Object.keys(shares) as EducationLevel[]) {
       for (const location of ["rural", "urban"] as const) {
-        const p = at(30, { sex, education: { level, inSchool: false, years: 6 }, location });
-        const o = sectorOdds(p, c);
+        const person = (literate: boolean) =>
+          at(30, { sex, education: { level, inSchool: false, years: 6, literate }, location });
+        const o = sectorOdds(person(true), c);
         const weight = shares[level] * (location === "urban" ? urban : 1 - urban);
-        for (const s of sectors) informal += weight * o[s] * informalOdds(p, s, c);
+        const reads = literacyChance(sex, c, level !== "none");
+        for (const s of sectors) {
+          informal +=
+            weight *
+            o[s] *
+            (reads * informalOdds(person(true), s, c) + (1 - reads) * informalOdds(person(false), s, c));
+        }
       }
     }
     expect(informal).toBeCloseTo(c.work.informalShare.value, 3);

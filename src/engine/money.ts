@@ -34,10 +34,19 @@ const DAYS = 365;
 const HOUSEHOLD_SHARE = 0.7;
 const MIX = { education: 0.5, skills: 0.2, job: 0.15, luck: 0.5 } as const;
 /** Standard deviation of the unscaled own-merit mix, so that it has spread 1. */
-const MIX_SPREAD = 0.8;
-/** Skills the average adult has, and how many points are one step of spread. */
-const SKILLS_CENTRE = 45;
-const SKILLS_SPREAD = 22;
+const MIX_SPREAD = 0.7;
+/**
+ * Skills mostly follow schooling, so skills count in the mix only as the gap from what the person's
+ * level of schooling usually brings (the average at 35 in simulated lives), in steps of SKILLS_SPREAD.
+ */
+const SKILLS_BY_LEVEL: Record<EducationLevel, number> = {
+  none: 43,
+  primary: 50,
+  "lower-secondary": 54,
+  "upper-secondary": 59,
+  tertiary: 63,
+};
+const SKILLS_SPREAD = 8;
 const JOB_SECTOR: Record<Sector, number> = { agriculture: -0.3, industry: 0.1, services: 0.3 };
 const INFORMAL_JOB = -0.3;
 
@@ -71,7 +80,7 @@ export function adultPercentile(person: Person, country: Country): number {
   const direct = HOUSEHOLD_SHARE * persistence;
   const merit =
     (MIX.education * educationScore(person, country) +
-      MIX.skills * clamp((person.stats.skills - SKILLS_CENTRE) / SKILLS_SPREAD, -2.5, 2.5) +
+      MIX.skills * clamp((person.stats.skills - SKILLS_BY_LEVEL[person.education.level]) / SKILLS_SPREAD, -2.5, 2.5) +
       MIX.job * jobScore(person) +
       MIX.luck * person.money.luck) /
     MIX_SPREAD;

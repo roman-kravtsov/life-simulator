@@ -11,7 +11,7 @@ export const HAZARD_MIN = 0.5;
 export const HAZARD_MAX = 4;
 
 /** Calibration constant (log scale): the mean of exp(spread) is above 1, so the centre sits a little below 0. */
-const HAZARD_OFFSET = -0.03;
+const HAZARD_OFFSET = -0.045;
 
 /** Deaths of newborns come on average this far into the first year; later ages die mid-year. */
 const FIRST_YEAR_FRACTION = 0.1;

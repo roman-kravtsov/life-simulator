@@ -164,7 +164,12 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
       { name: `${sex} primary completion`, expected: primary, simulated: share(t.reached[1]!), tolerance: 0.07 },
       { name: `${sex} lower secondary completion`, expected: lower, simulated: share(t.reached[2]!), tolerance: 0.07 },
       { name: `${sex} upper secondary completion`, expected: upper, simulated: share(t.reached[3]!), tolerance: 0.07 },
-      { name: `${sex} adult literacy`, expected: education.literacy.value[sex], simulated: share(t.literate), tolerance: 0.07 },
+      {
+        name: `${sex} adult literacy`,
+        expected: education.literacy.value[sex],
+        simulated: share(t.literate),
+        tolerance: 0.07,
+      },
       {
         name: `${sex} labour participation`,
         expected: work.labourParticipation.value[sex],
@@ -200,15 +205,22 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
   out.push({
     name: "adult standing follows the household (correlation)",
     expected: country.money.intergenerationalPersistence.value,
-    simulated: pairs.length > 2 ? correlation(pairs.map(([h]) => z(h)), pairs.map(([, s]) => z(s))) : 0,
+    simulated:
+      pairs.length > 2
+        ? correlation(
+            pairs.map(([h]) => z(h)),
+            pairs.map(([, s]) => z(s)),
+          )
+        : 0,
     tolerance: 0.12,
   });
+  // Half the summed gap between each tenth's share of adults and one tenth: 0 when standing is spread evenly.
   const adults = deciles.reduce((a, b) => a + b, 0);
   out.push({
-    name: "adult standing is spread across the country (largest tenth's share)",
-    expected: 0.1,
-    simulated: adults ? Math.max(...deciles) / adults : 0,
-    tolerance: 0.04,
+    name: "adult standing is spread across the country (distance from even tenths)",
+    expected: 0,
+    simulated: adults ? deciles.reduce((sum, n) => sum + Math.abs(n / adults - 0.1), 0) / 2 : 1,
+    tolerance: 0.09,
   });
   return out;
 }

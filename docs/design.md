@@ -145,13 +145,15 @@ interface Person {
   };
 
   money: {
-    householdPercentile: number;   // 1..100 within the country distribution
+    householdPercentile: number;   // 1..100 within the country distribution, drawn at birth
+    percentile: number;            // where the person stands now: the household's until adulthood, then their own
+    luck: number;                  // standard normal draw at birth, part of the adult mix
     savings: number;               // PPP$
     debt: number;                  // PPP$
   };
 
-  education: { level: "none" | "primary" | "lower-secondary" | "upper-secondary" | "tertiary"; inSchool: boolean };
-  work: { status: "child" | "student" | "employed" | "informal" | "unemployed" | "caregiver" | "retired"; sector?: Sector; incomePercentile?: number };
+  education: { level: "none" | "primary" | "lower-secondary" | "upper-secondary" | "tertiary"; inSchool: boolean; years: number; literate?: boolean };
+  work: { status: "child" | "student" | "employed" | "informal" | "unemployed" | "caregiver" | "retired"; sector?: Sector; formal?: boolean; yearsWorked: number; attachment: number };
   location: "rural" | "urban";
 
   relationships: Relationship[];
@@ -327,6 +329,8 @@ For a zoomed year (3.1.1), steps 2 to 8 run once per quarter with quarterly prob
 
 **Built in M3 (2026-10-24):** the year is the one the person is living at their current age, and the birthday comes at its end. So drift, checks, events and mortality all use the age the person has now (mortality uses the life table's `qx` for that age), the record is written with the new age, and a death records the age at death (the infant who dies in year one dies at age 0). Steps without a system yet (the plan, decisions) are no-ops until M5.
 
+**Built in M4 (2026-10-24):** step 4 now runs, in this order: family deaths, a younger sibling's birth, child labour, school, work, money, conditions, then the closeness of the people around the person. Each reads the person as the earlier ones left them, so a child who leaves school this year is a worker next year, and a condition that begins this year already counts in the mortality check.
+
 ### 3.3 Player agency: the yearly plan and the odds lens
 
 This is where the "in-depth game feeling" comes from.
@@ -387,7 +391,7 @@ This is where the "in-depth game feeling" comes from.
 
 - **Seed:** a readable string (three words or two words plus digits), stored with the life and shown on the summary.
 - **PRNG:** a small, fast, well-tested generator (sfc32 or similar), seeded by hashing the seed string (cyrb128-style hash). No `Math.random()` anywhere in the engine; a lint rule enforces it.
-- **Independent streams:** each subsystem draws from its own stream derived from `hash(seed, stream name, year)`: `birth`, `person`, `names`, `parents`, `family`, `drift`, `labour`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `mortality`, `cause`, and later `outcomes`, `money`. Adding a new event to the content therefore does not change when someone dies, and replays stay stable across small content updates.
+- **Independent streams:** each subsystem draws from its own stream derived from `hash(seed, stream name, year)`: `birth`, `person`, `names`, `parents`, `siblings`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `mortality`, `cause`, and later `outcomes`. Adding a new event to the content therefore does not change when someone dies, and replays stay stable across small content updates.
 - **Replay guarantee:** the same seed, data version, content version and decision log always produce the same life. Tested directly (same inputs, identical history, run many times).
 - **Auto mode:** an auto-player chooses for the player using a simple policy (weighted by traits), drawing from its own `autoplay` stream, so auto lives are also replayable.
 
@@ -466,3 +470,16 @@ Built in M3 (2026-10-24), where the engine settled details the sketch left open:
 - **Family:** parents are alive at the birth (mother's age around the country's mean age at birth, father a few years older) and then die by the life table, with a grief event.
 - **Events:** each statistical event has its own stream (`event:<id>`); narrative events are drawn from a major pool (at most one a year) and a minor pool (at most two), each with a "nothing happens" weight of 8. Events with choices are skipped until M5.
 - **Skills and school** use a stand-in in M3: yearly gain by age band, scaled by the country's completion rate for that age, place and child labour. M4 (EDU-001) replaces it.
+
+Built in M4 (2026-10-24), where the life systems settled these details:
+
+- **School.** Primary runs from 6 to 11, lower secondary 12 to 14, upper secondary 15 to 17 and tertiary 18 to 21, the same for every country. Every child starts at six; each year they stay or leave. The chance to finish a level, given reaching it, is the ratio of the country's completion rates (capped so they never rise with level), spread as a yearly hazard over the level's years. A child's own hazard is the country's times a factor for household (strength 0.9 times the country's schooling persistence, mean 1 over the 100 percentiles), place (the gap between a rural and an urban child's hazard is 30% of the national one, split so that the mean over urban and rural children holds) and aptitude (12% per point). The hazard is scaled per country and sex so that the average over its children, level by level and among those who reached the level, is the published rate; completion rates for five countries are reproduced within 5 points. Tertiary uses enrolment times an **authored 70% completion share**, because UNESCO gives enrolment, not completion. Child labour does not yet change school odds (EDU-004 and CAREER-004, M5).
+- **Literacy** is set at 12. Completers of primary school can read with probability 0.97 (authored) or less where the country's adult rate is lower than that; the chance for non-completers is whatever makes the country's adult rate hold. Today's children are compared with today's adults, a simplification. Illiteracy adds 1 to the log odds that a job is informal.
+- **Work.** Each person is dealt a fixed attachment from 0 to 1 at birth and works, when out of school, at the ages where the country's participation rate for their sex is above it. The age shape is authored (a rise from 15 to 25, a plateau, a fall that starts at 55 plus up to 8 years where all work is informal) and scaled per country so the rate holds across a life-table population. Unemployment spells are not modelled yet (CAREER-003), so the unemployed count as in work. A health below 25 from age 45 takes a worker out of work. Not in the labour force: retired from 65, or from 55 for someone who has worked, otherwise "caregiver" (looking after home and family) from 18.
+- **Jobs.** The first job draws a sector and formal or informal status from logistic models with authored weights for place, schooling and illiteracy, whose intercepts are solved per country so the average over its people hits the published sector and informal shares. Dangerous and informal work lowers the health norm.
+- **Money.** The adult percentile is the household's (weighted by 0.7 times the persistence, authored) mixed with the standardised schooling rank, skills against what that schooling usually brings, job and luck. The mix keeps the whole 1 to 100 range populated; adult standing follows the household within 0.12 of the source's persistence in the batch. Income is the country table at that percentile times 365 (retired: 70%, authored). Spending is 102% of income at the bottom and 78% at the top (authored) with 6% yearly noise; surplus first repays debt (6% yearly interest, authored), then saves; deficits draw savings, then borrow. A debt of half a year's income or more weighs on happiness and health.
+- **Siblings.** Births to a mother form a steady stream over ages 15 to 45 at the total fertility rate divided by 30 a year. The number of older siblings is Poisson with that rate times the mother's years behind her, those who died young are counted in `flags.siblingsLost` and not listed, and younger siblings arrive year by year while the mother is alive and under 45. Siblings per person then match fertility within 12% in the batch.
+- **Relationships.** Closeness moves a fifth of the way to a norm each year (by kind, plus 4 per point of sociability, minus 10 for parents during the teenage years) with a little noise. `relationship` effects add, remove or move relatives, and `condition` effects add (with severity) or remove conditions.
+- **Conditions.** Fourteen conditions (the list is `src/content/healthConditions.ts`), each with an authored yearly onset chance scaled by age, household, place, job and the country's own cause-of-death mix, plus yearly worsening and easing chances, a hazard per severity point, a health penalty and a focus cost. None of the onset numbers is a published statistic and none is shown as one. Because the life table already contains the effect of disease, the average hazard the conditions add at an age and sex is divided out of the mortality multiplier using a cohort model of the conditions (`expectedHazardFactor`), so conditions decide who dies at an age and not how many. With that, simulated life expectancy is within 1 year of the source for the sampled countries.
+- **Money display.** Every amount goes through `formatMoney`. Income is described in words by bands: below 3.00, 4.20 and 8.30 are the World Bank international poverty lines (2021 PPP); 20 and 60 are the game's own thresholds. The optional comparison says that international dollars buy at home what they buy in the United States, which is what PPP dollars are; it does not add data.
+- **Streams.** New: `siblings`, `closeness`, `education`, `work`, `money` and `condition:<id>`. The newborn's luck and work attachment are drawn at the end of the `person` stream, after the earlier draws.

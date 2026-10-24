@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { en } from "../../src/content/strings/en";
 import { advance, newLife, type NewLifeOptions } from "../../src/engine/life";
 import { createCatalog, type EventDef } from "../../src/engine/events";
 import type { LifeState } from "../../src/engine/types";
@@ -376,5 +377,42 @@ describe("the life systems in the yearly turn (M4)", () => {
   });
   it("replays exactly: the same seed gives the same life", () => {
     expect(run(start("replay-m4"), createCatalog([]))).toEqual(run(start("replay-m4"), createCatalog([])));
+  });
+});
+
+describe("every text the engine can write exists (L10N-001)", () => {
+  it("has a string for each event text key that a run of lives produces", () => {
+    const seen = new Set<string>();
+    const countries = [country, makeCountry({ region: "Eastern Asia" })];
+    for (const c of countries) {
+      for (let i = 0; i < 60; i++) {
+        let s = start(`keys-${i}`, c);
+        while (s.person.alive) {
+          s = advance(s, input, c).state;
+          for (const e of s.history.at(-1)!.events) seen.add(e.textKey);
+        }
+      }
+    }
+    expect(seen.size).toBeGreaterThan(10);
+    for (const key of seen) expect(en, key).toHaveProperty([key]);
+  });
+  it("has a string for every school, work and money text the code can name", () => {
+    const keys = [
+      "event.school.starts",
+      ...["primary", "lower-secondary", "upper-secondary", "tertiary"].flatMap((l) => [
+        `event.school.left.${l}`,
+        `event.school.completed.${l}`,
+      ]),
+      ...["agriculture", "industry", "services"].flatMap((s) => [
+        `event.work.starts.${s}.formal`,
+        `event.work.starts.${s}.informal`,
+      ]),
+      "event.work.retires",
+      "event.work.stops",
+      "event.money.debt_pressure",
+      "event.money.debt_cleared",
+      "event.family.sibling_born",
+    ];
+    for (const key of keys) expect(en, key).toHaveProperty([key]);
   });
 });

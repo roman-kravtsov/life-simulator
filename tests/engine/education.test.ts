@@ -156,6 +156,21 @@ describe("stepEducation", () => {
     );
     expect(person.education).toMatchObject({ level: "tertiary", inSchool: false });
   });
+  it("does not send someone to a level the country gives no chance to finish, and says nothing of it", () => {
+    const none = makeCountry({
+      education: {
+        ...country.education,
+        tertiaryEnrolment: { ...country.education.tertiaryEnrolment, value: { female: 0, male: 0 } },
+      },
+    });
+    const { person, events } = stepEducation(
+      at(18, { education: { level: "upper-secondary", inSchool: true, years: 12 } }),
+      none,
+      createRng("no-place"),
+    );
+    expect(person.education).toMatchObject({ level: "upper-secondary", inSchool: false, years: 12 });
+    expect(events).toEqual([]);
+  });
   it("never puts an adult back in school", () => {
     expect(step(at(30)).person.education.inSchool).toBe(false);
   });

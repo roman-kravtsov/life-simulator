@@ -5,7 +5,7 @@
 // and nobody flickers between jobs from one year to the next. The first job, its sector and whether
 // it is formal, is drawn once. Unemployment spells and job changes arrive with CAREER-003 and 005.
 import { clamp } from "./dist";
-import { attainmentShares, inSchoolShare } from "./education";
+import { attainmentShares, inSchoolShare, literacyChance } from "./education";
 import type { PendingEvent } from "./events";
 import type { Rng } from "./rng";
 import type { EducationLevel, Person, Sector, Sex, WorkStatus } from "./types";
@@ -61,6 +61,8 @@ const SECTOR_WEIGHTS: Record<Sector, { rural: number; schooling: number }> = {
 const INFORMAL_BY_SECTOR: Record<Sector, number> = { agriculture: 1.2, industry: 0, services: -0.6 };
 const INFORMAL_SCHOOLING = -0.4;
 const INFORMAL_RURAL = 0.3;
+/** Someone who cannot read is far less likely to be taken on formally (EDU-002). */
+const INFORMAL_ILLITERATE = 1;
 
 const SECTORS: readonly Sector[] = ["agriculture", "industry", "services"];
 const LEVELS_IN_ORDER: readonly EducationLevel[] = [
@@ -105,8 +107,12 @@ function sectorProbabilities(
   return Object.fromEntries(SECTORS.map((s, i) => [s, weights[i]! / total])) as Record<Sector, number>;
 }
 
-const informalLogit = (intercept: number, sector: Sector, rural: boolean, schooling: number) =>
-  intercept + INFORMAL_BY_SECTOR[sector] + INFORMAL_SCHOOLING * schooling + INFORMAL_RURAL * (rural ? 1 : 0);
+const informalLogit = (intercept: number, sector: Sector, rural: boolean, schooling: number, literate: boolean) =>
+  intercept +
+  INFORMAL_BY_SECTOR[sector] +
+  INFORMAL_SCHOOLING * schooling +
+  INFORMAL_RURAL * (rural ? 1 : 0) +
+  (literate ? 0 : INFORMAL_ILLITERATE);
 
 interface WorkModel {
   /** Multiplies the shape of working life so the country's participation rate holds. */
@@ -167,7 +173,14 @@ function buildModel(country: Country, sex: Sex): WorkModel {
     let sum = 0;
     for (const c of people) {
       const p = sectorProbabilities(sectorOffsets, c.rural, c.schooling);
-      for (const s of SECTORS) sum += c.weight * p[s] * logistic(informalLogit(intercept, s, c.rural, c.schooling));
+      const reads = literacyChance(sex, country, c.schooling > 0);
+      for (const s of SECTORS) {
+        sum +=
+          c.weight *
+          p[s] *
+          (reads * logistic(informalLogit(intercept, s, c.rural, c.schooling, true)) +
+            (1 - reads) * logistic(informalLogit(intercept, s, c.rural, c.schooling, false)));
+      }
     }
     return sum;
   };
@@ -213,6 +226,7 @@ export function informalOdds(person: Person, sector: Sector, country: Country): 
       sector,
       person.location === "rural",
       schoolingIndex(person.education.level),
+      person.education.literate !== false,
     ),
   );
 }

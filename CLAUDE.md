@@ -23,7 +23,9 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   rng.ts            seeded PRNG and independent streams per subsystem and period
   life.ts           public API: newLife({seed, country}), advance(state, input, country) -> new state
                     (the yearly turn, design 3.2); the caller loads the country, the engine does no I/O
-  person.ts, family.ts, money.ts   the newborn, parents, family ageing and deaths, household percentile
+  person.ts, family.ts, money.ts   the newborn, parents and siblings, family ageing and deaths, household and adult percentile, income, savings and debt
+  education.ts, work.ts   school levels and literacy, participation, sectors and informal work, retirement (each calibrated per country)
+  health.ts, relationships.ts   condition rules (onset, progression, hazard) and relationship closeness; the conditions themselves are content
   drift.ts, mortality.ts, checks.ts   stat drift and health norm, life-table mortality and cause of death, statistical checks
   conditions.ts, events.ts   the event condition language, event schema, catalog and selection
   calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
@@ -32,7 +34,7 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
   world/            country schema (types.ts), validator, birth draw, data loader
-src/content/        game content as data: strings (en.ts), events/ (typed event defs), names.ts (name lists by region)
+src/content/        game content as data: strings (en.ts), events/ (typed event defs), healthConditions.ts, names.ts (name lists by region)
 src/data.ts         loads the baked country files in the browser (fetch), outside the engine
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
@@ -80,8 +82,8 @@ Read these docs before starting work:
 
 - **Engine (`src/engine/`) is pure TypeScript:** no React, no DOM, no I/O. The UI talks to it through `src/ui/store.ts`.
 - **No unseeded randomness in the engine.** Never use `Math.random` or `crypto` there; draw from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. Use a separate stream per subsystem so that new content does not shift other rolls. ESLint and a guard test enforce this.
-- **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `family`, `drift`, `labour`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `mortality`, `cause`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
-- **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard or drift, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`).
+- **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `siblings`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `mortality`, `cause`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
+- **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.
 - **Engine state is immutable:** functions return new state and never mutate their inputs.
