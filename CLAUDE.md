@@ -39,6 +39,12 @@ e2e/                Playwright: full-loop tests at phone and desktop widths
 - **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision log. Saves (M6) store those plus a snapshot, so any life can be replayed exactly.
 - **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, Vitest, React Testing Library, Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
 
+## Data pipeline
+
+- `npm run data` rebuilds `public/data` and `docs/data-report.md` from `.cache/data`, downloading what is missing (`-- --refresh` downloads everything again). Behind a proxy, set `NODE_USE_ENV_PROXY=1`. Commit the regenerated files. Bump `DATA_VERSION` in `scripts/data/sources.ts` when the sources change.
+- A new indicator needs: an extractor in `scripts/data/extract/`, its source in `scripts/data/sources.ts`, a field in `src/engine/world/types.ts` and the validator, and a place in the CORE or SECONDARY list in `assemble.ts`.
+- `tests/data/files.test.ts` checks the committed output (schema, size, sources, estimate flags).
+
 ## Docs
 
 Read these docs before starting work:

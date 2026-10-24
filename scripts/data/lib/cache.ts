@@ -80,8 +80,9 @@ export async function download(name: string, url: string, refresh = false): Prom
   const bytes = statSync(path).size;
   if (bytes === 0) throw new Error(`Download of ${url} was empty`);
 
-  manifest[name] = { url, accessed: new Date().toISOString().slice(0, 10), bytes, sha256: await sha256(path) };
-  writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
+  const entry = { url, accessed: new Date().toISOString().slice(0, 10), bytes, sha256: await sha256(path) };
+  // Read and write in one synchronous step: downloads run in parallel and must not overwrite each other.
+  writeFileSync(MANIFEST, JSON.stringify({ ...readManifest(), [name]: entry }, null, 2) + "\n");
   return path;
 }
 

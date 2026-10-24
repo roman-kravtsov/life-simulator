@@ -2,6 +2,7 @@
 // Access dates come from the download manifest, so they change only when files are re-downloaded.
 import type { SourceInfo } from "../../src/engine/world/types";
 import { fetched } from "./lib/cache";
+import { GHE_FILE } from "./extract/ghe";
 import { GDIM_FILE } from "./extract/gdim";
 import { GHO_SUICIDE_FILE } from "./extract/gho";
 import { ILO_IDS, iloFile } from "./extract/ilostat";
@@ -64,6 +65,14 @@ const FIXED: Record<string, Fixed> = {
     licence: "CC BY 4.0",
     version: "ILOSTAT bulk API, latest value per country",
     files: Object.values(ILO_IDS).map(iloFile),
+  },
+  "who-ghe": {
+    title: "Global Health Estimates: deaths by cause, age, sex and country",
+    publisher: "World Health Organization",
+    url: "https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates/ghe-leading-causes-of-death",
+    licence: "WHO data terms: free use for public health purposes, with attribution",
+    version: "GHE 2023 estimates (workbook of 1 October 2026)",
+    files: [GHE_FILE],
   },
   "who-gho": {
     title: "Global Health Observatory: age-standardised suicide rate",

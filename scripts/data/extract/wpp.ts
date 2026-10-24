@@ -9,6 +9,12 @@ export const WPP_FILES = {
   male: "wpp/WPP2024_Life_Table_Complete_Medium_Male_1950-2023.csv.gz",
   female: "wpp/WPP2024_Life_Table_Complete_Medium_Female_1950-2023.csv.gz",
 };
+/**
+ * WPP gives Northern America's countries ParentID 918, which has no row of its own in the
+ * file; the region itself appears as LocID 905.
+ */
+const PARENT_ALIASES: Record<string, string> = { "918": "905" };
+
 /** Latest estimate year in WPP 2024 (later years are projections). */
 const YEAR = 2023;
 
@@ -62,7 +68,7 @@ export async function extractWpp(refresh: boolean): Promise<{ meta: CountryMeta[
     iso3,
     iso2,
     name,
-    region: names.get(parent) ?? "Unknown",
+    region: names.get(PARENT_ALIASES[parent] ?? parent) ?? "Unknown",
   }));
   return { meta, indicators: out };
 }

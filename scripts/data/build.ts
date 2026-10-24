@@ -9,6 +9,7 @@ import { validateCountry } from "../../src/engine/world/validate";
 import type { Sourced } from "../../src/engine/world/types";
 import { assemble, type RawCountry } from "./assemble";
 import { extractGdim } from "./extract/gdim";
+import { extractGhe } from "./extract/ghe";
 import { extractGho } from "./extract/gho";
 import { extractIlostat } from "./extract/ilostat";
 import { extractPip } from "./extract/pip";
@@ -33,6 +34,7 @@ export async function build(refresh: boolean) {
     await extractGdim(refresh),
     await extractUis(refresh),
     await extractIlostat(refresh),
+    await extractGhe(refresh),
     await extractGho(refresh),
   ];
 

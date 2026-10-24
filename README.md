@@ -10,6 +10,7 @@ npm run dev        # local dev server
 npm test           # engine and guard tests
 npm run typecheck
 npm run build      # production build in dist/
+npm run data       # rebuild public/data from the source publishers (see CLAUDE.md)
 ```
 
 ## Docs

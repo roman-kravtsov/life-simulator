@@ -22,3 +22,21 @@ test("theme toggle switches between light and dark", async ({ page }) => {
   const after = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(after).not.toBe(before);
 });
+
+test("sources screen lists the real sources without horizontal scroll", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+
+  await page.goto("./");
+  await page.getByRole("button", { name: "Where the numbers come from" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Where the numbers come from");
+  await expect(page.getByRole("link", { name: /World Population Prospects 2024/ })).toBeVisible();
+  await expect(page.getByText("CC BY 3.0 IGO")).toBeVisible();
+  await page.getByText(/countries and what is missing/).click();
+  await expect(page.getByText(/^Afghanistan: /)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+  expect(errors).toEqual([]);
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Birthright");
+});
