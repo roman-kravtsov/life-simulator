@@ -101,7 +101,7 @@ npm run e2e            # in the cloud sandbox: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-
 
 ## Independent review before hand-off
 
-Before opening a PR, and before asking Roman to review, run an independent review pass. Skip it for changes that touch only docs or data files. Spawn the reviewers in parallel, each with fresh context. Give each one its inputs: the diff vs `main` (`git diff main...HEAD`), `CLAUDE.md`, and the `docs/features.md` rows (feature IDs and acceptance criteria) for the feature IDs in the PR.
+Before opening a PR, and before asking Roman to review, run an independent review pass. Skip the reviewers below for changes that touch only docs or data files; the documentation step at the end has its own trigger. Spawn the reviewers in parallel, each with fresh context. Give each one its inputs: the diff vs `main` (`git diff main...HEAD`), `CLAUDE.md`, and the `docs/features.md` rows (feature IDs and acceptance criteria) for the feature IDs in the PR.
 
 - **`surgeon-reviewer` (acceptance):** checks that each feature ID's acceptance criteria are met and tested. An unmet criterion is a blocker.
 - **`surgeon-reviewer` (React):** checks correctness, React patterns per `.claude/skills/vercel-react-best-practices` (its `SKILL.md` index plus the rule files it needs, in addition to the shared inputs), and performance.
@@ -113,6 +113,7 @@ Reviewers only report; the implementer fixes. Their prompts must say not to edit
 Every finding has a severity (**blocker**, **should-fix** or **nit**), a `path:line` and the evidence. The agents use their own tiers, so ask for this format on top of them: `surgeon-reviewer` WILL BREAK is a blocker, WILL COST a should-fix, WILL ROT a should-fix or a nit by judgement; `accessibility-tester` Blocker, Serious and Minor map to blocker, should-fix and nit.
 
 - Fix every blocker and should-fix, run the checks in "Before pushing" again, and re-run only the reviewers that found problems. Stop after 2 rounds and report whatever is still unresolved.
+- **Documentation coherence, last:** once the fixes above are in, run `docs-drift-editor` with the final diff. It checks that the docs, `CLAUDE.md`, `README.md`, and the comments and references in the changed files agree with the code and with each other, with no contradictory statements and no stale or wrong file paths, commands, feature IDs, statuses or links. It edits only Markdown, with minimal edits, and reports stale code comments for the implementer to fix. Run it on every PR except one that only regenerates data, docs-only PRs included, and review its edits in the diff. It does not count toward the 2 rounds.
 - The hand-off to Roman includes a short summary of each reviewer's findings and how they were resolved, including any left unfixed (nits, or findings you chose not to fix) and why.
 
 ## Commits and PRs

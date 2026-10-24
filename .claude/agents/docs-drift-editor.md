@@ -21,6 +21,8 @@ The caller gives a diff, a branch, or a list of changed files. If not, use `git 
 - `CLAUDE.md`: architecture tree, stack, conventions and checks. Update it whenever a change alters the architecture, a convention, the stack or a check.
 - `README.md`.
 
+Also check coherence, not only drift: the pages must not contradict each other or the code (for example two pages giving different counts, orders, names or rules), and every file path, command, script name, feature ID, PR number, agent name, skill name and link they mention must exist. Comments in the changed code files count too: a comment that no longer matches the code beside it is stale. You do not edit code files, so report stale comments with `path:line` and the sentence that is wrong, and leave the fix to the caller.
+
 ## Method
 
 1. List what the diff actually changed: new or renamed files, scripts in `package.json`, kit components, strings, engine API, tests, CI workflows.
@@ -31,4 +33,4 @@ The caller gives a diff, a branch, or a list of changed files. If not, use `git 
 
 ## Output
 
-A short report: each page edited with the reason in one line, pages checked and left alone, and anything that needs a human decision (for example a feature whose acceptance criteria are only partly met, or a decision that should go into the section 7 decisions log). Do not rewrite for style.
+A short report: each page edited with the reason in one line, stale code comments to fix (`path:line`, what is wrong), pages checked and left alone, and anything that needs a human decision (for example a feature whose acceptance criteria are only partly met, or a decision that should go into the section 7 decisions log). Do not rewrite for style.
