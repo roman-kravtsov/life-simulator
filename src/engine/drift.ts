@@ -6,6 +6,7 @@ import { clamp } from "./dist";
 import { SCHOOL_START_AGE, levelAtAge } from "./education";
 import { conditionCatalog } from "../content/healthConditions";
 import { healthPenalty } from "./health";
+import { FOCUS_EFFECT } from "./focus";
 import { debtStress } from "./money";
 import { jobHealthPenalty } from "./work";
 import type { Rng } from "./rng";
@@ -75,7 +76,9 @@ export function healthNorm(person: Person, country: Country): number {
       (childLabour(person) ? 3 : 0) -
       jobHealthPenalty(person) -
       healthPenalty(person.conditions, conditionCatalog) -
-      3 * debtStress(person, country),
+      3 * debtStress(person, country) +
+      // Points on Health above the default plan lift the health a person settles at; fewer let it sink (DEC-003).
+      FOCUS_EFFECT.health.norm * (person.focus?.health ?? 0),
     0,
     100,
   );
@@ -87,9 +90,15 @@ export const happinessNorm = (person: Person, country: Country) =>
   (4 * (50 - person.money.percentile)) / 50 +
   0.1 * (person.stats.belonging - 50) -
   (childLabour(person) ? 3 : 0) -
-  6 * debtStress(person, country);
+  (person.work.status === "unemployed" ? 3 : 0) -
+  6 * debtStress(person, country) +
+  FOCUS_EFFECT.rest.norm * (person.focus?.rest ?? 0);
 
 function belongingNorm(person: Person): number {
+  return baseBelongingNorm(person) + FOCUS_EFFECT.bond.norm * (person.focus?.bond ?? 0);
+}
+
+function baseBelongingNorm(person: Person): number {
   const parents = person.relationships.filter((r) => r.alive && (r.kind === "mother" || r.kind === "father"));
   if (person.age < 18) {
     const closeness = parents.length ? parents.reduce((sum, r) => sum + r.closeness, 0) / parents.length : 0;
@@ -112,6 +121,8 @@ export function skillGrowth(person: Person): number {
   if (level && person.location === "rural") gain *= RURAL_SCHOOL_QUALITY;
   if (childLabour(person)) gain *= 0.5;
   gain *= 1 + 0.12 * person.traits.aptitude + 0.08 * person.traits.curiosity;
+  // Points on Learn above the default plan add to what is picked up; fewer take away from it (DEC-003).
+  gain *= Math.max(0.3, 1 + FOCUS_EFFECT.learn.skills * (person.focus?.learn ?? 0));
   return gain * (1 - person.stats.skills / SKILL_CEILING);
 }
 

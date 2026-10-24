@@ -1,6 +1,7 @@
 // The health conditions of the game (HEALTH-004). Onset chances are authored for plausibility and
 // scaled by each country's own cause-of-death mix where `causeShare` is set; they are not published
-// statistics. Text lives in strings/en.ts under condition.<id> and event.condition.<id>.begins,
+// statistics, and so are the treatment costs, which are shares of a year's middle income before the
+// country's out-of-pocket share is applied. Text lives in strings/en.ts under condition.<id> and event.condition.<id>.begins,
 // .worsens and .ends.
 import { createConditionCatalog, type ConditionDef } from "../engine/health";
 
@@ -16,6 +17,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.3,
     healthPenalty: 3,
     focusCost: [0, 0, 1],
+    care: { usual: 0.1, best: 0.4 },
   },
   {
     id: "undernutrition",
@@ -30,6 +32,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.3,
     healthPenalty: 3,
     focusCost: [0, 0, 0],
+    care: { usual: 0.02, best: 0.06 },
   },
   {
     id: "pneumonia",
@@ -51,6 +54,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.4,
     healthPenalty: 4,
     focusCost: [0, 1, 2],
+    care: { usual: 0.04, best: 0.12 },
   },
   {
     id: "malaria",
@@ -70,6 +74,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.3,
     healthPenalty: 3,
     focusCost: [0, 1, 2],
+    care: { usual: 0.03, best: 0.1 },
   },
   {
     id: "tuberculosis",
@@ -84,6 +89,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.45,
     healthPenalty: 4,
     focusCost: [1, 1, 2],
+    care: { usual: 0.08, best: 0.25 },
   },
   {
     id: "serious_injury",
@@ -105,6 +111,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.25,
     healthPenalty: 4,
     focusCost: [0, 1, 2],
+    care: { usual: 0.15, best: 0.4 },
   },
   {
     id: "depression",
@@ -123,6 +130,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.15,
     healthPenalty: 2,
     focusCost: [0, 1, 1],
+    care: { usual: 0.06, best: 0.2 },
     sensitivity: "difficult",
     helpTopic: "suicide",
   },
@@ -141,6 +149,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.05,
     healthPenalty: 2,
     focusCost: [0, 0, 1],
+    care: { usual: 0.05, best: 0.15 },
   },
   {
     id: "hypertension",
@@ -159,6 +168,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.18,
     healthPenalty: 2,
     focusCost: [0, 0, 1],
+    care: { usual: 0.05, best: 0.15 },
   },
   {
     id: "diabetes",
@@ -177,6 +187,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.3,
     healthPenalty: 3,
     focusCost: [0, 1, 1],
+    care: { usual: 0.1, best: 0.3 },
   },
   {
     id: "heart_disease",
@@ -195,6 +206,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.4,
     healthPenalty: 4,
     focusCost: [0, 1, 2],
+    care: { usual: 0.2, best: 0.6 },
   },
   {
     id: "chronic_lung_disease",
@@ -214,6 +226,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.35,
     healthPenalty: 3,
     focusCost: [0, 1, 2],
+    care: { usual: 0.12, best: 0.35 },
   },
   {
     id: "liver_disease",
@@ -230,6 +243,7 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.35,
     healthPenalty: 3,
     focusCost: [0, 1, 1],
+    care: { usual: 0.15, best: 0.45 },
   },
   {
     id: "cancer",
@@ -247,7 +261,9 @@ export const conditionDefs: readonly ConditionDef[] = [
     hazard: 0.5,
     healthPenalty: 5,
     focusCost: [1, 2, 2],
+    care: { usual: 0.35, best: 1.0 },
     sensitivity: "difficult",
+    helpTopic: "illness",
   },
 ];
 

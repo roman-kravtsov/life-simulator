@@ -5,6 +5,7 @@
 // follow from income and costs.
 import { clamp, normal, normalCdf, normalQuantile } from "./dist";
 import { attainmentShares } from "./education";
+import { FOCUS_EFFECT } from "./focus";
 import type { PendingEvent } from "./events";
 import type { Rng } from "./rng";
 import type { EducationLevel, Person, Sector } from "./types";
@@ -150,7 +151,8 @@ export function stepMoney(person: Person, country: Country, rng: Rng): MoneyStep
   }
   const standing: Person = { ...person, money: { ...person.money, percentile } };
   const income = yearlyIncome(standing, country);
-  const net = income * (1 - spendingShare(percentile) - noise);
+  // Points on Earn above the default plan are saved; fewer are spent (DEC-003).
+  const net = income * (1 - spendingShare(percentile) - noise + FOCUS_EFFECT.earn.saving * (person.focus?.earn ?? 0));
   let { savings, debt } = person.money;
   debt *= 1 + DEBT_INTEREST;
   if (net >= 0) {

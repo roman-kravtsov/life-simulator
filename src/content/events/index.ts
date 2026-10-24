@@ -1,174 +1,22 @@
-// Event content as data (EVENT-001). The MVP event set is written in M5; these starter events
-// give the yearly loop something to carry. Text lives in strings/en.ts under the event's `text` key.
+// Event content as data (EVENT-001, EVENT-007). One file per life stage; text lives in
+// src/content/strings/events/ under the keys named here.
 import { createCatalog, type EventDef } from "../../engine/events";
+import { adolescenceEvents } from "./adolescence";
+import { adulthoodEvents } from "./adulthood";
+import { earlyEvents } from "./early";
+import { elderEvents } from "./elder";
+import { midlifeEvents } from "./midlife";
+import { shockEvents } from "./shocks";
+import { youthEvents } from "./youth";
 
 export const eventDefs: readonly EventDef[] = [
-  {
-    id: "infancy.first_steps",
-    stage: ["infancy"],
-    tier: "major",
-    conditions: [{ age: [1, 2] }],
-    chance: { kind: "weight", base: 6 },
-    once: true,
-    text: "event.infancy.first_steps",
-    effects: [{ stat: "happiness", add: 2 }],
-  },
-  {
-    id: "infancy.lullaby",
-    stage: ["infancy"],
-    chance: { kind: "weight", base: 5 },
-    text: "event.infancy.lullaby",
-    effects: [{ stat: "belonging", add: 2 }],
-  },
-  {
-    id: "infancy.fever",
-    stage: ["infancy", "childhood"],
-    chance: { kind: "weight", base: 3 },
-    cooldownYears: 2,
-    text: "event.infancy.fever",
-    effects: [{ stat: "health", add: -6 }],
-  },
-  {
-    id: "childhood.long_walk",
-    stage: ["childhood"],
-    conditions: [{ location: "rural" }],
-    chance: { kind: "weight", base: 5 },
-    cause: "circumstance",
-    text: "event.childhood.long_walk",
-    effects: [{ stat: "belonging", add: 2 }],
-  },
-  {
-    id: "childhood.teacher_notices",
-    stage: ["childhood"],
-    tier: "major",
-    conditions: [{ age: [6, 11] }, { trait: "aptitude", op: ">", value: 0 }],
-    chance: { kind: "weight", base: 4 },
-    once: true,
-    text: "event.childhood.teacher_notices",
-    effects: [
-      { stat: "skills", add: 4 },
-      { stat: "happiness", add: 3 },
-    ],
-  },
-  {
-    id: "childhood.harvest_help",
-    stage: ["childhood"],
-    conditions: [{ location: "rural" }, { age: [8, 11] }],
-    chance: { kind: "weight", base: 4 },
-    cause: "circumstance",
-    cooldownYears: 2,
-    text: "event.childhood.harvest_help",
-    effects: [
-      { stat: "belonging", add: 2 },
-      { stat: "health", add: -1 },
-    ],
-  },
-  {
-    id: "adolescence.first_friend",
-    stage: ["adolescence"],
-    tier: "major",
-    conditions: [{ trait: "sociability", op: ">", value: 0 }],
-    chance: { kind: "weight", base: 5 },
-    once: true,
-    text: "event.adolescence.first_friend",
-    effects: [{ stat: "belonging", add: 5 }],
-  },
-  {
-    id: "adolescence.growth_spurt",
-    stage: ["adolescence"],
-    tier: "major",
-    chance: { kind: "weight", base: 5 },
-    once: true,
-    text: "event.adolescence.growth_spurt",
-    effects: [
-      { stat: "health", add: 2 },
-      { stat: "happiness", add: -1 },
-    ],
-  },
-  {
-    id: "youth.restless_year",
-    stage: ["youth"],
-    conditions: [{ trait: "curiosity", op: ">", value: 0 }],
-    chance: { kind: "weight", base: 4 },
-    cooldownYears: 3,
-    text: "event.youth.restless_year",
-    effects: [
-      { stat: "skills", add: 3 },
-      { stat: "happiness", add: -1 },
-    ],
-  },
-  {
-    id: "adulthood.unemployed_year",
-    stage: ["youth", "adulthood", "midlife"],
-    conditions: [{ age: [20, 59] }],
-    chance: { kind: "indicator", path: "work.unemployment" },
-    cause: "circumstance",
-    cooldownYears: 3,
-    text: "event.adulthood.unemployed_year",
-    dataNote: { text: "note.unemployment", path: "work.unemployment" },
-    effects: [{ stat: "happiness", add: -3 }],
-  },
-  {
-    id: "adulthood.hard_times",
-    stage: ["youth", "adulthood", "midlife"],
-    chance: {
-      kind: "weight",
-      base: 2,
-      modifiers: [{ when: [{ world: "work.unemployment", op: ">", value: 0.1 }], multiply: 3 }],
-    },
-    cause: "circumstance",
-    cooldownYears: 4,
-    text: "event.adulthood.hard_times",
-    effects: [
-      { stat: "happiness", add: -2 },
-      { stat: "belonging", add: 1 },
-    ],
-  },
-  {
-    id: "adulthood.quiet_evening",
-    stage: ["youth", "adulthood"],
-    chance: { kind: "weight", base: 6 },
-    text: "event.adulthood.quiet_evening",
-    effects: [{ stat: "happiness", add: 2 }],
-  },
-  {
-    id: "midlife.old_injury",
-    stage: ["midlife"],
-    chance: { kind: "weight", base: 3 },
-    cooldownYears: 4,
-    text: "event.midlife.old_injury",
-    effects: [{ stat: "health", add: -4 }],
-  },
-  {
-    id: "midlife.looking_back",
-    stage: ["midlife"],
-    chance: { kind: "weight", base: 4 },
-    cooldownYears: 5,
-    text: "event.midlife.looking_back",
-    effects: [
-      { stat: "happiness", add: 1 },
-      { stat: "skills", add: 1 },
-    ],
-  },
-  {
-    id: "elder.stories",
-    stage: ["elder"],
-    chance: { kind: "weight", base: 6 },
-    cooldownYears: 2,
-    text: "event.elder.stories",
-    effects: [
-      { stat: "happiness", add: 3 },
-      { stat: "belonging", add: 2 },
-    ],
-  },
-  {
-    id: "elder.slower_mornings",
-    stage: ["elder"],
-    chance: { kind: "weight", base: 5 },
-    cooldownYears: 3,
-    text: "event.elder.slower_mornings",
-    effects: [{ stat: "health", add: -3 }],
-  },
+  ...earlyEvents,
+  ...adolescenceEvents,
+  ...youthEvents,
+  ...adulthoodEvents,
+  ...midlifeEvents,
+  ...elderEvents,
+  ...shockEvents,
 ];
 
 export const catalog = createCatalog(eventDefs);

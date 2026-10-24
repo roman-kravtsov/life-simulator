@@ -1,0 +1,581 @@
+// Infancy and childhood (EVENT-007). Strings are in strings/events/early.ts.
+import type { EventDef } from "../../engine/events";
+import { withRole } from "./helpers";
+
+export const earlyEvents: readonly EventDef[] = [
+  // Infancy ---------------------------------------------------------------------------------------
+  {
+    id: "infancy.first_steps",
+    stage: ["infancy"],
+    tier: "major",
+    conditions: [{ age: [1, 2] }],
+    chance: { kind: "weight", base: 6 },
+    once: true,
+    text: "event.infancy.first_steps",
+    effects: [{ stat: "happiness", add: 2 }],
+  },
+  {
+    id: "infancy.first_word",
+    stage: ["infancy"],
+    tier: "major",
+    conditions: [{ age: [1, 2] }],
+    chance: { kind: "weight", base: 5 },
+    once: true,
+    text: "event.infancy.first_word",
+    effects: [
+      { stat: "happiness", add: 2 },
+      { stat: "belonging", add: 1 },
+    ],
+  },
+  {
+    id: "infancy.name_day",
+    stage: ["infancy"],
+    tier: "major",
+    conditions: [{ age: [0, 1] }],
+    chance: { kind: "weight", base: 6 },
+    once: true,
+    text: "event.infancy.name_day",
+    dataNote: { text: "note.tfr", path: "demography.tfr" },
+    effects: [{ stat: "belonging", add: 3 }],
+  },
+  {
+    id: "infancy.lullaby",
+    stage: ["infancy"],
+    chance: { kind: "weight", base: 5 },
+    cooldownYears: 6,
+    text: "event.infancy.lullaby",
+    effects: [{ stat: "belonging", add: 2 }],
+  },
+  {
+    id: "infancy.mother_sings",
+    stage: ["infancy"],
+    roles: ["mother"],
+    chance: { kind: "weight", base: 4 },
+    cooldownYears: 6,
+    text: "event.infancy.mother_sings",
+    effects: [
+      { relationship: "closeness", amount: 3, role: "mother" },
+      { stat: "belonging", add: 1 },
+    ],
+  },
+  {
+    id: "infancy.father_carries",
+    stage: ["infancy"],
+    roles: ["father"],
+    chance: { kind: "weight", base: 4 },
+    cooldownYears: 6,
+    text: "event.infancy.father_carries",
+    effects: [
+      { relationship: "closeness", amount: 3, role: "father" },
+      { stat: "belonging", add: 1 },
+    ],
+  },
+  {
+    id: "infancy.sibling_cradle",
+    stage: ["infancy"],
+    roles: ["sibling"],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    text: "event.infancy.sibling_cradle",
+    effects: [{ relationship: "closeness", amount: 4, role: "sibling" }],
+  },
+  {
+    id: "infancy.carried",
+    stage: ["infancy"],
+    chance: { kind: "weight", base: 5 },
+    quiet: true,
+    text: "event.infancy.carried",
+    effects: [{ stat: "belonging", add: 1 }],
+  },
+  {
+    id: "infancy.rain",
+    stage: ["infancy", "childhood"],
+    conditions: [{ age: [1, 5] }],
+    chance: { kind: "weight", base: 4 },
+    cooldownYears: 3,
+    quiet: true,
+    text: "event.infancy.rain",
+    effects: [{ stat: "happiness", add: 1 }],
+  },
+  {
+    id: "infancy.teething",
+    stage: ["infancy"],
+    conditions: [{ age: [0, 1] }],
+    chance: { kind: "weight", base: 3 },
+    once: true,
+    quiet: true,
+    text: "event.infancy.teething",
+    effects: [{ stat: "happiness", add: -1 }],
+  },
+  {
+    id: "infancy.fever",
+    stage: ["infancy", "childhood"],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    text: "event.infancy.fever",
+    effects: [{ stat: "health", add: -6 }],
+  },
+  {
+    id: "infancy.clinic_day",
+    stage: ["infancy"],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    focus: "health",
+    text: "event.infancy.clinic_day",
+    effects: [{ stat: "health", add: 2 }],
+  },
+  {
+    id: "infancy.lean_months",
+    stage: ["infancy", "childhood"],
+    conditions: [{ standing: "<", value: 30 }],
+    chance: { kind: "weight", base: 4 },
+    cause: "circumstance",
+    cooldownYears: 6,
+    text: "event.infancy.lean_months",
+    effects: [{ stat: "health", add: -3 }],
+  },
+
+  // Childhood -------------------------------------------------------------------------------------
+  {
+    id: "childhood.first_day_school",
+    stage: ["childhood"],
+    tier: "major",
+    conditions: [{ age: [6, 7] }, { school: true }],
+    chance: { kind: "weight", base: 8 },
+    once: true,
+    focus: "learn",
+    text: "event.childhood.first_day_school",
+    dataNote: { text: "note.primary_completion", path: "education.primaryCompletion" },
+    effects: [
+      { stat: "skills", add: 1 },
+      { stat: "belonging", add: 1 },
+    ],
+  },
+  {
+    id: "childhood.long_walk",
+    stage: ["childhood"],
+    conditions: [{ location: "rural" }],
+    chance: { kind: "weight", base: 5 },
+    cause: "circumstance",
+    cooldownYears: 6,
+    text: "event.childhood.long_walk",
+    effects: [{ stat: "belonging", add: 2 }],
+  },
+  {
+    id: "childhood.teacher_notices",
+    stage: ["childhood"],
+    tier: "major",
+    conditions: [{ age: [6, 11] }, { trait: "aptitude", op: ">", value: 0 }],
+    chance: { kind: "weight", base: 4 },
+    once: true,
+    focus: "learn",
+    text: "event.childhood.teacher_notices",
+    effects: [
+      { stat: "skills", add: 4 },
+      { stat: "happiness", add: 3 },
+    ],
+  },
+  {
+    id: "childhood.harvest_help",
+    stage: ["childhood"],
+    conditions: [{ location: "rural" }, { age: [8, 11] }],
+    chance: { kind: "weight", base: 4 },
+    cause: "circumstance",
+    cooldownYears: 6,
+    text: "event.childhood.harvest_help",
+    dataNote: { text: "note.child_labour", path: "work.childLabour" },
+    effects: [
+      { stat: "belonging", add: 2 },
+      { stat: "health", add: -1 },
+    ],
+  },
+  {
+    id: "childhood.games_in_dust",
+    stage: ["childhood"],
+    conditions: [{ age: [4, 11] }],
+    chance: { kind: "weight", base: 5 },
+    cooldownYears: 2,
+    quiet: true,
+    focus: "rest",
+    text: "event.childhood.games_in_dust",
+    effects: [
+      { stat: "belonging", add: 2 },
+      { stat: "happiness", add: 1 },
+    ],
+  },
+  {
+    id: "childhood.best_friend",
+    stage: ["childhood"],
+    roles: ["friend"],
+    conditions: [{ age: [5, 11] }],
+    chance: { kind: "weight", base: 4 },
+    cooldownYears: 6,
+    focus: "bond",
+    text: "event.childhood.best_friend",
+    effects: [
+      { relationship: "closeness", amount: 8, role: "friend" },
+      { stat: "belonging", add: 2 },
+    ],
+  },
+  {
+    id: "childhood.quarrel_friend",
+    stage: ["childhood"],
+    roles: ["friend"],
+    conditions: [{ age: [5, 11] }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    text: "event.childhood.quarrel_friend",
+    effects: [
+      { relationship: "closeness", amount: -8, role: "friend" },
+      { stat: "happiness", add: -1 },
+    ],
+  },
+  {
+    id: "childhood.sibling_quarrel",
+    stage: ["childhood"],
+    roles: ["sibling"],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    text: "event.childhood.sibling_quarrel",
+    dataNote: { text: "note.tfr", path: "demography.tfr" },
+    effects: [{ relationship: "closeness", amount: -4, role: "sibling" }],
+  },
+  {
+    id: "childhood.grandmother_stories",
+    stage: ["childhood"],
+    conditions: [{ age: [5, 11] }],
+    chance: { kind: "weight", base: 4 },
+    cooldownYears: 3,
+    quiet: true,
+    text: "event.childhood.grandmother_stories",
+    effects: [{ stat: "belonging", add: 2 }],
+  },
+  {
+    id: "childhood.school_without_shoes",
+    stage: ["childhood"],
+    conditions: [{ school: true }, { standing: "<", value: 30 }],
+    chance: { kind: "weight", base: 4 },
+    cause: "circumstance",
+    cooldownYears: 6,
+    text: "event.childhood.school_without_shoes",
+    dataNote: { text: "note.primary_incomplete", path: "education.primaryCompletion", invert: true },
+    effects: [
+      { stat: "happiness", add: -2 },
+      { stat: "skills", add: 1 },
+    ],
+  },
+  {
+    id: "childhood.neighbour_loses_child",
+    stage: ["childhood"],
+    conditions: [{ age: [5, 11] }],
+    chance: { kind: "weight", base: 1 },
+    cause: "circumstance",
+    sensitivity: "severe",
+    helpTopic: "grief",
+    cooldownYears: 8,
+    text: "event.childhood.neighbour_loses_child",
+    softText: "event.childhood.neighbour_loses_child.soft",
+    effects: [
+      { stat: "happiness", add: -3 },
+      { stat: "belonging", add: 1 },
+    ],
+  },
+
+  // Childhood decisions ---------------------------------------------------------------------------
+  {
+    id: "childhood.found_coin",
+    stage: ["childhood"],
+    conditions: [{ age: [6, 11] }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    text: "event.childhood.found_coin",
+    choices: [
+      {
+        id: "keep",
+        text: "choice.childhood.found_coin.keep",
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.found_coin.keep",
+            effects: [
+              { stat: "happiness", add: 2 },
+              { stat: "belonging", add: -1 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "hand_in",
+        text: "choice.childhood.found_coin.hand_in",
+        default: true,
+        outcomes: [
+          {
+            p: 0.6,
+            text: "outcome.childhood.found_coin.reward",
+            lens: "lens.rewarded",
+            effects: [
+              { stat: "happiness", add: 3 },
+              { stat: "belonging", add: 2 },
+            ],
+          },
+          {
+            p: 0.4,
+            text: "outcome.childhood.found_coin.nothing",
+            lens: "lens.only_thanks",
+            effects: [{ stat: "belonging", add: 2 }],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "childhood.bully",
+    stage: ["childhood"],
+    conditions: [{ age: [7, 11] }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    sensitivity: "difficult",
+    helpTopic: "violence",
+    text: "event.childhood.bully",
+    softText: "event.childhood.bully.soft",
+    choices: [
+      {
+        id: "stand_up",
+        text: "choice.childhood.bully.stand_up",
+        outcomes: [
+          {
+            p: 0.4,
+            text: "outcome.childhood.bully.respect",
+            lens: "lens.respect",
+            effects: [
+              { stat: "belonging", add: 3 },
+              { stat: "happiness", add: 2 },
+            ],
+          },
+          {
+            p: 0.6,
+            text: "outcome.childhood.bully.hurt",
+            lens: "lens.hurt",
+            effects: [
+              { stat: "health", add: -2 },
+              { stat: "happiness", add: -3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "tell",
+        text: "choice.childhood.bully.tell",
+        default: true,
+        outcomes: [
+          {
+            p: 0.65,
+            text: "outcome.childhood.bully.settled",
+            lens: "lens.settled",
+            effects: [
+              { stat: "happiness", add: 1 },
+              { stat: "belonging", add: 1 },
+            ],
+          },
+          {
+            p: 0.35,
+            text: "outcome.childhood.bully.worse",
+            lens: "lens.worse_for_telling",
+            effects: [
+              { stat: "happiness", add: -3 },
+              { stat: "belonging", add: -2 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "avoid",
+        text: "choice.childhood.bully.avoid",
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.bully.avoid",
+            effects: [
+              { stat: "belonging", add: -2 },
+              { stat: "happiness", add: -1 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "childhood.teacher_extra",
+    stage: ["childhood"],
+    conditions: [{ age: [7, 11] }, { school: true }, { stat: "skills", op: ">", value: 25 }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    focus: "learn",
+    text: "event.childhood.teacher_extra",
+    choices: [
+      {
+        id: "accept",
+        text: "choice.childhood.teacher_extra.accept",
+        locks: [{ unless: [{ flag: "childLabour", is: false }], reason: "lock.no_time" }],
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.teacher_extra.accept",
+            effects: [
+              { stat: "skills", add: 4 },
+              { stat: "happiness", add: -1 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "decline",
+        text: "choice.childhood.teacher_extra.decline",
+        default: true,
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.teacher_extra.decline",
+            effects: [{ stat: "happiness", add: 1 }],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "childhood.friend_in_trouble",
+    stage: ["childhood"],
+    roles: ["friend"],
+    conditions: [{ age: [7, 11] }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    focus: "bond",
+    text: "event.childhood.friend_in_trouble",
+    choices: [
+      {
+        id: "stand_by",
+        text: "choice.childhood.friend_in_trouble.stand_by",
+        outcomes: [
+          {
+            p: 0.6,
+            text: "outcome.childhood.friend_in_trouble.forgiven",
+            lens: "lens.forgiven",
+            effects: withRole("friend", 8, [{ stat: "belonging", add: 2 }]),
+          },
+          {
+            p: 0.4,
+            text: "outcome.childhood.friend_in_trouble.shared_blame",
+            lens: "lens.share_blame",
+            effects: withRole("friend", 10, [{ stat: "happiness", add: -3 }]),
+          },
+        ],
+      },
+      {
+        id: "stay_out",
+        text: "choice.childhood.friend_in_trouble.stay_out",
+        default: true,
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.friend_in_trouble.stay_out",
+            effects: withRole("friend", -8, [{ stat: "belonging", add: -2 }]),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "childhood.parent_asks",
+    stage: ["childhood"],
+    roles: ["parent"],
+    conditions: [{ age: [6, 11] }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    text: "event.childhood.parent_asks",
+    choices: [
+      {
+        id: "help",
+        text: "choice.childhood.parent_asks.help",
+        default: true,
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.parent_asks.help",
+            effects: withRole("parent", 4, [
+              { stat: "belonging", add: 2 },
+              { stat: "skills", add: 1 },
+            ]),
+          },
+        ],
+      },
+      {
+        id: "play",
+        text: "choice.childhood.parent_asks.play",
+        outcomes: [
+          {
+            p: 1,
+            text: "outcome.childhood.parent_asks.play",
+            effects: withRole("parent", -3, [{ stat: "happiness", add: 3 }]),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "childhood.test_day",
+    stage: ["childhood"],
+    conditions: [{ age: [8, 11] }, { school: true }],
+    chance: { kind: "weight", base: 3 },
+    cooldownYears: 6,
+    focus: "learn",
+    text: "event.childhood.test_day",
+    choices: [
+      {
+        id: "study",
+        text: "choice.childhood.test_day.study",
+        default: true,
+        outcomes: [
+          {
+            p: 0.75,
+            text: "outcome.childhood.test_day.good",
+            lens: "lens.pass_well",
+            effects: [
+              { stat: "skills", add: 4 },
+              { stat: "happiness", add: 2 },
+            ],
+          },
+          {
+            p: 0.25,
+            text: "outcome.childhood.test_day.poor",
+            lens: "lens.pass_poorly",
+            effects: [{ stat: "skills", add: 1 }],
+          },
+        ],
+      },
+      {
+        id: "rest",
+        text: "choice.childhood.test_day.rest",
+        outcomes: [
+          {
+            p: 0.45,
+            text: "outcome.childhood.test_day.good_anyway",
+            lens: "lens.pass_well",
+            effects: [
+              { stat: "skills", add: 3 },
+              { stat: "happiness", add: 2 },
+            ],
+          },
+          {
+            p: 0.55,
+            text: "outcome.childhood.test_day.poor_unready",
+            lens: "lens.pass_poorly",
+            effects: [
+              { stat: "skills", add: 0 },
+              { stat: "happiness", add: -2 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];

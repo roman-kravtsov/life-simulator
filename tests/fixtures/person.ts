@@ -31,6 +31,8 @@ export function makePerson(overrides: Partial<Person> = {}): Person {
     relationships: [],
     conditions: [],
     flags: {},
+    marriageDraw: 0.5,
+    scheduled: [],
     ...overrides,
   };
 }

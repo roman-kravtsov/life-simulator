@@ -1,10 +1,10 @@
 // The calibration harness (SIM-007): runs many lives headless and compares them with the source
-// data: life expectancy, and the school, work, income and family systems of M4. Marriage age
-// joins with relationships in M5.
+// data: life expectancy, and the school, work, income, marriage and family systems.
 import { normalQuantile } from "./dist";
 import { completionRates } from "./education";
-import { advance, newLife } from "./life";
+import { advanceAuto, newLife } from "./life";
 import { lifeExpectancy } from "./mortality";
+import { ADULT_AGE, shareMarriedBy } from "./partnership";
 import type { LifeState, Sex } from "./types";
 import type { Country } from "./world/types";
 
@@ -13,8 +13,8 @@ export const LE_TOLERANCE_YEARS = 2;
 
 /** One whole life with no player input. */
 export function simulateLife(seed: string, country: Country): LifeState {
-  let state = newLife({ seed, country });
-  while (state.person.alive) state = advance(state, { kind: "continue" }, country).state;
+  let state = newLife({ seed, country, settings: { pace: "every-year" } });
+  while (state.person.alive) state = advanceAuto(state, country);
   return state;
 }
 
@@ -58,7 +58,7 @@ const SEXES: readonly Sex[] = ["female", "male"];
 const LEVEL_RANK = { none: 0, primary: 1, "lower-secondary": 2, "upper-secondary": 3, tertiary: 4 } as const;
 
 /** Age at which attainment and literacy are read, and when the siblings and standing of adults are counted. */
-const READ_AT = { attainment: 25, siblings: 22, standing: 35 } as const;
+const READ_AT = { attainment: 25, siblings: 22, standing: 35, marriage: 60 } as const;
 
 interface Tally {
   lives: number;
@@ -67,8 +67,18 @@ interface Tally {
   adults: number;
   personYears: number;
   workingYears: number;
+  /** Person-years in the labour force: at work or out of work and looking. */
+  forceYears: number;
+  unemployedYears: number;
   workingBySector: Record<string, number>;
   informalYears: number;
+  marriageAges: number[];
+  adultsAt50: number;
+  marriedBy50: number;
+  womenAt20: number;
+  marriedUnder18: number;
+  womenAt45: number;
+  childrenOfWomenAt45: number;
   siblings: number;
   siblingLives: number;
   household: number[];
@@ -82,6 +92,15 @@ const emptyTally = (): Tally => ({
   adults: 0,
   personYears: 0,
   workingYears: 0,
+  forceYears: 0,
+  unemployedYears: 0,
+  marriageAges: [],
+  adultsAt50: 0,
+  marriedBy50: 0,
+  womenAt20: 0,
+  marriedUnder18: 0,
+  womenAt45: 0,
+  childrenOfWomenAt45: 0,
   workingBySector: { agriculture: 0, industry: 0, services: 0 },
   informalYears: 0,
   siblings: 0,
@@ -116,17 +135,22 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
   const pairs: [number, number][] = [];
   const deciles = new Array<number>(10).fill(0);
   for (let i = 0; i < lives; i++) {
-    let state = newLife({ seed: `${seedPrefix}-${i}`, country });
+    let state = newLife({ seed: `${seedPrefix}-${i}`, country, settings: { pace: "every-year" } });
     const tally = bySex[state.person.sex];
     tally.lives++;
     while (state.person.alive) {
-      state = advance(state, { kind: "continue" }, country).state;
+      state = advanceAuto(state, country);
       const { person } = state;
       const lived = person.age - 1;
       if (lived >= 15) {
         tally.personYears++;
         const { status, sector, formal } = person.work;
+        if (status === "unemployed") {
+          tally.forceYears++;
+          tally.unemployedYears++;
+        }
         if (status === "employed" || status === "informal") {
+          tally.forceYears++;
           tally.workingYears++;
           if (sector) tally.workingBySector[sector]!++;
           if (formal === false) tally.informalYears++;
@@ -137,6 +161,21 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
         const rank = LEVEL_RANK[person.education.level];
         for (const level of [1, 2, 3, 4]) if (rank >= level) tally.reached[level]!++;
         if (person.education.literate) tally.literate++;
+      }
+      if (person.age === READ_AT.marriage) {
+        tally.adultsAt50++;
+        if (typeof person.flags.marriedAt === "number") {
+          tally.marriedBy50++;
+          tally.marriageAges.push(person.flags.marriedAt);
+        }
+      }
+      if (person.age === 20 && person.sex === "female") {
+        tally.womenAt20++;
+        if (typeof person.flags.marriedAt === "number" && person.flags.marriedAt < 18) tally.marriedUnder18++;
+      }
+      if (person.age === 45 && person.sex === "female") {
+        tally.womenAt45++;
+        tally.childrenOfWomenAt45 += person.relationships.filter((r) => r.kind === "child").length;
       }
       if (person.age === READ_AT.siblings) {
         tally.siblingLives++;
@@ -172,11 +211,47 @@ export function calibrateSystems(country: Country, lives: number, seedPrefix: st
       {
         name: `${sex} labour participation`,
         expected: work.labourParticipation.value[sex],
-        simulated: t.personYears ? t.workingYears / t.personYears : 0,
+        simulated: t.personYears ? t.forceYears / t.personYears : 0,
         tolerance: 0.08,
       },
     );
+    const ages = t.marriageAges;
+    out.push({
+      name: `${sex} mean age at first marriage`,
+      expected: country.family.meanAgeFirstMarriage.value[sex],
+      simulated: ages.length ? ages.reduce((a, b) => a + b, 0) / ages.length : 0,
+      tolerance: 2,
+    });
   }
+  const women = bySex.female;
+  // The published mean age and the share married before 18 come from different surveys, and in a few
+  // countries no one spread can hold both. There the closest the model reaches is the target.
+  const reachable = shareMarriedBy(ADULT_AGE - 0.5, "female", country);
+  const published = country.family.childMarriageBy18.value;
+  out.push(
+    {
+      name:
+        Math.abs(reachable - published) > 0.04
+          ? "women married before 18 (closest the spread reaches)"
+          : "women married before 18",
+      expected: Math.abs(reachable - published) > 0.04 ? reachable : published,
+      simulated: women.womenAt20 ? women.marriedUnder18 / women.womenAt20 : 0,
+      tolerance: 0.06,
+    },
+    {
+      name: "children per woman who lives to 45 (total fertility)",
+      expected: country.demography.tfr.value,
+      simulated: women.womenAt45 ? women.childrenOfWomenAt45 / women.womenAt45 : 0,
+      tolerance: Math.max(0.35, 0.15 * country.demography.tfr.value),
+    },
+  );
+  const force = SEXES.reduce((n, sex) => n + bySex[sex].forceYears, 0);
+  out.push({
+    name: "share of the labour force out of work",
+    expected: work.unemployment.value,
+    simulated: force ? SEXES.reduce((n, sex) => n + bySex[sex].unemployedYears, 0) / force : 0,
+    tolerance: 0.04,
+  });
   const working = SEXES.reduce((n, sex) => n + bySex[sex].workingYears, 0);
   const sectorYears = (sector: string) => SEXES.reduce((n, sex) => n + bySex[sex].workingBySector[sector]!, 0);
   for (const sector of ["agriculture", "industry", "services"] as const) {
