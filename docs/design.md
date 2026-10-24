@@ -410,6 +410,7 @@ This is where the "in-depth game feeling" comes from.
   - **State:** the engine stays pure TypeScript with no React or DOM imports. A small store (`src/ui/store.ts`) holds the current state and exposes actions; components read it with `useSyncExternalStore`. No Redux or Zustand unless state grows beyond this.
   - **Screens:** switched by game state, with no router library. Hash routing is an option later for shareable links.
   - **Styling:** design tokens and shared base in `src/styles.css`, component styles in CSS Modules. System fonts only, no third-party requests.
+  - **Components:** React Aria Components (Adobe), unstyled, wrapped in `src/ui/kit/` and styled with CSS Modules and the tokens (chosen by Roman, 2026-10-24). See `docs/design-system.md`.
   - **Graphics:** the growth rings are plain React SVG, with no chart library.
   - **Persistence:** localStorage for the current life, IndexedDB (via `idb`) for past lives.
   - **Text:** `t(key, vars)` over English string files; `react-i18next` is an option when a second language arrives.
@@ -435,3 +436,5 @@ e2e/               Playwright end-to-end tests (phone and desktop)
 ## 7. Decisions log
 
 None. Decided 2026-10-23: the name is **Birthright** (1.1); yearly input is **focus points** (3.3), played **yearly with zoom-in quarters** in crisis and turning-point years (3.1.1); the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1); the UI uses **React with Vite** (6).
+
+Decided 2026-10-24: interactive controls use **React Aria Components**, wrapped in `src/ui/kit/` and styled with **CSS Modules**, not Tailwind (6, `docs/design-system.md`).

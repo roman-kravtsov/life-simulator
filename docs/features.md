@@ -228,7 +228,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | UI-008 | Past lives screen | A list of finished lives with name, country, age at death and rings thumbnail. | P1 | SAVE-003, UI-001 | S | MVP | not started |
 | UI-009 | Settings screen | Softening, reduced motion, text size, theme, delete data. | P1 | UI-001 | S | MVP | not started |
 | UI-010 | Responsive layout | One column on phones, two on desktop. Done when the full loop works at 360 px and 1440 px widths. | P0 | UI-001 | M | MVP | not started |
-| UI-011 | Visual identity | Palette, type, light and dark themes as tokens (1.3). Done when all screens use the tokens. | P0 | UI-001 | M | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
+| UI-011 | Visual identity | Palette, type, light and dark themes as tokens (1.3), plus the React Aria based component kit in `src/ui/kit` (`docs/design-system.md`). Done when all screens use the tokens. | P0 | UI-001 | M | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | UI-012 | Help resources | Calm help lines after sensitive events and an always-available "Need to talk?" link (4). Done when every event with a help topic shows it. | P0 | UI-001, EVENT-006 | S | MVP | not started |
 | UI-013 | Motion | Small transitions (a ring growing, a card settling). | P2 | UI-011, A11Y-004 | S | post-MVP | not started |
 | UI-014 | Installable and offline | Web app manifest and offline caching. | P2 | BE-002 | M | post-MVP | not started |
