@@ -1,8 +1,8 @@
-// Parents at birth (FAM-001) and the family growing older and dying (FAM-003).
+// Parents at birth (FAM-001), siblings (FAM-002) and the family growing older and dying (FAM-003).
 import { namesForRegion } from "../content/names";
-import { normal, clamp } from "./dist";
+import { normal, clamp, poisson } from "./dist";
 import type { Rng } from "./rng";
-import type { Relationship } from "./types";
+import type { Person, Relationship, Sex } from "./types";
 import type { Country } from "./world/types";
 
 const MOTHER_AGE_SD = 5.5;
@@ -58,4 +58,82 @@ export function rollFamilyDeaths(relationships: readonly Relationship[], country
     const qx = table[Math.min(relative.age, table.length - 1)]!;
     return roll < qx ? { ...relative, alive: false } : relative;
   });
+}
+
+/** The years of a mother's life in which she has children: births come at a steady rate across them. */
+export const FERTILE_AGES = [15, 45] as const;
+const FERTILE_YEARS = FERTILE_AGES[1] - FERTILE_AGES[0];
+
+/** Births per year to a mother in the fertile years: the total fertility rate spread across them. */
+const birthRate = (country: Country) => country.demography.tfr.value / FERTILE_YEARS;
+
+const SIBLING_CLOSENESS = [40, 85] as const;
+
+function sibling(
+  country: Country,
+  id: string,
+  age: number,
+  sexRoll: number,
+  nameRoll: number,
+  closenessRoll: number,
+): Relationship {
+  const ratio = country.demography.sexRatioAtBirth.value;
+  const sex: Sex = sexRoll < ratio / (1 + ratio) ? "male" : "female";
+  const names = namesForRegion(country.region)[sex];
+  return {
+    id,
+    kind: "sibling",
+    name: names[Math.floor(nameRoll * names.length)]!,
+    sex,
+    age,
+    alive: true,
+    closeness: SIBLING_CLOSENESS[0] + Math.floor(closenessRoll * (SIBLING_CLOSENESS[1] - SIBLING_CLOSENESS[0] + 1)),
+  };
+}
+
+/**
+ * Older siblings at the birth. Births to the mother form a steady stream across her fertile years,
+ * so the number before this child is Poisson with the rate times the years she had behind her, and
+ * each came at a uniform moment among them. Brothers and sisters who died young are not listed, only
+ * counted in `lost`, because they were born. Younger siblings come later, year by year (rollSiblingBirth).
+ */
+export function generateSiblings(
+  rng: Rng,
+  country: Country,
+  motherAge: number,
+): { siblings: Relationship[]; lost: number } {
+  const years = Math.max(0, Math.min(motherAge, FERTILE_AGES[1]) - FERTILE_AGES[0]);
+  const count = poisson(rng, birthRate(country) * years);
+  const siblings: Relationship[] = [];
+  let lost = 0;
+  for (let i = 0; i < count; i++) {
+    const age = Math.max(1, Math.round(rng.next() * years));
+    const sexRoll = rng.next();
+    const survival = rng.next();
+    const nameRoll = rng.next();
+    const closenessRoll = rng.next();
+    const born = sibling(country, `sibling-${i + 1}`, age, sexRoll, nameRoll, closenessRoll);
+    const table = country.demography.lifeTable.value[born.sex];
+    let alive = 1;
+    for (let a = 0; a < age; a++) alive *= 1 - table[Math.min(a, table.length - 1)]!;
+    if (survival < alive) siblings.push(born);
+    else lost++;
+  }
+  siblings.sort((a, b) => b.age - a.age);
+  return { siblings: siblings.map((s, i) => ({ ...s, id: `sibling-${i + 1}` })), lost };
+}
+
+/**
+ * A younger sibling this year, if the mother is alive and in her fertile years: the yearly chance is
+ * the birth rate of the mother's stream of births. Always draws four numbers.
+ */
+export function rollSiblingBirth(person: Person, country: Country, rng: Rng): Relationship | undefined {
+  const roll = rng.next();
+  const sexRoll = rng.next();
+  const nameRoll = rng.next();
+  const closenessRoll = rng.next();
+  const mother = person.relationships.find((r) => r.kind === "mother");
+  if (!mother?.alive || mother.age < FERTILE_AGES[0] || mother.age >= FERTILE_AGES[1]) return undefined;
+  if (roll >= 1 - Math.exp(-birthRate(country))) return undefined;
+  return sibling(country, `sibling-born-${person.age}`, 0, sexRoll, nameRoll, closenessRoll);
 }

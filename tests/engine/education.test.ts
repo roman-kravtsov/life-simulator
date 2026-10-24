@@ -55,7 +55,11 @@ describe("continuation odds (EDU-001, WORLD-009)", () => {
   });
   it("is higher with more aptitude", () => {
     const apt = (value: number) =>
-      p(at(8, { traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: value, constitution: 0 } }));
+      p(
+        at(8, {
+          traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: value, constitution: 0 },
+        }),
+      );
     expect(apt(2)).toBeGreaterThan(apt(-2));
   });
   it("uses the household's start, not the person's later standing", () => {
@@ -174,7 +178,8 @@ describe("literacy (EDU-002)", () => {
   it("adds up to the country's adult rate for each sex", () => {
     for (const sex of ["female", "male"] as const) {
       const completers = country.education.primaryCompletion.value[sex];
-      const rate = completers * literacyChance(sex, country, true) + (1 - completers) * literacyChance(sex, country, false);
+      const rate =
+        completers * literacyChance(sex, country, true) + (1 - completers) * literacyChance(sex, country, false);
       expect(rate).toBeCloseTo(country.education.literacy.value[sex], 6);
     }
   });
@@ -206,7 +211,7 @@ describe("the schooling model", () => {
   });
   it("keeps everyone in school at six and nobody before it or after 21", () => {
     expect(inSchoolShare(country, "male", 5)).toBe(0);
-    expect(inSchoolShare(country, "male", 6)).toBe(1);
+    expect(inSchoolShare(country, "male", 6)).toBeCloseTo(1, 9);
     expect(inSchoolShare(country, "male", 22)).toBe(0);
     expect(inSchoolShare(country, "male", 12)).toBeLessThan(inSchoolShare(country, "male", 7));
   });
@@ -235,24 +240,30 @@ describe("the schooling batch reproduces each country's completion rates (EDU-00
       for (let age = 6; age <= 21; age++) {
         person = stepEducation({ ...person, age }, c, createRng(`cohort-${sex}-${i}-${age}`)).person;
       }
-      const rank = ["none", "primary", "lower-secondary", "upper-secondary", "tertiary"].indexOf(person.education.level);
+      const rank = ["none", "primary", "lower-secondary", "upper-secondary", "tertiary"].indexOf(
+        person.education.level,
+      );
       if (rank >= 1) reached.primary++;
       if (rank >= 2) reached.lower++;
       if (rank >= 3) reached.upper++;
     }
     return { primary: reached.primary / n, lower: reached.lower / n, upper: reached.upper / n };
   };
-  it.each(["NGA", "NER", "JPN", "IND", "USA"])("%s", (iso3) => {
-    const c = real(iso3);
-    for (const sex of ["female", "male"] as const) {
-      const got = cohort(c, sex, 1600);
-      const cap = (x: number) => Math.min(1, x);
-      const primary = cap(c.education.primaryCompletion.value[sex]);
-      const lower = Math.min(primary, cap(c.education.lowerSecondaryCompletion.value[sex]));
-      const upper = Math.min(lower, cap(c.education.upperSecondaryCompletion.value[sex]));
-      expect(Math.abs(got.primary - primary), `${iso3} ${sex} primary`).toBeLessThan(0.05);
-      expect(Math.abs(got.lower - lower), `${iso3} ${sex} lower secondary`).toBeLessThan(0.05);
-      expect(Math.abs(got.upper - upper), `${iso3} ${sex} upper secondary`).toBeLessThan(0.05);
-    }
-  }, 30_000);
+  it.each(["NGA", "NER", "JPN", "IND", "USA"])(
+    "%s",
+    (iso3) => {
+      const c = real(iso3);
+      for (const sex of ["female", "male"] as const) {
+        const got = cohort(c, sex, 1600);
+        const cap = (x: number) => Math.min(1, x);
+        const primary = cap(c.education.primaryCompletion.value[sex]);
+        const lower = Math.min(primary, cap(c.education.lowerSecondaryCompletion.value[sex]));
+        const upper = Math.min(lower, cap(c.education.upperSecondaryCompletion.value[sex]));
+        expect(Math.abs(got.primary - primary), `${iso3} ${sex} primary`).toBeLessThan(0.05);
+        expect(Math.abs(got.lower - lower), `${iso3} ${sex} lower secondary`).toBeLessThan(0.05);
+        expect(Math.abs(got.upper - upper), `${iso3} ${sex} upper secondary`).toBeLessThan(0.05);
+      }
+    },
+    30_000,
+  );
 });

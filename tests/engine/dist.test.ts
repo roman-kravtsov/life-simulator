@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { normalCdf, normalQuantile } from "../../src/engine/dist";
+import { normalCdf, normalQuantile, poisson } from "../../src/engine/dist";
+import { createRng } from "../../src/engine/rng";
 
 describe("normal distribution helpers", () => {
   it("the quantile of 0.5 is 0 and the quantiles are symmetric", () => {
@@ -19,5 +20,20 @@ describe("normal distribution helpers", () => {
   it("keeps the extremes finite", () => {
     expect(Number.isFinite(normalQuantile(0))).toBe(true);
     expect(Number.isFinite(normalQuantile(1))).toBe(true);
+  });
+});
+
+describe("poisson", () => {
+  it("has the right mean and variance, and is never negative", () => {
+    const rng = createRng("poisson");
+    const draws = Array.from({ length: 20000 }, () => poisson(rng, 3.2));
+    const mean = draws.reduce((a, b) => a + b, 0) / draws.length;
+    const variance = draws.reduce((a, b) => a + (b - mean) ** 2, 0) / draws.length;
+    expect(mean).toBeCloseTo(3.2, 1);
+    expect(variance).toBeCloseTo(3.2, 0);
+    expect(Math.min(...draws)).toBeGreaterThanOrEqual(0);
+  });
+  it("is zero for a mean of zero", () => {
+    expect(poisson(createRng("zero"), 0)).toBe(0);
   });
 });

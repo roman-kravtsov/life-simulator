@@ -164,3 +164,28 @@ describe("parents' random stream", () => {
     expect(Math.abs(cov / Math.sqrt(vs * vr))).toBeLessThan(0.08);
   });
 });
+
+describe("a newborn's whole story (M4)", () => {
+  it("starts out of school, out of work, at the household's standing and with no conditions", () => {
+    const p = generatePerson("fresh", country);
+    expect(p.education).toEqual({ level: "none", inSchool: false, years: 0 });
+    expect(p.work).toMatchObject({ status: "child", yearsWorked: 0 });
+    expect(p.work.attachment).toBeGreaterThanOrEqual(0);
+    expect(p.work.attachment).toBeLessThan(1);
+    expect(p.money.percentile).toBe(p.money.householdPercentile);
+    expect(Number.isFinite(p.money.luck)).toBe(true);
+    expect(p.conditions).toEqual([]);
+  });
+  it("lists older siblings after the parents (FAM-002)", () => {
+    let withSiblings = 0;
+    for (let i = 0; i < 100; i++) {
+      const p = generatePerson(`sib-${i}`, country);
+      expect(p.relationships[0]!.kind).toBe("mother");
+      expect(p.relationships[1]!.kind).toBe("father");
+      const siblings = p.relationships.slice(2);
+      expect(siblings.every((r) => r.kind === "sibling" && r.alive)).toBe(true);
+      if (siblings.length > 0) withSiblings++;
+    }
+    expect(withSiblings).toBeGreaterThan(20);
+  });
+});

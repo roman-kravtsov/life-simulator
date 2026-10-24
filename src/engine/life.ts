@@ -1,13 +1,19 @@
 import { catalog as contentCatalog } from "../content/events";
+import { conditionCatalog } from "../content/healthConditions";
 import { childLabourStatus } from "./checks";
+import { stepEducation } from "./education";
 import { applyEffectsToPerson, type Effect } from "./effects";
 import { selectEvents, pendingFromDef, type EventCatalog, type PendingEvent } from "./events";
-import { ageRelatives, rollFamilyDeaths } from "./family";
+import { ageRelatives, rollFamilyDeaths, rollSiblingBirth } from "./family";
+import { stepConditions } from "./health";
+import { stepMoney } from "./money";
+import { driftCloseness } from "./relationships";
 import { driftStats } from "./drift";
 import { drawCause, rollDeath } from "./mortality";
 import { generatePerson } from "./person";
 import { stream } from "./rng";
 import { stageForAge } from "./stages";
+import { stepWork } from "./work";
 import type { EventRecord, LifeState, Person, Relationship } from "./types";
 import type { Country } from "./world/types";
 
@@ -81,12 +87,27 @@ export function advance(
   // 3. Baseline drift.
   let person: Person = { ...state.person, stats: driftStats(state.person, country, stream(seed, "drift", year)) };
 
-  // 4. Statistical checks: family deaths, then child labour.
+  // 4. Statistical checks: family deaths and births, child labour, then school, work, money,
+  // conditions and the closeness of the people around the person.
   const relatives = rollFamilyDeaths(person.relationships, country, stream(seed, "family", year));
   relatives.forEach((relative, i) => {
     if (!relative.alive && person.relationships[i]!.alive) pending.push(griefFor(relative, person.age));
   });
   person = { ...person, relationships: relatives };
+
+  const baby = rollSiblingBirth(person, country, stream(seed, "siblings", year));
+  if (baby) {
+    pending.push({
+      id: "family.sibling_born",
+      textKey: "event.family.sibling_born",
+      vars: { name: baby.name },
+      effects: [
+        { relationship: "add", relative: baby },
+        { stat: "belonging", add: 2 },
+      ],
+      cause: "chance",
+    });
+  }
 
   const working = childLabourStatus(person, country, stream(seed, "labour", year));
   if (working !== (person.flags.childLabour === true)) {
@@ -110,6 +131,18 @@ export function advance(
           },
     );
   }
+
+  for (const step of [
+    () => stepEducation(person, country, stream(seed, "education", year)),
+    () => stepWork(person, country, stream(seed, "work", year)),
+    () => stepMoney(person, country, stream(seed, "money", year)),
+    () => stepConditions(person, country, (id) => stream(seed, `condition:${id}`, year), conditionCatalog),
+  ]) {
+    const result = step();
+    person = result.person;
+    pending.push(...result.events);
+  }
+  person = { ...person, relationships: driftCloseness(person.relationships, person, stream(seed, "closeness", year)) };
 
   // 5. Event selection.
   const eventsRng = stream(seed, "events", year);

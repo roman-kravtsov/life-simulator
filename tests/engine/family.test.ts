@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageRelatives, rollFamilyDeaths } from "../../src/engine/family";
+import { ageRelatives, generateSiblings, rollFamilyDeaths, rollSiblingBirth } from "../../src/engine/family";
 import { CHILD_LABOUR_AGES, childLabourStatus } from "../../src/engine/checks";
 import { lifeExpectancy } from "../../src/engine/mortality";
 import { createRng } from "../../src/engine/rng";
@@ -126,5 +126,136 @@ describe("childLabourStatus (SIM-005)", () => {
     const none = makeCountry({ work: { ...country.work, childLabour: { ...country.work.childLabour, value: 0 } } });
     for (let i = 0; i < 200; i++)
       expect(childLabourStatus(makePerson({ age: 9 }), none, createRng(`z${i}`))).toBe(false);
+  });
+});
+
+describe("siblings (FAM-002)", () => {
+  const sibCountry = (tfr: number, meanAge = 28) =>
+    makeCountry({
+      region: "Western Africa",
+      demography: {
+        ...country.demography,
+        tfr: { ...country.demography.tfr, value: tfr },
+        meanAgeAtBirth: { ...country.demography.meanAgeAtBirth, value: meanAge },
+      },
+    });
+  const mother = (age: number) => rel({ id: "mother", kind: "mother", age });
+
+  it("generates older siblings with an age, a sex, a name and a closeness, oldest first", () => {
+    const rng = createRng("older");
+    let found = false;
+    for (let i = 0; i < 50 && !found; i++) {
+      const { siblings } = generateSiblings(createRng(`older-${i}`), sibCountry(6), 38);
+      if (siblings.length < 2) continue;
+      found = true;
+      for (const s of siblings) {
+        expect(s.kind).toBe("sibling");
+        expect(s.alive).toBe(true);
+        expect(s.age).toBeGreaterThanOrEqual(1);
+        expect(s.age).toBeLessThanOrEqual(23);
+        expect(s.name.length).toBeGreaterThan(0);
+        expect(["female", "male"]).toContain(s.sex);
+        expect(s.closeness).toBeGreaterThanOrEqual(40);
+        expect(s.closeness).toBeLessThanOrEqual(90);
+      }
+      expect(siblings.map((s) => s.age)).toEqual([...siblings.map((s) => s.age)].sort((a, b) => b - a));
+      expect(new Set(siblings.map((s) => s.id)).size).toBe(siblings.length);
+    }
+    expect(found).toBe(true);
+    expect(rng.next()).toBeGreaterThanOrEqual(0);
+  });
+  it("gives a very young mother no older siblings", () => {
+    for (let i = 0; i < 20; i++)
+      expect(generateSiblings(createRng(`young-${i}`), sibCountry(6), 15).siblings).toEqual([]);
+  });
+  it("is deterministic and draws the same numbers whatever the family", () => {
+    expect(generateSiblings(createRng("same"), sibCountry(4), 30)).toEqual(
+      generateSiblings(createRng("same"), sibCountry(4), 30),
+    );
+  });
+  it("counts the older siblings who died before the birth", () => {
+    const deadly = makeCountry({
+      region: "Western Africa",
+      demography: {
+        ...country.demography,
+        tfr: { ...country.demography.tfr, value: 6 },
+        lifeTable: {
+          ...country.demography.lifeTable,
+          value: { female: new Array<number>(101).fill(1), male: new Array<number>(101).fill(1) },
+        },
+      },
+    });
+    let lostTotal = 0;
+    for (let i = 0; i < 30; i++) {
+      const { siblings, lost } = generateSiblings(createRng(`lost-${i}`), deadly, 40);
+      expect(siblings).toEqual([]);
+      lostTotal += lost;
+    }
+    expect(lostTotal).toBeGreaterThan(0);
+  });
+  it("brings younger siblings only while the mother is alive and of childbearing age", () => {
+    const person = makePerson({ age: 3, relationships: [mother(30)] });
+    const births = (rel0: Relationship, seed: number) =>
+      rollSiblingBirth({ ...person, relationships: [rel0] }, sibCountry(8), createRng(`b-${seed}`));
+    let born = 0;
+    for (let i = 0; i < 300; i++) if (births(mother(30), i)) born++;
+    expect(born).toBeGreaterThan(0);
+    for (let i = 0; i < 300; i++) expect(births(mother(46), i)).toBeUndefined();
+    for (let i = 0; i < 300; i++) expect(births({ ...mother(30), alive: false }, i)).toBeUndefined();
+    for (let i = 0; i < 300; i++) expect(births(mother(14), i)).toBeUndefined();
+  });
+  it("makes a newborn sibling age 0 with a name", () => {
+    const person = makePerson({ age: 3, relationships: [mother(28)] });
+    for (let i = 0; i < 200; i++) {
+      const baby = rollSiblingBirth(person, sibCountry(8), createRng(`baby-${i}`));
+      if (baby) {
+        expect(baby).toMatchObject({ kind: "sibling", age: 0, alive: true });
+        expect(baby.id).toBe("sibling-born-3");
+        expect(baby.name.length).toBeGreaterThan(0);
+        return;
+      }
+    }
+    throw new Error("no sibling was born");
+  });
+  it("draws four numbers every year", () => {
+    const person = makePerson({ age: 3, relationships: [mother(28)] });
+    for (const m of [mother(28), mother(60), { ...mother(28), alive: false }]) {
+      const rng = createRng("four");
+      const control = createRng("four");
+      rollSiblingBirth({ ...person, relationships: [m] }, sibCountry(3), rng);
+      for (let i = 0; i < 4; i++) control.next();
+      expect(rng.next()).toBe(control.next());
+    }
+  });
+  it.each([
+    ["a high-fertility country", 6, 29],
+    ["a middle one", 2.4, 28],
+    ["a low-fertility one", 1.3, 32],
+  ])("brings siblings in numbers that match fertility over a childhood, for %s (batch)", (_name, tfr, meanAge) => {
+    // Every sibling a person will ever have, while the mother lives: born before them plus born during
+    // their childhood. Dead infants before the birth count. The mean must be the country's fertility.
+    const c = sibCountry(tfr, meanAge);
+    const n = 6000;
+    let total = 0;
+    for (let i = 0; i < n; i++) {
+      const motherAge = Math.max(
+        16,
+        Math.min(46, Math.round(meanAge + 5.5 * (createRng(`ma-${i}`).next() - 0.5) * 3.46)),
+      );
+      const { siblings, lost } = generateSiblings(createRng(`older-${tfr}-${i}`), c, motherAge);
+      total += siblings.length + lost;
+      let person = makePerson({ age: 0, relationships: [mother(motherAge)] });
+      for (let age = 0; age < 50 && person.relationships[0]!.age <= 45; age++) {
+        const baby = rollSiblingBirth(person, c, createRng(`younger-${tfr}-${i}-${age}`));
+        if (baby) total++;
+        person = {
+          ...person,
+          age: age + 1,
+          relationships: [{ ...person.relationships[0]!, age: person.relationships[0]!.age + 1 }],
+        };
+      }
+    }
+    expect(total / n).toBeGreaterThan(tfr * 0.9);
+    expect(total / n).toBeLessThan(tfr * 1.1);
   });
 });

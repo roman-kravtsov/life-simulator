@@ -7,7 +7,7 @@ import type { Country } from "../src/engine/world/types";
 const args = process.argv.slice(2);
 const livesAt = args.indexOf("--lives");
 const lives = livesAt === -1 ? 3000 : Number(args[livesAt + 1]);
-const codes = args.filter((a, i) => !a.startsWith("--") && i !== livesAt + 1);
+const codes = args.filter((a, i) => !a.startsWith("--") && (livesAt === -1 || i !== livesAt + 1));
 if (codes.length === 0)
   throw new Error("Give at least one ISO3 country code, for example: npm run calibrate -- NGA JPN");
 

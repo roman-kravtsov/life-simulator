@@ -92,7 +92,11 @@ export type StreamName =
   | "birth"
   | "person"
   | "parents"
+  | "siblings"
   | "family"
+  | "closeness"
+  | "education"
+  | "work"
   | "drift"
   | "labour"
   | "mortality"
@@ -110,7 +114,7 @@ export type StreamName =
  */
 export function stream(
   seed: string,
-  name: StreamName | `event:${string}` | `pool:${string}`,
+  name: StreamName | `event:${string}` | `pool:${string}` | `condition:${string}`,
   year: number,
   quarter?: 1 | 2 | 3 | 4,
 ): Rng {

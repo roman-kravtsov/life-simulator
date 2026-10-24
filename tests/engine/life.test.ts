@@ -124,9 +124,11 @@ describe("turn steps", () => {
   it("events: an event that always fires lands in the record with its effects tagged by cause", () => {
     const catalog = createCatalog([event({ effects: [{ stat: "belonging", add: 3 }], cause: "circumstance" })]);
     const record = advance(start("events"), input, country, catalog).state.history[0]!;
-    expect(record.events.map((e) => e.id)).toEqual(["test.event"]);
-    expect(record.events[0]!.textKey).toBe("event.test.event");
-    expect(record.events[0]!.effects).toEqual([
+    // The life's own systems (a condition beginning, say) may add events beside the authored one.
+    const authored = record.events.filter((e) => e.id === "test.event");
+    expect(authored).toHaveLength(1);
+    expect(authored[0]!.textKey).toBe("event.test.event");
+    expect(authored[0]!.effects).toEqual([
       { effect: { stat: "belonging", add: 3 }, cause: "circumstance", delta: expect.any(Number) },
     ]);
   });
@@ -279,5 +281,100 @@ describe("event cooldowns count years lived", () => {
   it("a cooldown of 1 allows the event every year and 2 every other year", () => {
     expect(firedAges(1)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(firedAges(2)).toEqual([1, 3, 5, 7]);
+  });
+});
+
+describe("the life systems in the yearly turn (M4)", () => {
+  const walk = (seed: string, c = country, stop = (s: LifeState) => !s.person.alive) => {
+    let s = start(seed, c);
+    const states = [s];
+    while (!stop(s)) {
+      s = advance(s, input, c).state;
+      states.push(s);
+      if (states.length > 200) throw new Error("life did not end");
+    }
+    return states;
+  };
+  const events = (states: LifeState[], id: string) =>
+    states.flatMap((s) => s.history.at(-1)?.events.filter((e) => e.id === id) ?? []);
+
+  it("starts school once, in the year the child is six", () => {
+    for (const seed of ["school-1", "school-2", "school-3"]) {
+      const states = walk(seed, country, (s) => !s.person.alive || s.person.age >= 10);
+      if (states.at(-1)!.person.age < 10) continue;
+      const startedAt = states
+        .filter((s) => s.history.at(-1)?.events.some((e) => e.id === "school.starts"))
+        .map((s) => s.person.age);
+      expect(startedAt).toEqual([7]);
+    }
+  });
+  it("never lowers the level of schooling, and keeps school years within the school ages", () => {
+    for (const seed of ["lvl-1", "lvl-2", "lvl-3", "lvl-4"]) {
+      const order = ["none", "primary", "lower-secondary", "upper-secondary", "tertiary"];
+      let previous = 0;
+      for (const s of walk(seed)) {
+        const rank = order.indexOf(s.person.education.level);
+        expect(rank).toBeGreaterThanOrEqual(previous);
+        previous = rank;
+        if (s.person.education.inSchool) expect(s.person.age).toBeGreaterThanOrEqual(6);
+        if (s.person.age > 22) expect(s.person.education.inSchool).toBe(false);
+      }
+    }
+  });
+  it("sets literacy for every adult", () => {
+    for (const seed of ["lit-1", "lit-2", "lit-3"]) {
+      const adult = walk(seed, country, (s) => !s.person.alive || s.person.age >= 18).at(-1)!;
+      if (adult.person.alive) expect(adult.person.education.literate).toBeTypeOf("boolean");
+    }
+  });
+  it("gives adults a status that fits their age, a job once they work, and a standing from 1 to 100", () => {
+    let someoneWorked = false;
+    for (const seed of ["work-1", "work-2", "work-3", "work-4", "work-5", "work-6"]) {
+      for (const s of walk(seed)) {
+        const { person } = s;
+        expect(person.money.percentile).toBeGreaterThanOrEqual(1);
+        expect(person.money.percentile).toBeLessThanOrEqual(100);
+        expect(person.money.savings).toBeGreaterThanOrEqual(0);
+        expect(person.money.debt).toBeGreaterThanOrEqual(0);
+        if (person.age < 6) expect(person.work.status).toBe("child");
+        if (person.work.status === "employed" || person.work.status === "informal") {
+          someoneWorked = true;
+          expect(person.work.sector).toBeDefined();
+          expect(person.age).toBeGreaterThanOrEqual(15);
+        }
+        if (person.work.status === "retired") expect(person.age).toBeGreaterThanOrEqual(55);
+      }
+    }
+    expect(someoneWorked).toBe(true);
+  });
+  it("brings younger siblings into the household, as events that add a relative", () => {
+    let seen = 0;
+    for (let i = 0; i < 30; i++) {
+      const states = walk(`sib-${i}`, country, (s) => !s.person.alive || s.person.age >= 15);
+      for (const born of events(states, "family.sibling_born")) {
+        seen++;
+        expect(born.vars).toHaveProperty("name");
+        expect(born.effects.some((e) => "relationship" in e.effect && e.effect.relationship === "add")).toBe(true);
+      }
+      const last = states.at(-1)!.person;
+      expect(last.relationships.filter((r) => r.kind === "sibling").length).toBeGreaterThanOrEqual(
+        events(states, "family.sibling_born").length,
+      );
+    }
+    expect(seen).toBeGreaterThan(5);
+  });
+  it("lets conditions begin and carries them on the person with valid severities", () => {
+    let begun = 0;
+    for (let i = 0; i < 20; i++) {
+      const states = walk(`cond-${i}`);
+      begun += states
+        .flatMap((s) => s.history.at(-1)?.events ?? [])
+        .filter((e) => /^health\..+\.begins$/.test(e.id)).length;
+      for (const s of states) for (const c of s.person.conditions) expect([1, 2, 3]).toContain(c.severity);
+    }
+    expect(begun).toBeGreaterThan(10);
+  });
+  it("replays exactly: the same seed gives the same life", () => {
+    expect(run(start("replay-m4"), createCatalog([]))).toEqual(run(start("replay-m4"), createCatalog([])));
   });
 });

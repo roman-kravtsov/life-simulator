@@ -45,3 +45,15 @@ export function normalQuantile(p: number): number {
   const s = r * r;
   return (horner(QUANTILE_LOW, s) * r) / horner([...QUANTILE_HIGH, 1], s);
 }
+
+/** A Poisson-distributed count (Knuth's method; fine for the small means the game uses). */
+export function poisson(rng: Rng, mean: number): number {
+  const limit = Math.exp(-mean);
+  let count = 0;
+  let product = rng.next();
+  while (product > limit) {
+    count++;
+    product *= rng.next();
+  }
+  return count;
+}
