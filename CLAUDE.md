@@ -39,7 +39,7 @@ src/data.ts         loads the baked country files in the browser (fetch), outsid
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
-  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear);
+  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, toggleUsPrices);
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
   kit/              styled wrappers around React Aria Components (Button, Switch, Slider, Tooltip, Dialog)
