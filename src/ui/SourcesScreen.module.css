@@ -1,0 +1,45 @@
+.source {
+  margin: 0 0 1.5rem;
+  padding: 0 0 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.source h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+.fields dt {
+  color: var(--ink-soft);
+}
+
+.fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.excluded {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+.excluded summary {
+  cursor: pointer;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.excluded ul {
+  padding-left: 1.25rem;
+}

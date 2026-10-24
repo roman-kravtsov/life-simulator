@@ -57,4 +57,12 @@ describe("game store", () => {
     store.continueYear();
     expect(store.getSnapshot()).toBe(before);
   });
+
+  it("opens and closes the sources screen without a life", () => {
+    const store = createGameStore(seeds());
+    store.openSources();
+    expect(store.getSnapshot()).toEqual({ screen: "sources", life: null });
+    store.closeSources();
+    expect(store.getSnapshot()).toEqual({ screen: "start", life: null });
+  });
 });

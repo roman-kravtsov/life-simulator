@@ -19,6 +19,12 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Begin a life" })).toBeInTheDocument();
   });
 
+  it("opens the sources screen from the start screen", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: "Where the numbers come from" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Where the numbers come from");
+  });
+
   it("begins a life and moves focus to the new heading", async () => {
     const { user } = setup();
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
