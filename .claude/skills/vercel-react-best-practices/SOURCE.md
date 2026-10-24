@@ -23,17 +23,16 @@ third-party scripts. The agents that preload this skill (`skills: [vercel-react-
 - `server-*` (10 rules): RSC, `React.cache`, `after()`, server actions, LRU across requests. No server.
 - `async-api-routes`, `async-suspense-boundaries` (server streaming), `async-dependencies` (needs
   `better-all`), `async-cheap-condition-before-await` (remote feature flags).
-- `bundle-analyzable-paths` (Next.js file tracing), `bundle-defer-third-party` (analytics and logging;
-  we use no third-party requests).
+- `bundle-defer-third-party` (analytics and logging; we use no third-party requests).
 - `client-swr-dedup`: SWR is not used.
 - `rendering-hydration-no-flicker`, `rendering-hydration-suppress-warning`: no SSR.
 - `rendering-resource-hints`, `rendering-script-defer-async`: Vite handles script tags and the app has
   no server-rendered head.
 - `rendering-activity`: not needed for current screens; add back if screens start hiding and restoring state.
 
-## Kept (48 rules)
+## Kept (49 rules)
 
-`async-defer-await`, `async-parallel` (data loading), `bundle-barrel-imports`, `bundle-conditional`,
+`async-defer-await`, `async-parallel` (data loading), `bundle-analyzable-paths` (cut to its Vite import-path half), `bundle-barrel-imports`, `bundle-conditional`,
 `bundle-dynamic-imports`, `bundle-preload`, `client-event-listeners`, `client-localstorage-schema`
 (saves), `client-passive-event-listeners`, all 15 `rerender-*`, `rendering-animate-svg-wrapper`,
 `rendering-svg-precision` (tree rings), `rendering-content-visibility` (long event log),
@@ -42,6 +41,8 @@ third-party scripts. The agents that preload this skill (`skills: [vercel-react-
 
 ## Edited kept rules
 
+- `async-defer-await`: dropped the link to the removed flag rule.
+- `bundle-analyzable-paths`: kept only the import-path guidance; dropped the Next.js file-tracing half.
 - `bundle-barrel-imports`: dropped the Next.js `optimizePackageImports` section.
 - `bundle-dynamic-imports`: `next/dynamic` replaced with `React.lazy` and `Suspense`.
 - `client-event-listeners`: `useSWRSubscription` replaced with a plain shared listener.

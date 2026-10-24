@@ -22,6 +22,7 @@ This index is all that loads by default. Pick the rules that match the code you 
 
 ## Bundle size (CRITICAL)
 
+- `bundle-analyzable-paths`: Prefer Statically Analyzable Import Paths
 - `bundle-barrel-imports`: Avoid Barrel File Imports
 - `bundle-conditional`: Conditional Module Loading
 - `bundle-dynamic-imports`: Dynamic Imports for Heavy Components

@@ -31,7 +31,8 @@ When using the `useKeyboardShortcut` hook multiple times, each instance will reg
 
 ```tsx
 // Module-level Map to track callbacks per key
-const keyCallbacks = new Map<string, Set<() => void>>()
+// Arrays, not Sets, so two hook instances passing the same callback each keep their own entry
+const keyCallbacks = new Map<string, Array<() => void>>()
 
 function onKeyDown(e: KeyboardEvent) {
   if (e.metaKey) keyCallbacks.get(e.key)?.forEach(cb => cb())
@@ -41,13 +42,13 @@ function useKeyboardShortcut(key: string, callback: () => void) {
   useEffect(() => {
     // The first registered callback attaches the single shared listener
     if (keyCallbacks.size === 0) window.addEventListener('keydown', onKeyDown)
-    if (!keyCallbacks.has(key)) keyCallbacks.set(key, new Set())
-    keyCallbacks.get(key)!.add(callback)
+    if (!keyCallbacks.has(key)) keyCallbacks.set(key, [])
+    keyCallbacks.get(key)!.push(callback)
 
     return () => {
-      const set = keyCallbacks.get(key)!
-      set.delete(callback)
-      if (set.size === 0) keyCallbacks.delete(key)
+      const list = keyCallbacks.get(key)!
+      list.splice(list.indexOf(callback), 1)
+      if (list.length === 0) keyCallbacks.delete(key)
       // The last callback to leave removes it
       if (keyCallbacks.size === 0) window.removeEventListener('keydown', onKeyDown)
     }
