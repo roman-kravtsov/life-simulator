@@ -74,6 +74,16 @@ export const en: Readonly<Record<string, string>> = {
   "life.note": "{note} ({source}, {year})",
   "life.died": "Your life ends at {age}, of {cause}.",
   "life.ended": "Life ended",
+  "help.grief":
+    "If the loss is weighing on you, findahelpline.com lists free, confidential helplines around the world.",
+  "help.suicide":
+    "If thoughts of ending a life are close to you, please reach out: findahelpline.com lists free, confidential helplines around the world, and you do not have to carry this alone.",
+  "help.violence":
+    "If this touches something you have lived, findahelpline.com lists free, confidential helplines around the world.",
+  "help.abuse":
+    "If this is close to your own life, findahelpline.com lists free, confidential helplines around the world.",
+  "help.addiction":
+    "If drink or drugs feel hard to put down, findahelpline.com lists free, confidential helplines around the world.",
   "life.another": "Begin another life",
 
   "cause.infectious": "an infectious disease",

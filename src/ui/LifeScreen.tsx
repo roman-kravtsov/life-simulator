@@ -33,6 +33,7 @@ function EventLine({ event, sources }: { event: EventRecord; sources: CountryInd
           })}
         </span>
       )}
+      {event.helpTopic && <p className={styles.help}>{t(`help.${event.helpTopic}`)}</p>}
     </li>
   );
 }
@@ -44,7 +45,7 @@ function relativeLine(relative: Relationship) {
 
 export function LifeScreen({ life, country, sources, onContinue, onAnother, onBack }: Props) {
   const { person, death } = life;
-  const heading = useFocusOn<HTMLHeadingElement>(person.age);
+  const heading = useFocusOn<HTMLHeadingElement>(life.history.length);
   const last = life.history.at(-1);
   const story = death
     ? t("life.died", {
@@ -87,7 +88,7 @@ export function LifeScreen({ life, country, sources, onContinue, onAnother, onBa
       </dl>
       <div role="status" className={styles.story}>
         <p>{story}</p>
-        {last && !death && (
+        {last && (
           <>
             <h2 className={styles.thisYear}>{t("life.thisYear")}</h2>
             {events.length === 0 ? (

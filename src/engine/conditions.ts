@@ -18,13 +18,15 @@ export interface ConditionContext {
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
-const isSourced = (value: unknown): value is { value: unknown; source: string; year: number } =>
+const isSourced = (value: unknown): value is { value: unknown; source: string; year: number; estimated?: boolean } =>
   isObject(value) && "value" in value && "source" in value && "year" in value;
 
 export interface SourcedIndicator {
   value: number;
   source: string;
   year: number;
+  /** True when the country has no value and this one is a regional or income-group average. */
+  estimated?: boolean;
 }
 
 /**
@@ -34,17 +36,17 @@ export interface SourcedIndicator {
  */
 export function readIndicator(country: Country, path: string, sex: Sex): SourcedIndicator {
   let node: unknown = country;
-  let sourced: { source: string; year: number } | undefined;
+  let sourced: { source: string; year: number; estimated?: boolean } | undefined;
   for (const segment of path.split(".")) {
     if (isSourced(node) && !(segment in node)) {
-      sourced = { source: node.source, year: node.year };
+      sourced = { source: node.source, year: node.year, ...(node.estimated ? { estimated: true } : {}) };
       node = node.value;
     }
     if (!isObject(node) || !(segment in node)) throw new Error(`Unknown indicator: ${path}`);
     node = node[segment];
   }
   if (isSourced(node)) {
-    sourced = { source: node.source, year: node.year };
+    sourced = { source: node.source, year: node.year, ...(node.estimated ? { estimated: true } : {}) };
     node = node.value;
   }
   if (isObject(node) && sex in node) node = node[sex];

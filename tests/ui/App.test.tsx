@@ -2,9 +2,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { newLife } from "../../src/engine/life";
+import type { EventRecord, LifeState } from "../../src/engine/types";
 import { App } from "../../src/ui/App";
+import { LifeScreen } from "../../src/ui/LifeScreen";
 import { createGameStore } from "../../src/ui/store";
-import { testWorld } from "../fixtures/country";
+import { makeCountry, testSources, testWorld } from "../fixtures/country";
 
 const setup = () => {
   const store = createGameStore(() => "test-seed", testWorld());
@@ -141,5 +144,71 @@ describe("App", () => {
     await startLife(user);
     await user.click(screen.getByRole("button", { name: "Back to start" }));
     expect(screen.getByRole("button", { name: "Begin a life" })).toBeInTheDocument();
+  });
+
+  describe("the final year and its care", () => {
+    const country = makeCountry({ region: "Western Africa" });
+    const noop = () => {};
+    const renderEnded = (events: EventRecord[], age = 40): LifeState => {
+      const base = newLife({ seed: "end", country });
+      const life: LifeState = {
+        ...base,
+        person: { ...base.person, alive: false, age },
+        death: { age, cause: "cardiovascular" },
+        history: [{ age, stage: "adulthood", stageChanged: false, stats: base.person.stats, events, died: true }],
+      };
+      render(
+        <LifeScreen
+          life={life}
+          country={country}
+          sources={testSources}
+          onContinue={noop}
+          onAnother={noop}
+          onBack={noop}
+        />,
+      );
+      return life;
+    };
+
+    it("still tells the events of the year the person died", () => {
+      renderEnded([{ id: "e1", textKey: "event.midlife.looking_back", effects: [] }]);
+      const status = screen.getByRole("status");
+      expect(status).toHaveTextContent(/Your life ends at 40/);
+      expect(within(status).getByRole("heading", { name: "This year" })).toBeInTheDocument();
+      expect(within(status).getByText(/telling a story you have never told/)).toBeInTheDocument();
+    });
+
+    it("follows a grief event with a calm pointer to helplines", () => {
+      renderEnded([
+        { id: "e2", textKey: "event.midlife.looking_back", helpTopic: "grief", sensitivity: "difficult", effects: [] },
+      ]);
+      expect(screen.getByText(/findahelpline\.com lists free, confidential helplines/)).toBeInTheDocument();
+    });
+
+    it("shows no help line for events without a help topic", () => {
+      renderEnded([{ id: "e3", textKey: "event.midlife.looking_back", effects: [] }]);
+      expect(screen.queryByText(/findahelpline/)).not.toBeInTheDocument();
+    });
+
+    it("moves focus to the heading after a death at age 0", async () => {
+      const deadly = makeCountry({
+        region: "Western Africa",
+        demography: {
+          ...country.demography,
+          lifeTable: {
+            ...country.demography.lifeTable,
+            value: { female: new Array<number>(101).fill(1), male: new Array<number>(101).fill(1) },
+          },
+        },
+      });
+      const store = createGameStore(() => "test-seed", testWorld(deadly));
+      render(<App store={store} />);
+      const user = userEvent.setup();
+      await startLife(user);
+      await nextYear(user);
+      expect(store.getSnapshot().life?.person.alive).toBe(false);
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Age 0");
+      expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
+    });
   });
 });

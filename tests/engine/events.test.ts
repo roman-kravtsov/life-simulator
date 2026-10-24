@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCatalog, eventProbability, selectEvents, type EventDef } from "../../src/engine/events";
+import { createCatalog, eventProbability, pendingFromDef, selectEvents, type EventDef } from "../../src/engine/events";
 import { createRng } from "../../src/engine/rng";
 import { en } from "../../src/content/strings/en";
 import { catalog as contentCatalog, eventDefs } from "../../src/content/events";
@@ -35,12 +35,44 @@ describe("createCatalog (EVENT-001)", () => {
     ["a non-positive weight", [def({ chance: { kind: "weight", base: 0 } })], /weight/i],
     ["no text key", [def({ text: "" })], /text/i],
     [
+      "a choice outcome probability outside 0 to 1",
+      [
+        def({
+          choices: [
+            {
+              id: "c",
+              text: "x",
+              outcomes: [
+                { p: -1, effects: [], text: "y" },
+                { p: 2, effects: [], text: "z" },
+              ],
+            },
+          ],
+        }),
+      ],
+      /between 0 and 1/i,
+    ],
+    [
       "choice outcomes that do not sum to 1",
       [def({ choices: [{ id: "c", text: "x", outcomes: [{ p: 0.5, effects: [], text: "y" }] }] })],
       /sum to 1/i,
     ],
   ])("rejects %s", (_name, defs, message) => {
     expect(() => createCatalog(defs as EventDef[])).toThrow(message);
+  });
+});
+
+describe("data notes", () => {
+  const withNote = def({ dataNote: { text: "note.unemployment", path: "work.unemployment" } });
+  it("carries the value, source and year of an observed indicator", () => {
+    const pending = pendingFromDef(withNote, makePerson(), country);
+    expect(pending.dataNote).toEqual({ textKey: "note.unemployment", value: 0.06, source: "test", year: 2023 });
+  });
+  it("leaves the note out for an estimated indicator, which is never shown as a fact about the country", () => {
+    const estimated = makeCountry({
+      work: { ...country.work, unemployment: { ...country.work.unemployment, estimated: true } },
+    });
+    expect(pendingFromDef(withNote, makePerson(), estimated).dataNote).toBeUndefined();
   });
 });
 

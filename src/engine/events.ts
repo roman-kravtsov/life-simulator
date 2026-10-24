@@ -60,6 +60,11 @@ export function createCatalog(defs: readonly EventDef[]): EventCatalog {
     }
     if (chance.kind === "weight" && !(chance.base > 0)) throw new Error(`Event ${def.id}: weight must be positive`);
     for (const choice of def.choices ?? []) {
+      for (const outcome of choice.outcomes) {
+        if (!Number.isFinite(outcome.p) || outcome.p < 0 || outcome.p > 1) {
+          throw new Error(`Event ${def.id}, choice ${choice.id}: each outcome probability must be between 0 and 1`);
+        }
+      }
       const total = choice.outcomes.reduce((sum, o) => sum + o.p, 0);
       if (Math.abs(total - 1) > 1e-9) throw new Error(`Event ${def.id}, choice ${choice.id}: outcomes must sum to 1`);
     }
@@ -162,8 +167,9 @@ export function pendingFromDef(def: EventDef, person: Person, country: Country):
   if (def.sensitivity) pending.sensitivity = def.sensitivity;
   if (def.helpTopic) pending.helpTopic = def.helpTopic;
   if (def.dataNote) {
-    const { value, source, year } = readIndicator(country, def.dataNote.path, person.sex);
-    pending.dataNote = { textKey: def.dataNote.text, value, source, year };
+    // An estimate (filled from a region or income group) is never shown as a fact about the country.
+    const { value, source, year, estimated } = readIndicator(country, def.dataNote.path, person.sex);
+    if (!estimated) pending.dataNote = { textKey: def.dataNote.text, value, source, year };
   }
   return pending;
 }
