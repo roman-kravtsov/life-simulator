@@ -15,12 +15,12 @@ Birthright is a client-only React 19 + Vite SPA: no server, no Next.js, no RSC, 
 
 This index is all that loads by default. Pick the rules that match the code you are touching, then read only those files, e.g. `rules/bundle-barrel-imports.md`. Do not read the whole `rules/` folder. Each file has a short why, an incorrect and a correct example.
 
-## Async (CRITICAL)
+## Async
 
 - `async-defer-await`: Defer Await Until Needed
 - `async-parallel`: Promise.all() for Independent Operations
 
-## Bundle size (CRITICAL)
+## Bundle size
 
 - `bundle-analyzable-paths`: Prefer Statically Analyzable Import Paths
 - `bundle-barrel-imports`: Avoid Barrel File Imports
@@ -34,7 +34,7 @@ This index is all that loads by default. Pick the rules that match the code you 
 - `client-localstorage-schema`: Version and Minimize localStorage Data
 - `client-passive-event-listeners`: Use Passive Event Listeners for Scrolling Performance
 
-## Re-renders (MEDIUM)
+## Re-renders
 
 - `rerender-defer-reads`: Defer State Reads to Usage Point
 - `rerender-dependencies`: Narrow Effect Dependencies
@@ -52,7 +52,7 @@ This index is all that loads by default. Pick the rules that match the code you 
 - `rerender-use-deferred-value`: Use useDeferredValue for Expensive Derived Renders
 - `rerender-use-ref-transient-values`: Use useRef for Transient Values
 
-## Rendering (MEDIUM)
+## Rendering
 
 - `rendering-animate-svg-wrapper`: Animate SVG Wrapper Instead of SVG Element
 - `rendering-conditional-render`: Use Explicit Conditional Rendering
@@ -61,7 +61,7 @@ This index is all that loads by default. Pick the rules that match the code you 
 - `rendering-svg-precision`: Optimize SVG Precision
 - `rendering-usetransition-loading`: Use useTransition Over Manual Loading States
 
-## JavaScript (LOW-MEDIUM)
+## JavaScript
 
 - `js-batch-dom-css`: Avoid Layout Thrashing
 - `js-cache-function-results`: Cache Repeated Function Calls
@@ -78,7 +78,7 @@ This index is all that loads by default. Pick the rules that match the code you 
 - `js-set-map-lookups`: Use Set/Map for O(1) Lookups
 - `js-tosorted-immutable`: Use toSorted() Instead of sort() for Immutability
 
-## Advanced (LOW)
+## Advanced
 
 - `advanced-effect-event-deps`: Do Not Put Effect Events in Dependency Arrays
 - `advanced-event-handler-refs`: Store Event Handlers in Refs

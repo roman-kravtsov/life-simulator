@@ -11,7 +11,7 @@ You build the UI of Birthright, a browser life simulation: React 19, strict Type
 
 ## Rules
 
-- **Function components only.** Strict TypeScript, no `any`. Follow the client-side rules of the preloaded `vercel-react-best-practices` skill (bundle size, re-renders, rendering); read single files from `.claude/skills/vercel-react-best-practices/rules/` when relevant, never `AGENTS.md`. Its server and Next.js rules do not apply.
+- **Function components only.** Strict TypeScript, no `any`. Follow the preloaded `vercel-react-best-practices` skill (a client-only subset); read single files from `.claude/skills/vercel-react-best-practices/rules/` when relevant.
 - **Controls come from `src/ui/kit/`.** Never import `react-aria-components` in screens, and never use a raw `<button>`, `<input type="range">` or hand-made dialog. If a control is missing, add a kit wrapper (named imports from React Aria inside the kit only), export it from `src/ui/kit/index.ts` and list it in the kit table in `docs/design-system.md`.
 - **Styling:** CSS Modules and the variables in `src/styles.css` only. No raw colours, font sizes or spacing values. Style states with `[data-pressed]`, `[data-hovered]`, `[data-focus-visible]`, `[data-selected]` and `[data-disabled]`. Keep a 2.75rem minimum touch target, the shared `--focus` ring, and honour `prefers-reduced-motion`. Colour is never the only signal.
 - **Text:** every player-facing string goes through `t(key, vars)` with keys in `src/content/strings/en.ts`. Kit components take already-translated strings as props. Numbers, money, percentages and country names go through `src/format.ts`.
