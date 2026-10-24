@@ -405,7 +405,18 @@ This is where the "in-depth game feeling" comes from.
 
 ## 6. Technical outline
 
-- **Stack:** Vite, TypeScript, no UI framework (small render helpers over the DOM), Vitest, GitHub Pages. Same as Roman's defaults.
+- **Stack (React chosen by Roman, 2026-10-23):**
+  - **UI:** React 19 single-page app built with Vite (`@vitejs/plugin-react`), TypeScript strict. No Next.js: there is no server, and the site is static on GitHub Pages.
+  - **State:** the engine stays pure TypeScript with no React or DOM imports. A small store (`src/ui/store.ts`) holds the current state and exposes actions; components read it with `useSyncExternalStore`. No Redux or Zustand unless state grows beyond this.
+  - **Screens:** switched by game state, with no router library. Hash routing is an option later for shareable links.
+  - **Styling:** design tokens and shared base in `src/styles.css`, component styles in CSS Modules. System fonts only, no third-party requests.
+  - **Graphics:** the growth rings are plain React SVG, with no chart library.
+  - **Persistence:** localStorage for the current life, IndexedDB (via `idb`) for past lives.
+  - **Text:** `t(key, vars)` over English string files; `react-i18next` is an option when a second language arrives.
+  - **Quality:** Vitest with React Testing Library and jsdom; Playwright end-to-end at phone (360 px) and desktop (1440 px); ESLint (typescript-eslint, React Hooks, `Math.random` banned in the engine); Prettier.
+  - **Data pipeline:** Node scripts run with `tsx`.
+  - **CI and hosting:** GitHub Actions (lint, format, typecheck, unit tests, build, end-to-end) and GitHub Pages deploy on merge to `main`.
+  - The repo's `vercel-react-best-practices` skill applies for its client-side rules (bundle size, re-renders, rendering); its server and Next.js rules do not apply.
 - **Layout of the repo:**
 
 ```
@@ -413,13 +424,14 @@ scripts/data/      pipeline: download, clean, fill gaps, write public/data/*.jso
 public/data/       baked world data (committed, versioned)
 src/engine/        pure simulation: rng, world, person, events, effects, mortality, money, replay
 src/content/       events, names, text (English)
-src/ui/            screens: start, life, decision, reflection, summary, past lives, settings
+src/ui/            React components and the game store: start, life, decision, reflection, summary, past lives, settings
 src/save/          localStorage and IndexedDB adapters, migrations
-tests/             engine tests, replay tests, calibration tests
+tests/             engine, replay, calibration and component tests
+e2e/               Playwright end-to-end tests (phone and desktop)
 ```
 
 - **Data size target:** under 15 KB gzipped per country, loaded on demand.
 
 ## 7. Decisions log
 
-None. Decided 2026-10-23: the name is **Birthright** (1.1); yearly input is **focus points** (3.3), played **yearly with zoom-in quarters** in crisis and turning-point years (3.1.1); the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1).
+None. Decided 2026-10-23: the name is **Birthright** (1.1); yearly input is **focus points** (3.3), played **yearly with zoom-in quarters** in crisis and turning-point years (3.1.1); the focus area "Care" is renamed **Health** (3.3), and the MVP includes **every country with complete data** (2.1); the UI uses **React with Vite** (6).

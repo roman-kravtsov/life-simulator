@@ -1,0 +1,69 @@
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { en } from "../src/content/strings/en";
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    return statSync(path).isDirectory() ? sourceFiles(path) : /\.tsx?$/.test(path) ? [path] : [];
+  });
+}
+
+const unseededRandom = (source: string) => /Math\s*\.\s*random\s*\(/.test(source);
+const trackingCode = (source: string) =>
+  /google-analytics|googletagmanager|gtag\(|plausible|segment\.com|mixpanel|posthog|sendBeacon/i.test(source);
+
+describe("RNG-005: no unseeded randomness in the engine", () => {
+  it("detects Math.random()", () => {
+    expect(unseededRandom("const x = Math.random();")).toBe(true);
+    expect(unseededRandom("const x = Math . random ( );")).toBe(true);
+    expect(unseededRandom("const x = rng.next();")).toBe(false);
+  });
+
+  it.each(sourceFiles("src/engine"))("%s does not call Math.random()", (file) => {
+    expect(unseededRandom(readFileSync(file, "utf8"))).toBe(false);
+  });
+});
+
+describe("ANLT-001: no tracking", () => {
+  it("detects common tracking code", () => {
+    expect(trackingCode("<script src='https://www.googletagmanager.com/gtag/js'>")).toBe(true);
+    expect(trackingCode("render(app)")).toBe(false);
+  });
+
+  it.each([...sourceFiles("src"), "index.html"])("%s contains no tracking code", (file) => {
+    expect(trackingCode(readFileSync(file, "utf8"))).toBe(false);
+  });
+});
+
+describe("L10N-001: every string key used in the code exists", () => {
+  it.each(sourceFiles("src"))("%s", (file) => {
+    const keys = [...readFileSync(file, "utf8").matchAll(/\bt\(\s*"([^"]+)"/g)].map((m) => m[1]!);
+    for (const key of keys) expect(en, `missing string "${key}"`).toHaveProperty([key]);
+  });
+});
+
+// JSX text between tags, e.g. <p>Hello</p>, must come from t(). Expressions like {t("x")} are fine.
+// Type arguments such as useRef<HTMLElement>() are removed first so they are not mistaken for tags.
+const hardCodedJsxText = (source: string) =>
+  [...source.replace(/<[A-Z][\w.]*(\[\])?>/g, "").matchAll(/>([^<>{}]*[A-Za-z][^<>{}]*)</g)]
+    .map((m) => m[1]!.trim())
+    .filter(Boolean);
+
+describe("L10N-001: no hard-coded text in the UI", () => {
+  it("detects text between JSX tags", () => {
+    expect(hardCodedJsxText("<p>Begin a life</p>")).toEqual(["Begin a life"]);
+    expect(hardCodedJsxText('<p>{t("start.begin")}</p>')).toEqual([]);
+    expect(hardCodedJsxText("const ref = useRef<HTMLElement>();\n  return (<p />);")).toEqual([]);
+  });
+
+  it.each(sourceFiles("src/ui").filter((f) => f.endsWith(".tsx")))("%s", (file) => {
+    expect(hardCodedJsxText(readFileSync(file, "utf8"))).toEqual([]);
+  });
+
+  it("index.html has no visible text outside the title", () => {
+    const body = readFileSync("index.html", "utf8").split("<body>")[1]!;
+    expect(hardCodedJsxText(body)).toEqual([]);
+  });
+});
