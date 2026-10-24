@@ -105,17 +105,23 @@ export interface SelectArgs {
   catalog: EventCatalog;
   person: Person;
   country: Country;
-  history: readonly { age: number; events: readonly { id: string }[] }[];
+  history: readonly { age: number; died?: boolean; events: readonly { id: string }[] }[];
   /** Draws the pool picks. */
   rng: Rng;
-  /** A separate stream per statistical event, so new content never shifts another event's roll. */
-  rollFor?: (eventId: string) => Rng;
+  /**
+   * A separate stream per statistical event (`event:<id>`) and for each pool (`pool:major`,
+   * `pool:minor`), so new content never shifts another event's roll or the other pool's picks.
+   */
+  rollFor?: (name: `event:${string}` | `pool:${string}`) => Rng;
 }
 
 /** The events that happen this year: statistical events first, then the major and minor draws. */
 export function selectEvents({ catalog, person, country, history, rng, rollFor }: SelectArgs): EventDef[] {
   const lastSeen = new Map<string, number>();
-  for (const record of history) for (const e of record.events) lastSeen.set(e.id, record.age);
+  // A surviving year is recorded at the age reached; a death at the age lived. Count years lived.
+  for (const record of history) {
+    for (const e of record.events) lastSeen.set(e.id, record.died ? record.age : record.age - 1);
+  }
   const ctx = { person, country };
 
   const eligible = catalog.forStage(person.stage).filter((def) => {
@@ -127,25 +133,28 @@ export function selectEvents({ catalog, person, country, history, rng, rollFor }
   });
 
   const picked = eligible.filter(
-    (def) => def.chance.kind !== "weight" && (rollFor?.(def.id) ?? rng).chance(eventProbability(def, person, country)),
+    (def) =>
+      def.chance.kind !== "weight" &&
+      (rollFor?.(`event:${def.id}`) ?? rng).chance(eventProbability(def, person, country)),
   );
 
   const pool = (tier: "major" | "minor") =>
     eligible.filter((def) => def.chance.kind === "weight" && (def.tier ?? "minor") === tier);
-  const draw = (candidates: EventDef[]): EventDef | undefined => {
+  const draw = (pool: Rng, candidates: EventDef[]): EventDef | undefined => {
     if (candidates.length === 0) return undefined;
-    const choice = rng.weighted<EventDef | undefined>(
+    const choice = pool.weighted<EventDef | undefined>(
       [...candidates, undefined],
       [...candidates.map((def) => eventWeight(def, person, country)), QUIET_WEIGHT],
     );
     return choice;
   };
 
-  const major = draw(pool("major"));
+  const major = draw(rollFor?.("pool:major") ?? rng, pool("major"));
   if (major) picked.push(major);
   let minors = pool("minor");
+  const minorRng = rollFor?.("pool:minor") ?? rng;
   for (let i = 0; i < MAX_MINOR; i++) {
-    const minor = draw(minors);
+    const minor = draw(minorRng, minors);
     if (!minor) continue;
     picked.push(minor);
     minors = minors.filter((def) => def !== minor);

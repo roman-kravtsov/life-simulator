@@ -250,3 +250,34 @@ describe("child labour in the yearly turn", () => {
     if (s.person.alive) expect(s.person.flags.childLabour).toBeFalsy();
   });
 });
+
+describe("event cooldowns count years lived", () => {
+  const immortal = makeCountry({
+    region: "Western Africa",
+    demography: {
+      ...country.demography,
+      lifeTable: {
+        ...country.demography.lifeTable,
+        value: {
+          female: [...new Array<number>(100).fill(0), 1],
+          male: [...new Array<number>(100).fill(0), 1],
+        },
+      },
+    },
+  });
+  const firedAges = (cooldownYears: number) => {
+    let s = start("cooldown", immortal);
+    const catalog = createCatalog([event({ cooldownYears })]);
+    const ages: number[] = [];
+    for (let i = 0; i < 8; i++) {
+      s = advance(s, input, immortal, catalog).state;
+      const record = s.history.at(-1)!;
+      if (record.events.some((e) => e.id === "test.event")) ages.push(record.age);
+    }
+    return ages;
+  };
+  it("a cooldown of 1 allows the event every year and 2 every other year", () => {
+    expect(firedAges(1)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(firedAges(2)).toEqual([1, 3, 5, 7]);
+  });
+});

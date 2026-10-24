@@ -25,11 +25,13 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   drift.ts, mortality.ts, checks.ts   stat drift and health norm, life-table mortality and cause of death, statistical checks
   conditions.ts, events.ts   the event condition language, event schema, catalog and selection
   calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
+  dist.ts           small distribution helpers (normal, clamp)
   seed.ts           readable seeds ("amber-river-4821")
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
   world/            country schema (types.ts), validator, birth draw, data loader
 src/content/        game content as data: strings (en.ts), events/ (typed event defs), names.ts (name lists by region)
+src/data.ts         loads the baked country files in the browser (fetch), outside the engine
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
@@ -76,7 +78,7 @@ Read these docs before starting work:
 
 - **Engine (`src/engine/`) is pure TypeScript:** no React, no DOM, no I/O. The UI talks to it through `src/ui/store.ts`.
 - **No unseeded randomness in the engine.** Never use `Math.random` or `crypto` there; draw from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. Use a separate stream per subsystem so that new content does not shift other rolls. ESLint and a guard test enforce this.
-- **One random stream per subsystem and year** (`person`, `names`, `family`, `drift`, `labour`, `events`, `event:<id>`, `mortality`, `cause`, `birth`). A new subsystem gets a new stream name.
+- **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `family`, `drift`, `labour`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `mortality`, `cause`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
 - **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard or drift, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.

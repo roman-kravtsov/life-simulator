@@ -26,7 +26,7 @@ export function generatePerson(seed: string, country: Country): Person {
   const names = stream(seed, "names", 0);
   const list = namesForRegion(country.region)[sex];
   const name = list[names.int(0, list.length - 1)]!;
-  const parents = generateParents(stream(seed, "family", 0), country, names);
+  const parents = generateParents(stream(seed, "parents", 0), country, names);
   const parentCloseness = parents.reduce((sum, p) => sum + p.closeness, 0) / parents.length;
 
   const newborn: Person = {

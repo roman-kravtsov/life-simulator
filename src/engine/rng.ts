@@ -88,13 +88,31 @@ export function createRng(seed: string): Rng {
 }
 
 /** Subsystems that draw randomness. Each gets its own stream per period. */
-export type StreamName = "birth" | "family" | "mortality" | "events" | "outcomes" | "money" | "names" | "autoplay";
+export type StreamName =
+  | "birth"
+  | "person"
+  | "parents"
+  | "family"
+  | "drift"
+  | "labour"
+  | "mortality"
+  | "cause"
+  | "events"
+  | "outcomes"
+  | "money"
+  | "names"
+  | "autoplay";
 
 /**
  * An independent random stream for one subsystem in one period (design 3.9).
  * Draws on one stream never shift another, so adding content does not change
  * when someone dies. Quarter is set only in zoomed years.
  */
-export function stream(seed: string, name: StreamName | string, year: number, quarter?: 1 | 2 | 3 | 4): Rng {
+export function stream(
+  seed: string,
+  name: StreamName | `event:${string}` | `pool:${string}`,
+  year: number,
+  quarter?: 1 | 2 | 3 | 4,
+): Rng {
   return createRng(`${seed}\u0000${name}\u0000${year}\u0000${quarter ?? 0}`);
 }

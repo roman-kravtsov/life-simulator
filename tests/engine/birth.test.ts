@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { generatePerson } from "../../src/engine/person";
 import { dailyIncome, householdBand, drawHouseholdPercentile } from "../../src/engine/money";
 import { generateParents } from "../../src/engine/family";
-import { createRng } from "../../src/engine/rng";
+import { createRng, stream } from "../../src/engine/rng";
 import { TRAIT_IDS } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
 import { namesForRegion } from "../../src/content/names";
@@ -137,5 +137,30 @@ describe("parents (FAM-001)", () => {
     expect(mean).toBeGreaterThan(2);
     expect(mean).toBeLessThan(4.5);
     expect(Math.min(...parents(3000).map(([, f]) => f!.age))).toBeGreaterThanOrEqual(17);
+  });
+});
+
+describe("parents' random stream", () => {
+  it("is separate from the year-0 family stream, so a parent's age says nothing about their year-0 death roll", () => {
+    const n = 3000;
+    const spread: number[] = [];
+    const rolls: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const seed = `corr-${i}`;
+      const mother = generatePerson(seed, country).relationships[0]!;
+      spread.push(Math.abs(mother.age - country.demography.meanAgeAtBirth.value));
+      rolls.push(stream(seed, "family", 0).next());
+    }
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const [ms, mr] = [mean(spread), mean(rolls)];
+    let cov = 0;
+    let vs = 0;
+    let vr = 0;
+    for (let i = 0; i < n; i++) {
+      cov += (spread[i]! - ms) * (rolls[i]! - mr);
+      vs += (spread[i]! - ms) ** 2;
+      vr += (rolls[i]! - mr) ** 2;
+    }
+    expect(Math.abs(cov / Math.sqrt(vs * vr))).toBeLessThan(0.08);
   });
 });

@@ -119,8 +119,8 @@ describe("selectEvents", () => {
   });
   it("respects a cooldown in years", () => {
     const cool = def({ id: "cool", cooldownYears: 3 });
-    expect(select([cool], makePerson({ age: 10 }), [{ age: 8, events: [{ id: "cool" }] }])).toEqual([]);
-    expect(select([cool], makePerson({ age: 10 }), [{ age: 7, events: [{ id: "cool" }] }])).toEqual(["cool"]);
+    expect(select([cool], makePerson({ age: 10 }), [{ age: 9, events: [{ id: "cool" }] }])).toEqual([]);
+    expect(select([cool], makePerson({ age: 10 }), [{ age: 8, events: [{ id: "cool" }] }])).toEqual(["cool"]);
   });
   it("draws narrative events from a weighted pool: at most one major and two minor, often none", () => {
     const defs = [
@@ -152,6 +152,26 @@ describe("selectEvents", () => {
       return n;
     };
     expect(count("rural")).toBeGreaterThan(count("urban") * 3);
+  });
+  it("draws the minor pool from its own stream, so adding a major event never reshuffles the minor picks", () => {
+    const minors = [
+      def({ id: "minor1", tier: "minor", chance: { kind: "weight", base: 5 } }),
+      def({ id: "minor2", tier: "minor", chance: { kind: "weight", base: 5 } }),
+      def({ id: "minor3", tier: "minor", chance: { kind: "weight", base: 5 } }),
+    ];
+    const major = def({ id: "major", tier: "major", chance: { kind: "weight", base: 5 } });
+    const run = (defs: EventDef[], seed: string) =>
+      selectEvents({
+        catalog: createCatalog(defs),
+        person: makePerson(),
+        country,
+        history: [],
+        rng: createRng(seed),
+        rollFor: (id) => createRng(`${seed}:${id}`),
+      })
+        .map((e) => e.id)
+        .filter((id) => id.startsWith("minor"));
+    for (let i = 0; i < 100; i++) expect(run([...minors, major], `p${i}`)).toEqual(run(minors, `p${i}`));
   });
   it("skips events with choices until decisions arrive (DEC-001)", () => {
     const withChoice = def({

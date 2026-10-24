@@ -119,7 +119,7 @@ export function advance(
     country,
     history: state.history,
     rng: eventsRng,
-    rollFor: (id) => stream(seed, `event:${id}`, year),
+    rollFor: (name) => stream(seed, name, year),
   })) {
     pending.push(pendingFromDef(def, person, country));
   }
