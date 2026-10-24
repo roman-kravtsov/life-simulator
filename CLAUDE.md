@@ -1,6 +1,42 @@
 # Birthright: working conventions
 
-Birthright is a browser life simulation built on real statistics. It is free and non-commercial. Read these docs before starting work:
+## The game
+
+Birthright is a browser game in which the player lives one person's life from birth to death. The birthplace, family and household wealth are drawn by the real odds of birth today, using public statistics from the UN, World Bank, WHO and others. Each year the player spends a few focus points (Learn, Earn, Health, Bond, Rest) and faces events and decisions, and the outcomes are shaped by real data on schooling, work, income, marriage, illness and death in that country. Choices shift the odds but never escape them, and an "odds lens" shows by how much. The tone is reflective and literary, hard topics are handled honestly but never graphically, and at the end the life is shown as tree rings with a summary of what came from chance, choice and circumstance. It is free, non-commercial, runs entirely in the browser and saves locally.
+
+## Keeping these conventions
+
+- **Follow every rule in this file on every change**, in every session. If a rule seems wrong for a task, ask Roman instead of quietly breaking it.
+- **Keep this file current.** When a change alters the architecture, a convention, the stack or a check, update `CLAUDE.md` in the same PR. When Roman sets a new rule, add it here.
+- **Rules are enforced by tooling where possible** (ESLint, guard tests in `tests/guards.test.ts`, CI). When a convention can be checked automatically, add a check instead of relying on memory.
+
+## Architecture
+
+```
+public/data/        baked country data (JSON, one file per country), built by the pipeline   [M2]
+scripts/data/       data pipeline: download pinned sources, extract, fill gaps, write JSON    [M2]
+src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
+  rng.ts            seeded PRNG and independent streams per subsystem and period
+  life.ts           public API: newLife(), advance(state, input) -> new state
+  effects.ts        effects with circumstance/choice/chance tags
+  stages.ts, types.ts
+src/content/        game content as data: strings (en.ts), later events, names, prompts
+src/i18n.ts         t(key, vars) translator
+src/ui/             React 19 components and the game store
+  store.ts          holds engine state, exposes actions; React reads it via useSyncExternalStore
+  App.tsx           switches screens by game state (no router)
+src/styles.css      design tokens (light and dark) and shared base styles
+tests/              Vitest: engine, guard and component tests
+e2e/                Playwright: full-loop tests at phone and desktop widths
+```
+
+- **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
+- **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision log. Saves (M6) store those plus a snapshot, so any life can be replayed exactly.
+- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, Vitest, React Testing Library, Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
+
+## Docs
+
+Read these docs before starting work:
 
 - `docs/features.md`: **the source of truth.** Every change traces back to a feature ID (SIM-001, UI-004, ...).
 - `docs/roadmap.md`: milestones in dependency order. `docs/mvp.md`: what the MVP includes and how it is built.
