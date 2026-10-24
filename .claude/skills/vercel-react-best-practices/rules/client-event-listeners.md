@@ -35,7 +35,7 @@ When using the `useKeyboardShortcut` hook multiple times, each instance will reg
 const keyCallbacks = new Map<string, Array<() => void>>()
 
 function onKeyDown(e: KeyboardEvent) {
-  if (e.metaKey) keyCallbacks.get(e.key)?.forEach(cb => cb())
+  if (e.metaKey) [...(keyCallbacks.get(e.key) ?? [])].forEach(cb => cb())
 }
 
 function useKeyboardShortcut(key: string, callback: () => void) {
