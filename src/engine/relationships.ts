@@ -1,6 +1,6 @@
 // How close the people around the person are, and how that changes (REL-001). Closeness runs from
 // 0 to 100. Each year it moves part of the way toward a norm that depends on who the relative is and
-// how sociable the person is, with a little noise. Events and, from M5, the Belonging focus move it too
+// how sociable the person is, with a little noise. Events and the Belonging focus move it too
 // (the `relationship` effects in effects.ts).
 import { namesForRegion } from "../content/names";
 import { clamp } from "./dist";

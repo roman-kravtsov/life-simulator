@@ -2,7 +2,7 @@
 // condition begins by a yearly chance that depends on age, household, place, job and how common its
 // cause is in the country's deaths; once the person has it, each year it may worsen or ease. It lowers
 // the health the person drifts toward, raises the hazard of death, shifts the cause of death, and can
-// take focus points from the yearly plan (used from M5). The conditions are content (src/content/
+// take focus points from the yearly plan. The conditions are content (src/content/
 // healthConditions.ts); this file holds the rules. All onset chances are authored for plausibility,
 // not published statistics, so nothing here is shown to the player as a fact about a country.
 import { clamp } from "./dist";
@@ -249,7 +249,7 @@ export const conditionHazard = (
 export const healthPenalty = (conditions: readonly HealthCondition[], catalog: ConditionCatalog): number =>
   conditions.reduce((sum, c) => sum + (catalog.get(c.id)?.healthPenalty ?? 0) * c.severity, 0);
 
-/** Focus points the person's conditions take from the yearly plan, at most two (the plan arrives in M5). */
+/** Focus points the person's conditions take from the yearly plan, at most two. */
 export const focusPointsLost = (conditions: readonly HealthCondition[], catalog: ConditionCatalog): number =>
   Math.min(
     MAX_FOCUS_LOST,

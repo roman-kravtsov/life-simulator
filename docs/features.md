@@ -166,7 +166,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | RNG-001 | Seeded PRNG | sfc32 (or similar) seeded by a cyrb128-style hash of the seed string. Done when known-answer tests pass. | P0 | none | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-002 | Independent streams | Separate streams per subsystem from `hash(seed, stream, year)` (3.9). Done when a test shows that adding an event does not change mortality draws. | P0 | RNG-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-003 | Readable seeds | Seeds like "amber-river-4821", shown on the summary. Done when every life has one. | P1 | RNG-001 | S | MVP | done ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)): the seed is shown on the birth screen; the summary display comes with SUM-001 (M6) |
-| RNG-004 | Replay | Same seed, data version, content version and decision log give the same life. Done when a test replays many lives and compares full histories. | P0 | RNG-002, SAVE-001 | M | MVP | not started |
+| RNG-004 | Replay | Same seed, data version, content version and decision, plan and settings logs give the same life. Done when a test replays many lives and compares full histories. | P0 | RNG-002, SAVE-001 | M | MVP | not started |
 | RNG-005 | No unseeded randomness | A lint rule forbids `Math.random()` in the engine. Done when CI fails on a violation. | P1 | BE-002 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-006 | Play a given seed | Enter or open a seed to live that same starting life. | P2 | RNG-003 | S | post-MVP | not started |
 

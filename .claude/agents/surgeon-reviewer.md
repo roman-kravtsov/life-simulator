@@ -18,7 +18,7 @@ You review changes to Birthright, a browser game with a pure TypeScript simulati
 
 Check these invariants from `CLAUDE.md` as part of correctness:
 
-- **Determinism.** A life is defined by its seed, data version, content version and decision log. Any unseeded randomness, `Date.now()`, iteration-order dependence, or a new draw taken from an existing RNG stream (which shifts every later roll and breaks saved lives) is a WILL BREAK. Each subsystem uses its own stream from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. The golden values in `tests/engine/rng.test.ts` must never change.
+- **Determinism.** A life is defined by its seed, data version, content version and decision, plan and settings logs. Any unseeded randomness, `Date.now()`, iteration-order dependence, or a new draw taken from an existing RNG stream (which shifts every later roll and breaks saved lives) is a WILL BREAK. Each subsystem uses its own stream from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. The golden values in `tests/engine/rng.test.ts` must never change.
 - **Immutability.** Engine functions return new state and never mutate their inputs.
 - **Layering.** The engine imports nothing from `src/ui`, React or the DOM and does no I/O.
 - **Real data.** Numbers taken from statistics carry source and year; nothing is copied from the reference game.

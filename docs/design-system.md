@@ -27,6 +27,7 @@ Birthright uses **React Aria Components** (Adobe, Apache-2.0) for the behaviour 
 - **Plan widget** (UI-005, `src/ui/PlanWidget.tsx`): controlled by the life screen, which sends a plan with Continue only when the player changed it (`planToSend` in the store). Forced points and locked areas are said in words.
 - **Help** (UI-012, `src/ui/HelpNote.tsx`): `HelpNote` follows any event, decision or condition with a help topic; `HelpLink` opens the directory in a new tab with `rel="noopener noreferrer"` and a screen-reader hint. The header carries an always-available "Need to talk?" link.
 - **One live region** (`role="status"`) per life screen holds the story; new status-like text elsewhere uses `aria-live="polite"` on a paragraph instead of a second status region.
+- `.eyebrow` (in `src/styles.css`) is the small uppercase label above a section; a screen's module sets its own margin.
 - `.visually-hidden` (in `src/styles.css`) is for text only screen readers need.
 
 ## Rules for adding or changing a component
