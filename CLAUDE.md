@@ -32,6 +32,7 @@ src/ui/             React 19 components and the game store
   kit/              styled wrappers around React Aria Components (Button, Switch, Slider, Tooltip, Dialog)
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
+.claude/agents/     project subagents (see docs/agents.md)
 e2e/                Playwright: full-loop tests at phone and desktop widths
 ```
 
@@ -51,6 +52,7 @@ Read these docs before starting work:
 
 - `docs/features.md`: **the source of truth.** Every change traces back to a feature ID (SIM-001, UI-004, ...).
 - `docs/roadmap.md`: milestones in dependency order. `docs/mvp.md`: what the MVP includes and how it is built.
+- `docs/agents.md`: the project subagents, where they came from and the rules for them.
 - `docs/design.md`: data model, engine rules and stack. `docs/analysis.md`: reference analysis and data sources with licences.
 
 ## How work flows
@@ -74,7 +76,7 @@ Read these docs before starting work:
 - **Real data only from the primary publishers** listed in `docs/analysis.md` 1.7, with source and year on every value. Never copy text, art, code or data from the reference game (1in8b.life).
 - **Sensitive content** (death, suicide, violence) is never graphic, always tagged with a sensitivity level, and followed by help resources where relevant. Suicide is never a player choice.
 - **No tracking, analytics or third-party requests** (fonts included). A guard test checks for common trackers.
-- **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow the client-side rules in `.claude/skills/vercel-react-best-practices`; its server and Next.js rules do not apply.
+- **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow `.claude/skills/vercel-react-best-practices`, a client-only subset trimmed for this SPA: read its `SKILL.md` index and open only the rule files you need, never the whole `rules/` folder.
 - **Accessibility is part of done:** keyboard play, visible focus, labelled controls, announcements for new events, colour never the only signal, reduced motion respected.
 - Match the surrounding code: naming, comment density and idiom.
 
