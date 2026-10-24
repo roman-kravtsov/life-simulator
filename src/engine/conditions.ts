@@ -78,7 +78,7 @@ export function holds(condition: Condition, { person, country }: ConditionContex
       case "child":
         return person.relationships.some((r) => r.alive && r.kind === "child");
       case "job":
-        return person.work?.status === "employed" || person.work?.status === "informal";
+        return person.work.status === "employed" || person.work.status === "informal";
       case "savings":
         return person.money.savings > 0;
     }

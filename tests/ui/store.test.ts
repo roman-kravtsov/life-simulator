@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
-import { browserSeed, createGameStore } from "../../src/ui/store";
-import { testWorld } from "../fixtures/country";
+import type { LifeState, Person, Relationship } from "../../src/engine/types";
+import { browserSeed, closenessBand, createGameStore, lifeOverview } from "../../src/ui/store";
+import { makeCountry, testWorld } from "../fixtures/country";
+import { adultAt, makePerson, moneyAt } from "../fixtures/person";
 
 const seeds = () => {
   let n = 0;
@@ -132,6 +135,231 @@ describe("game store", () => {
     expect(store.getSnapshot()).toMatchObject({ screen: "sources", life: null });
     store.closeSources();
     expect(store.getSnapshot()).toMatchObject({ screen: "start", life: null });
+  });
+
+  it("starts with US prices off, toggles them, and keeps the choice across lives (MONEY-007)", async () => {
+    const store = setup();
+    expect(store.getSnapshot().showUsPrices).toBe(false);
+    store.toggleUsPrices();
+    expect(store.getSnapshot().showUsPrices).toBe(true);
+    await store.begin();
+    expect(store.getSnapshot().showUsPrices).toBe(true);
+    store.backToStart();
+    store.openSources();
+    store.closeSources();
+    expect(store.getSnapshot().showUsPrices).toBe(true);
+    store.toggleUsPrices();
+    expect(store.getSnapshot().showUsPrices).toBe(false);
+  });
+});
+
+const relative = (overrides: Partial<Relationship>): Relationship => ({
+  id: "r",
+  kind: "sibling",
+  name: "Test",
+  sex: "female",
+  age: 10,
+  alive: true,
+  closeness: 50,
+  ...overrides,
+});
+
+const lifeOf = (overrides: Partial<Person>): LifeState => ({
+  seed: "test",
+  person: makePerson(overrides),
+  history: [],
+});
+
+describe("lifeOverview (REL-001, MONEY-007 and the display side of EDU, CAREER, HEALTH)", () => {
+  // Synthetic table: the percentile p earns 1 + (p - 1) * 0.5 dollars a day.
+  const country = makeCountry();
+
+  it("describes school by level, whether the person is in school, and years", () => {
+    const at = (age: number, education: Person["education"]) => lifeOverview(lifeOf({ age, education }), country);
+    expect(at(3, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "too-young" });
+    expect(at(7, { level: "none", inSchool: true, years: 1 }).education).toEqual({
+      kind: "attending",
+      level: "primary",
+      years: 1,
+    });
+    expect(at(20, { level: "upper-secondary", inSchool: true, years: 12 }).education).toEqual({
+      kind: "attending",
+      level: "tertiary",
+      years: 12,
+    });
+    expect(at(13, { level: "primary", inSchool: false, years: 6 }).education).toEqual({
+      kind: "completed",
+      level: "primary",
+      years: 6,
+    });
+    expect(at(30, { level: "tertiary", inSchool: false, years: 16 }).education).toMatchObject({
+      kind: "completed",
+      level: "tertiary",
+    });
+    expect(at(10, { level: "none", inSchool: false, years: 2 }).education).toEqual({
+      kind: "left-early",
+      level: "primary",
+      years: 2,
+    });
+    expect(at(6, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "too-young" });
+    expect(at(7, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "never" });
+    expect(at(12, { level: "none", inSchool: false, years: 0 }).education).toEqual({ kind: "never" });
+  });
+
+  it("reports reading from age 15, when it is known", () => {
+    const read = (age: number, literate?: boolean) =>
+      lifeOverview(lifeOf({ age, education: { level: "none", inSchool: false, years: 0, literate } }), country)
+        .literacy;
+    expect(read(14, true)).toBeNull();
+    expect(read(15, true)).toBe("literate");
+    expect(read(40, false)).toBe("illiterate");
+    expect(read(40, undefined)).toBeNull();
+  });
+
+  it("describes work in words, with nothing under six", () => {
+    const work = (age: number, w: Partial<Person["work"]>, inSchool = false) =>
+      lifeOverview(
+        lifeOf({
+          age,
+          education: { level: "none", inSchool, years: 0 },
+          work: { status: "child", yearsWorked: 0, attachment: 0.5, ...w },
+        }),
+        country,
+      ).work;
+    expect(work(5, {})).toBeNull();
+    expect(work(10, {})).toMatchObject({ kind: "too-young" });
+    expect(work(16, {})).toMatchObject({ kind: "at-home" });
+    expect(work(16, { status: "student" }, true)).toMatchObject({ kind: "student" });
+    expect(work(30, { status: "employed", sector: "industry", formal: true, yearsWorked: 8 })).toEqual({
+      kind: "working",
+      sector: "industry",
+      formal: true,
+      yearsWorked: 8,
+    });
+    expect(work(30, { status: "informal", sector: "agriculture", formal: false })).toMatchObject({
+      kind: "working",
+      sector: "agriculture",
+      formal: false,
+    });
+    expect(work(30, { status: "unemployed" })).toMatchObject({ kind: "unemployed" });
+    expect(work(30, { status: "caregiver" })).toMatchObject({ kind: "caregiver" });
+    expect(work(70, { status: "retired", yearsWorked: 40 })).toMatchObject({ kind: "retired", yearsWorked: 40 });
+  });
+
+  it("gives the daily and yearly income per person, the band, and the year of the data", () => {
+    const { money } = lifeOverview({ seed: "t", person: adultAt(11, country), history: [] }, country);
+    expect(money.daily).toBeCloseTo(6); // 1 + 10 * 0.5
+    expect(money.yearly).toBeCloseTo(6 * 365);
+    expect(money.band).toBe("low");
+    expect(money.year).toBe(2023);
+    expect(money.own).toBe(true);
+  });
+
+  it("shows a retired person's reduced income as the same figure per day and per year", () => {
+    const base = lifeOverview(lifeOf({ age: 40, money: moneyAt(41) }), country).money;
+    const retired = lifeOverview(
+      lifeOf({
+        age: 70,
+        money: moneyAt(41),
+        work: { status: "retired", yearsWorked: 40, attachment: 0.5 },
+      }),
+      country,
+    ).money;
+    expect(retired.daily).toBeLessThan(base.daily);
+    expect(retired.daily * 365).toBeCloseTo(retired.yearly);
+  });
+
+  it("shows savings and debt only for independent adults, and the household's income for the young", () => {
+    const money = moneyAt(50, { savings: 1200, debt: 300 });
+    expect(lifeOverview(lifeOf({ age: 30, money }), country).money.holdings).toEqual({ savings: 1200, debt: 300 });
+    const child = lifeOverview(lifeOf({ age: 10, money }), country).money;
+    expect(child.holdings).toBeNull();
+    expect(child.own).toBe(false);
+    const student = lifeOverview(
+      lifeOf({
+        age: 19,
+        money,
+        education: { level: "upper-secondary", inSchool: true, years: 12 },
+        work: { status: "student", yearsWorked: 0, attachment: 0.5 },
+      }),
+      country,
+    ).money;
+    expect(student.holdings).toBeNull();
+    expect(student.own).toBe(false);
+  });
+
+  it("shows the person's own standing from the day they are independent and out of school", () => {
+    const person = makePerson({
+      age: 18,
+      money: moneyAt(80, { luck: -3 }),
+      education: { level: "lower-secondary", inSchool: false, years: 9 },
+      work: { status: "informal", sector: "agriculture", formal: false, yearsWorked: 0, attachment: 0.1 },
+    });
+    const { money } = lifeOverview({ seed: "t", person, history: [] }, country);
+    expect(money.own).toBe(true);
+    expect(money.daily).toBeCloseTo(dailyIncome(country, adultPercentile(person, country)));
+    expect(money.daily).toBeLessThan(dailyIncome(country, 80));
+  });
+
+  it("lists conditions with their severity and onset", () => {
+    expect(lifeOverview(lifeOf({}), country).conditions).toEqual([]);
+    const { conditions } = lifeOverview(lifeOf({ conditions: [{ id: "malaria", severity: 2, since: 7 }] }), country);
+    expect(conditions).toEqual([{ id: "malaria", severity: 2, since: 7 }]);
+  });
+
+  it("carries a condition's help topic, so help stays with it while it lasts", () => {
+    const { conditions } = lifeOverview(
+      lifeOf({
+        conditions: [
+          { id: "depression", severity: 1, since: 20 },
+          { id: "malaria", severity: 1, since: 7 },
+        ],
+      }),
+      country,
+    );
+    expect(conditions.find((c) => c.id === "depression")?.helpTopic).toBe("suicide");
+    expect(conditions.find((c) => c.id === "malaria")?.helpTopic).toBeUndefined();
+  });
+
+  it("sorts relatives: parents, then siblings oldest first, then others", () => {
+    const { family } = lifeOverview(
+      lifeOf({
+        relationships: [
+          relative({ id: "friend", kind: "friend", age: 9 }),
+          relative({ id: "young", age: 3 }),
+          relative({ id: "father", kind: "father", age: 40 }),
+          relative({ id: "old", age: 14 }),
+          relative({ id: "mother", kind: "mother", age: 38 }),
+          relative({ id: "mid", age: 8, alive: false }),
+          relative({ id: "partner", kind: "partner", age: 30 }),
+        ],
+      }),
+      country,
+    );
+    expect(family.parents.map((r) => r.id)).toEqual(["mother", "father"]);
+    expect(family.siblings.map((r) => r.id)).toEqual(["old", "mid", "young"]);
+    expect(family.others.map((r) => r.id)).toEqual(["friend", "partner"]);
+  });
+
+  it("does not change the life it reads", () => {
+    const life = lifeOf({ relationships: [relative({ id: "b", age: 2 }), relative({ id: "a", age: 9 })] });
+    lifeOverview(life, country);
+    expect(life.person.relationships.map((r) => r.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("closenessBand (FAM-002)", () => {
+  it("uses the thresholds 80, 60, 40 and 20", () => {
+    expect(closenessBand(100)).toBe("very-close");
+    expect(closenessBand(80)).toBe("very-close");
+    expect(closenessBand(79)).toBe("close");
+    expect(closenessBand(60)).toBe("close");
+    expect(closenessBand(59)).toBe("friendly");
+    expect(closenessBand(40)).toBe("friendly");
+    expect(closenessBand(39)).toBe("distant");
+    expect(closenessBand(20)).toBe("distant");
+    expect(closenessBand(19)).toBe("strained");
+    expect(closenessBand(0)).toBe("strained");
   });
 });
 

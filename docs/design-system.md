@@ -13,7 +13,7 @@ Birthright uses **React Aria Components** (Adobe, Apache-2.0) for the behaviour 
 | Component | Wraps                   | Planned use                                          |
 | --------- | ----------------------- | ---------------------------------------------------- |
 | `Button`  | `Button`                | All actions. `variant`: `primary` or `ghost`; `icon` |
-| `Switch`  | `Switch`                | Settings toggles: softening, reduced motion (UI-009) |
+| `Switch`  | `Switch`                | Settings toggles: softening, reduced motion (UI-009); US-prices line (MONEY-007) |
 | `Slider`  | `Slider`                | Focus-point allocator (UI-005)                       |
 | `Tooltip` | `TooltipTrigger`        | Odds lens (UI-006)                                   |
 | `Dialog`  | `DialogTrigger`, `Modal`| Help resources, confirmations (UI-012, UI-009)       |

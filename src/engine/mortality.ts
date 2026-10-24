@@ -1,6 +1,8 @@
 // Yearly mortality (HEALTH-002, design 3.5) and the cause of death (HEALTH-003).
+import { conditionCatalog } from "../content/healthConditions";
 import { healthNorm } from "./drift";
 import { clamp } from "./dist";
+import { conditionHazard, expectedHazardFactor } from "./health";
 import type { Rng } from "./rng";
 import type { CauseId, HealthCondition, Person, Sex } from "./types";
 import type { Country } from "./world/types";
@@ -9,7 +11,7 @@ export const HAZARD_MIN = 0.5;
 export const HAZARD_MAX = 4;
 
 /** Calibration constant (log scale): the mean of exp(spread) is above 1, so the centre sits a little below 0. */
-const HAZARD_OFFSET = -0.03;
+const HAZARD_OFFSET = -0.045;
 
 /** Deaths of newborns come on average this far into the first year; later ages die mid-year. */
 const FIRST_YEAR_FRACTION = 0.1;
@@ -39,9 +41,12 @@ export function hazardMultiplier(person: Person, country: Country): number {
   let log = HAZARD_OFFSET;
   log += (1.2 * (healthNorm(person, country) - person.stats.health)) / 100;
   log -= 0.12 * person.traits.constitution;
-  log += (0.2 * (50 - person.money.householdPercentile)) / 50;
+  log += (0.2 * (50 - person.money.percentile)) / 50;
   log += person.location === "rural" ? 0.08 * urbanShare : -0.08 * (1 - urbanShare);
-  for (const condition of person.conditions) log += 0.35 * condition.severity;
+  // Conditions decide who among people of one age dies; the life table decides how many, so the
+  // average they add at this age and sex is taken out.
+  log += conditionHazard(person.conditions, conditionCatalog);
+  log -= Math.log(expectedHazardFactor(country, person.sex, person.age, conditionCatalog));
   return clamp(Math.exp(log), HAZARD_MIN, HAZARD_MAX);
 }
 

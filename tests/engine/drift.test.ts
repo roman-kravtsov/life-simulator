@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { driftStats, healthNorm, skillGrowth } from "../../src/engine/drift";
+import { driftStats, happinessNorm, healthNorm, skillGrowth } from "../../src/engine/drift";
 import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { Person, TraitId } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
-import { makePerson } from "../fixtures/person";
+import { makePerson, moneyAt } from "../fixtures/person";
 
 const country = makeCountry();
 const at = (age: number, overrides: Partial<Person> = {}) => makePerson({ age, stage: stageForAge(age), ...overrides });
@@ -34,8 +34,8 @@ describe("health norm (HEALTH-001)", () => {
     );
   });
   it("is lower for a poor household than a rich one", () => {
-    const poor = at(30, { money: { householdPercentile: 5, savings: 0, debt: 0 } });
-    const rich = at(30, { money: { householdPercentile: 95, savings: 0, debt: 0 } });
+    const poor = at(30, { money: moneyAt(5) });
+    const rich = at(30, { money: moneyAt(95) });
     expect(healthNorm(poor, country)).toBeLessThan(healthNorm(rich, country));
   });
   it("is lower in rural areas", () => {
@@ -45,6 +45,27 @@ describe("health norm (HEALTH-001)", () => {
   });
   it("is lower for a child at work", () => {
     expect(healthNorm(at(10, { flags: { childLabour: true } }), country)).toBeLessThan(healthNorm(at(10), country));
+  });
+});
+
+describe("work and money weigh on the norms (WORLD-009, MONEY-004)", () => {
+  const job = (sector: "agriculture" | "industry" | "services", formal: boolean) =>
+    at(30, { work: { status: formal ? "employed" : "informal", sector, formal, yearsWorked: 5, attachment: 0.1 } });
+  it("lowers the health norm in risky and informal work", () => {
+    expect(healthNorm(job("industry", true), country)).toBeLessThan(healthNorm(job("services", true), country));
+    expect(healthNorm(job("services", false), country)).toBeLessThan(healthNorm(job("services", true), country));
+    expect(healthNorm(job("services", true), country)).toBeCloseTo(healthNorm(at(30), country), 6);
+  });
+  it("lowers the health norm for each condition, more at higher severity (HEALTH-004)", () => {
+    const sick = (severity: 1 | 3) => at(50, { conditions: [{ id: "heart_disease", severity, since: 45 }] });
+    expect(healthNorm(sick(1), country)).toBeLessThan(healthNorm(at(50), country));
+    expect(healthNorm(sick(3), country)).toBeLessThan(healthNorm(sick(1), country));
+  });
+  it("lowers both norms under a heavy debt", () => {
+    const indebted = at(30, { money: moneyAt(20, { debt: 1e6 }) });
+    const free = at(30, { money: moneyAt(20) });
+    expect(healthNorm(indebted, country)).toBeLessThan(healthNorm(free, country));
+    expect(happinessNorm(indebted, country)).toBeLessThan(happinessNorm(free, country));
   });
 });
 
@@ -81,31 +102,33 @@ describe("driftStats (SIM-004)", () => {
   it("is deterministic for the same seed", () => {
     expect(drift(at(20), "same")).toEqual(drift(at(20), "same"));
   });
-  it("grows skills fastest in school years and slowly in adulthood, and loses a little in old age", () => {
-    const g = (age: number) =>
-      skillGrowth(at(age, { stats: { health: 70, happiness: 60, belonging: 60, skills: 10 } }), country);
-    expect(g(8)).toBeGreaterThan(g(2));
-    expect(g(8)).toBeGreaterThan(g(40));
-    expect(g(40)).toBeGreaterThan(0);
-    expect(g(80)).toBeLessThan(0);
+  const pupil = (age: number, overrides: Partial<Person> = {}) =>
+    at(age, { education: { level: "none", inSchool: true, years: 2 }, ...overrides });
+  it("grows skills fastest in school and slowly in adulthood, and loses a little in old age", () => {
+    const g = (person: Person) =>
+      skillGrowth({ ...person, stats: { health: 70, happiness: 60, belonging: 60, skills: 10 } });
+    expect(g(pupil(8))).toBeGreaterThan(g(at(2)));
+    expect(g(pupil(8))).toBeGreaterThan(g(at(40)));
+    expect(g(at(40))).toBeGreaterThan(0);
+    expect(g(at(80))).toBeLessThan(0);
   });
   it("slows skill growth as skills approach the ceiling", () => {
     const g = (skills: number) =>
-      skillGrowth(at(8, { stats: { health: 70, happiness: 60, belonging: 60, skills } }), country);
+      skillGrowth(pupil(8, { stats: { health: 70, happiness: 60, belonging: 60, skills } }));
     expect(g(80)).toBeLessThan(g(10));
   });
-  it("grows skills less where children rarely finish school", () => {
-    const poorSchooling = makeCountry({
-      education: {
-        ...country.education,
-        primaryCompletion: { ...country.education.primaryCompletion, value: { female: 0.3, male: 0.3 } },
-      },
-    });
-    expect(skillGrowth(at(8), poorSchooling)).toBeLessThan(skillGrowth(at(8), country));
+  it("grows skills far less for a child who is out of school (EDU-001)", () => {
+    expect(skillGrowth(at(8))).toBeLessThan(skillGrowth(pupil(8)));
   });
-  it("grows skills less in rural areas and for a child at work", () => {
-    expect(skillGrowth(at(8, { location: "rural" }), country)).toBeLessThan(skillGrowth(at(8), country));
-    expect(skillGrowth(at(8, { flags: { childLabour: true } }), country)).toBeLessThan(skillGrowth(at(8), country));
+  it("counts a six-year-old as a first-year pupil, because school starts this year", () => {
+    expect(skillGrowth(at(6))).toBeCloseTo(skillGrowth(pupil(6)), 9);
+  });
+  it("grows skills more in secondary and tertiary study than in nothing, at every level", () => {
+    for (const age of [8, 13, 16, 19]) expect(skillGrowth(pupil(age))).toBeGreaterThan(skillGrowth(at(age)));
+  });
+  it("grows skills less in rural schools and for a child at work", () => {
+    expect(skillGrowth(pupil(8, { location: "rural" }))).toBeLessThan(skillGrowth(pupil(8)));
+    expect(skillGrowth(pupil(8, { flags: { childLabour: true } }))).toBeLessThan(skillGrowth(pupil(8)));
   });
 });
 

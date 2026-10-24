@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { countryName, formatCompactNumber, formatDate, formatMoney, formatNumber, formatPercent } from "../src/format";
+import {
+  capitalise,
+  countryName,
+  formatCompactNumber,
+  formatDate,
+  formatMoney,
+  formatNumber,
+  formatPercent,
+  incomeBand,
+  pluralKey,
+} from "../src/format";
 
 describe("L10N-003: number formatting", () => {
   it("groups digits by locale", () => {
@@ -24,6 +34,36 @@ describe("L10N-003: number formatting", () => {
     expect(formatMoney(47.1, "en")).toBe("$47.10");
     expect(formatMoney(1234.5, "en")).toBe("$1,235");
     expect(formatMoney(2.15, "de")).toBe("2,15\u00a0$");
+  });
+});
+
+describe("MONEY-007: income bands", () => {
+  it("cuts at the international poverty lines (2021 PPP) and the game's own wording thresholds", () => {
+    expect(incomeBand(0)).toBe("below-extreme");
+    expect(incomeBand(2.99)).toBe("below-extreme");
+    expect(incomeBand(3)).toBe("near-extreme");
+    expect(incomeBand(4.19)).toBe("near-extreme");
+    expect(incomeBand(4.2)).toBe("low");
+    expect(incomeBand(8.29)).toBe("low");
+    expect(incomeBand(8.3)).toBe("modest");
+    expect(incomeBand(19.99)).toBe("modest");
+    expect(incomeBand(20)).toBe("comfortable");
+    expect(incomeBand(59.99)).toBe("comfortable");
+    expect(incomeBand(60)).toBe("wealthy");
+    expect(incomeBand(900)).toBe("wealthy");
+  });
+});
+
+describe("L10N: plural string keys and sentence case", () => {
+  it("picks the plural form of a string key for the locale", () => {
+    expect(pluralKey("common.years", 1, "en")).toBe("common.years.one");
+    expect(pluralKey("common.years", 0, "en")).toBe("common.years.other");
+    expect(pluralKey("common.years", 6, "en")).toBe("common.years.other");
+  });
+
+  it("capitalises the first letter of a phrase", () => {
+    expect(capitalise("a serious injury", "en")).toBe("A serious injury");
+    expect(capitalise("", "en")).toBe("");
   });
 });
 

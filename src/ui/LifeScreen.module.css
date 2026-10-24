@@ -72,14 +72,12 @@
   margin: 1.25rem 0 0.5rem;
 }
 
-.events,
-.family {
+.events {
   margin: 0 0 1rem;
   padding-left: 1.25rem;
 }
 
-.events li,
-.family li {
+.events li {
   margin-bottom: 0.5rem;
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generatePerson } from "../../src/engine/person";
 import { dailyIncome, householdBand, drawHouseholdPercentile } from "../../src/engine/money";
-import { generateParents } from "../../src/engine/family";
+import { generateParents, generateSiblings } from "../../src/engine/family";
 import { createRng, stream } from "../../src/engine/rng";
 import { TRAIT_IDS } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
@@ -162,5 +162,38 @@ describe("parents' random stream", () => {
       vr += (rolls[i]! - mr) ** 2;
     }
     expect(Math.abs(cov / Math.sqrt(vs * vr))).toBeLessThan(0.08);
+  });
+});
+
+describe("a newborn's whole story (M4)", () => {
+  it("starts out of school, out of work, at the household's standing and with no conditions", () => {
+    const p = generatePerson("fresh", country);
+    expect(p.education).toEqual({ level: "none", inSchool: false, years: 0 });
+    expect(p.work).toMatchObject({ status: "child", yearsWorked: 0 });
+    expect(p.work.attachment).toBeGreaterThanOrEqual(0);
+    expect(p.work.attachment).toBeLessThan(1);
+    expect(p.money.percentile).toBe(p.money.householdPercentile);
+    expect(Number.isFinite(p.money.luck)).toBe(true);
+    expect(p.conditions).toEqual([]);
+  });
+  it("lists older siblings after the parents (FAM-002)", () => {
+    let withSiblings = 0;
+    for (let i = 0; i < 100; i++) {
+      const p = generatePerson(`sib-${i}`, country);
+      expect(p.relationships[0]!.kind).toBe("mother");
+      expect(p.relationships[1]!.kind).toBe("father");
+      const siblings = p.relationships.slice(2);
+      expect(siblings.every((r) => r.kind === "sibling" && r.alive)).toBe(true);
+      if (siblings.length > 0) withSiblings++;
+    }
+    expect(withSiblings).toBeGreaterThan(20);
+  });
+  it("draws the older siblings from their own stream, not the yearly one", () => {
+    for (let i = 0; i < 20; i++) {
+      const seed = `sib-stream-${i}`;
+      const p = generatePerson(seed, country);
+      const { siblings } = generateSiblings(stream(seed, "siblings:birth", 0), country, p.relationships[0]!.age);
+      expect(p.relationships.slice(2)).toEqual(siblings);
+    }
   });
 });

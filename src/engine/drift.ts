@@ -1,8 +1,13 @@
 // Baseline stat drift (SIM-004) and the health stat (HEALTH-001). Each year stats move part of the
 // way toward a norm that depends on age, traits, household, place and country. The curves below
-// are data, kept at the top so they can be tuned and tested. School and work arrive in M4 and
-// replace the schooling stand-in in `skillGrowth`.
+// are data, kept at the top so they can be tuned and tested. Skills grow with school (EDU-001) and
+// with work.
 import { clamp } from "./dist";
+import { SCHOOL_START_AGE, levelAtAge } from "./education";
+import { conditionCatalog } from "../content/healthConditions";
+import { healthPenalty } from "./health";
+import { debtStress } from "./money";
+import { jobHealthPenalty } from "./work";
 import type { Rng } from "./rng";
 import type { Person, Stats } from "./types";
 import type { Country, IncomeGroup } from "./world/types";
@@ -25,14 +30,22 @@ const CARE_BY_INCOME_GROUP: Record<IncomeGroup, number> = { low: -4, "lower-midd
 
 const RATE = { health: 0.5, happiness: 0.4, belonging: 0.3 } as const;
 
-/** Skill points gained per year by age band before traits, access and ceiling: [from age, gain]. */
-const SKILL_GAIN: readonly (readonly [number, number])[] = [
-  [0, 1.5],
-  [6, 4.5],
-  [18, 2],
-  [30, 0.8],
-  [65, -0.4],
-];
+/** Skill points gained per year before traits, place and ceiling, by what the person is doing. */
+const SKILL_GAIN = {
+  infancy: 1.5,
+  schoolLevel: { primary: 4.5, "lower-secondary": 4, "upper-secondary": 3.5, tertiary: 3.5 },
+  /** Out of school before 18, learning what the household and village teach. */
+  outOfSchool: 1,
+  /** Working life: [from age, gain]. */
+  adult: [
+    [18, 1.6],
+    [30, 0.8],
+    [65, -0.4],
+  ],
+} as const;
+
+/** Rural schools reach less, even for the children who stay. */
+const RURAL_SCHOOL_QUALITY = 0.9;
 
 const SKILL_CEILING = 110;
 
@@ -56,21 +69,25 @@ export function healthNorm(person: Person, country: Country): number {
   return clamp(
     interpolate(HEALTH_CURVE, person.age) +
       4 * person.traits.constitution +
-      (3 * (person.money.householdPercentile - 50)) / 50 +
+      (3 * (person.money.percentile - 50)) / 50 +
       CARE_BY_INCOME_GROUP[country.incomeGroup] -
       (person.location === "rural" ? 2 : 0) -
-      (childLabour(person) ? 3 : 0),
+      (childLabour(person) ? 3 : 0) -
+      jobHealthPenalty(person) -
+      healthPenalty(person.conditions, conditionCatalog) -
+      3 * debtStress(person, country),
     0,
     100,
   );
 }
 
-const happinessNorm = (person: Person) =>
+export const happinessNorm = (person: Person, country: Country) =>
   62 +
   3 * person.traits.resilience -
-  (4 * (50 - person.money.householdPercentile)) / 50 +
+  (4 * (50 - person.money.percentile)) / 50 +
   0.1 * (person.stats.belonging - 50) -
-  (childLabour(person) ? 3 : 0);
+  (childLabour(person) ? 3 : 0) -
+  6 * debtStress(person, country);
 
 function belongingNorm(person: Person): number {
   const parents = person.relationships.filter((r) => r.alive && (r.kind === "mother" || r.kind === "father"));
@@ -81,25 +98,18 @@ function belongingNorm(person: Person): number {
   return 52 + 5 * person.traits.sociability;
 }
 
-/** How much of school or workplace learning the child or young adult can reach, 0 to 1. */
-function schoolAccess(person: Person, country: Country): number {
-  const { education } = country;
-  const { age, sex } = person;
-  if (age < 6) return 1;
-  if (age <= 11) return education.primaryCompletion.value[sex];
-  if (age <= 14) return education.lowerSecondaryCompletion.value[sex];
-  if (age <= 17) return education.upperSecondaryCompletion.value[sex];
-  if (age <= 29) return 0.5 + 0.5 * education.upperSecondaryCompletion.value[sex];
-  return 1;
-}
-
 /** Skill points gained (or lost, in old age) this year. */
-export function skillGrowth(person: Person, country: Country): number {
-  const band = [...SKILL_GAIN].reverse().find(([from]) => person.age >= from)!;
-  let gain = band[1];
+export function skillGrowth(person: Person): number {
+  const { age } = person;
+  let gain: number;
+  // School starts at six: the enrolment comes later in the same turn, but this year is a pupil's.
+  const level = person.education.inSchool || age === SCHOOL_START_AGE ? levelAtAge(age) : undefined;
+  if (level) gain = SKILL_GAIN.schoolLevel[level.id];
+  else if (age < SCHOOL_START_AGE) gain = SKILL_GAIN.infancy;
+  else if (age < 18) gain = SKILL_GAIN.outOfSchool;
+  else gain = [...SKILL_GAIN.adult].reverse().find(([from]) => age >= from)![1];
   if (gain < 0) return gain;
-  gain *= schoolAccess(person, country);
-  if (person.age >= 6 && person.age <= 17 && person.location === "rural") gain *= 0.85;
+  if (level && person.location === "rural") gain *= RURAL_SCHOOL_QUALITY;
   if (childLabour(person)) gain *= 0.5;
   gain *= 1 + 0.12 * person.traits.aptitude + 0.08 * person.traits.curiosity;
   return gain * (1 - person.stats.skills / SKILL_CEILING);
@@ -117,7 +127,7 @@ export function driftStats(person: Person, country: Country, rng: Rng): Stats {
   return {
     health: clamp(stats.health + RATE.health * (healthNorm(person, country) - stats.health) + healthNoise, 0, 100),
     happiness: clamp(
-      stats.happiness + RATE.happiness * (happinessNorm(person) - stats.happiness) + happinessNoise,
+      stats.happiness + RATE.happiness * (happinessNorm(person, country) - stats.happiness) + happinessNoise,
       0,
       100,
     ),
@@ -126,6 +136,6 @@ export function driftStats(person: Person, country: Country, rng: Rng): Stats {
       0,
       100,
     ),
-    skills: clamp(stats.skills + skillGrowth(person, country), 0, 100),
+    skills: clamp(stats.skills + skillGrowth(person), 0, 100),
   };
 }

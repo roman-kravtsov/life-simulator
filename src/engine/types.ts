@@ -45,16 +45,43 @@ export interface Relationship {
   closeness: number;
 }
 
-/** A lasting health problem. Conditions arrive with HEALTH-004; mortality already reads them. */
+/** A lasting health problem (HEALTH-004). The definitions live in src/content/healthConditions.ts. */
 export interface HealthCondition {
   id: string;
   /** 1 (mild) to 3 (severe). */
   severity: 1 | 2 | 3;
+  /** The age at which it began. */
+  since: number;
   /** The cause of death this condition makes more likely, if any. */
   raises?: CauseId;
 }
 
+/** The highest school level completed (EDU-001). */
+export type EducationLevel = "none" | "primary" | "lower-secondary" | "upper-secondary" | "tertiary";
+
+export interface Education {
+  level: EducationLevel;
+  inSchool: boolean;
+  /** Years spent in school so far. */
+  years: number;
+  /** Set at the end of the primary years (EDU-002); absent before then. */
+  literate?: boolean;
+}
+
 export type WorkStatus = "child" | "student" | "employed" | "informal" | "unemployed" | "caregiver" | "retired";
+
+export type Sector = "agriculture" | "industry" | "services";
+
+export interface Work {
+  status: WorkStatus;
+  /** The person's job, once they have had one (CAREER-002). */
+  sector?: Sector;
+  formal?: boolean;
+  /** Years in work so far. */
+  yearsWorked: number;
+  /** A fixed 0 to 1 dealt at birth: the person works at ages where the country's participation exceeds it (CAREER-001). */
+  attachment: number;
+}
 
 export interface Person {
   name: string;
@@ -68,16 +95,20 @@ export interface Person {
   traits: Traits;
   stats: Stats;
   location: Location;
+  education: Education;
+  work: Work;
   money: {
     /** 1 to 100 within the country's distribution, drawn at birth (MONEY-001). */
     householdPercentile: number;
+    /** Where the person stands now, 1 to 100: the household's until adulthood, then their own (MONEY-003). */
+    percentile: number;
+    /** A standard normal draw at birth: the person's lasting good or bad fortune in the income mix. */
+    luck: number;
     savings: number;
     debt: number;
   };
   relationships: Relationship[];
   conditions: HealthCondition[];
-  /** Arrives with CAREER-001; conditions that ask about a job read it when present. */
-  work?: { status: WorkStatus };
   flags: Record<string, number | boolean>;
 }
 

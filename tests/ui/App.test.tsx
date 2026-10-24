@@ -89,6 +89,19 @@ describe("App", () => {
     expect(screen.getByText(/your mother, [23]\d/)).toBeInTheDocument();
   });
 
+  it("shows the school, money and family panels and lets the player compare with US prices (MONEY-007)", async () => {
+    const { user } = setup();
+    await startLife(user);
+    for (const name of ["School", "Money", "Family"]) {
+      expect(screen.getByRole("heading", { level: 2, name })).toBeInTheDocument();
+    }
+    expect(screen.queryByText(/buys what the same amount buys in the United States/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: "Compare with US prices" }));
+    expect(screen.getByText(/buys what the same amount buys in the United States/)).toBeInTheDocument();
+    await nextYear(user);
+    expect(screen.getByRole("switch", { name: "Compare with US prices" })).toBeChecked();
+  });
+
   it("announces a new life stage after three years", async () => {
     const { user, store } = setup();
     await startLife(user);
@@ -179,6 +192,8 @@ describe("App", () => {
           life={life}
           country={country}
           sources={testSources}
+          showUsPrices={false}
+          onToggleUsPrices={noop}
           onContinue={noop}
           onAnother={noop}
           onBack={noop}

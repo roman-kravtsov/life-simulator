@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { allHold, holds, indicatorValue, type Condition } from "../../src/engine/conditions";
 import { makeCountry } from "../fixtures/country";
-import { makePerson } from "../fixtures/person";
+import { makePerson, moneyAt } from "../fixtures/person";
 
 const country = makeCountry();
 const ctx = (overrides = {}) => ({ person: makePerson(overrides), country });
@@ -82,7 +82,7 @@ describe("has conditions", () => {
   });
   it("savings needs money put by", () => {
     expect(holds({ has: "savings" }, ctx())).toBe(false);
-    expect(holds({ has: "savings" }, ctx({ money: { householdPercentile: 50, savings: 5, debt: 0 } }))).toBe(true);
+    expect(holds({ has: "savings" }, ctx({ money: moneyAt(50, { savings: 5 }) }))).toBe(true);
   });
 });
 

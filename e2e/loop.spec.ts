@@ -33,6 +33,31 @@ test("begins a life, shows the birth screen and plays years without errors or ho
   expect(errors).toEqual([]);
 });
 
+test("shows the school, money and work panels on the life screen without horizontal scroll", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Begin this life" }).click();
+
+  // MONEY-007, EDU-001, FAM-002: shown from the first year.
+  await expect(page.getByRole("heading", { level: 2, name: "School" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Money" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Family" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Compare with US prices" })).toBeVisible();
+
+  // CAREER-001: work appears from age six. A life can end early, so stop when it does.
+  const next = page.getByRole("button", { name: "Continue to the next year" });
+  const heading = page.getByRole("heading", { level: 1 });
+  for (let age = 0; age < 6 && (await next.isVisible()); age++) {
+    await next.click();
+    await expect(heading).toContainText(`Age ${age + 1}`);
+  }
+  if (await next.isVisible()) {
+    await expect(page.getByRole("heading", { level: 2, name: "Work" })).toBeVisible();
+  }
+  await expect(page.getByRole("heading", { level: 2, name: "Money" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("theme toggle switches between light and dark", async ({ page }) => {
   await page.goto("./");
   const before = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
