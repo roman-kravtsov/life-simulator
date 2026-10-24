@@ -1,5 +1,6 @@
 // The person at birth (CHAR-001, CHAR-003, WORLD-009, MONEY-001, FAM-001).
 import { namesForRegion } from "../content/names";
+import { normal } from "./dist";
 import { healthNorm } from "./drift";
 import { generateParents } from "./family";
 import { drawHouseholdPercentile } from "./money";
@@ -13,7 +14,8 @@ const TRAIT_WEIGHTS = [1, 4, 6, 4, 1];
 
 /**
  * A newborn in `country`, fully determined by the seed. Draws from the "person" stream in a
- * fixed order (sex, place, household, traits); names and family have their own streams.
+ * fixed order (sex, place, household, traits, then luck and work attachment); names and family
+ * have their own streams.
  */
 export function generatePerson(seed: string, country: Country): Person {
   const rng = stream(seed, "person", 0);
@@ -22,6 +24,9 @@ export function generatePerson(seed: string, country: Country): Person {
   const location = rng.chance(country.demography.urbanShare.value) ? "urban" : "rural";
   const householdPercentile = drawHouseholdPercentile(rng);
   const traits = Object.fromEntries(TRAIT_IDS.map((id) => [id, rng.weighted(TRAIT_VALUES, TRAIT_WEIGHTS)])) as Traits;
+
+  const luck = normal(rng, 0, 1);
+  const attachment = rng.next();
 
   const names = stream(seed, "names", 0);
   const list = namesForRegion(country.region)[sex];
@@ -40,7 +45,9 @@ export function generatePerson(seed: string, country: Country): Person {
     traits,
     stats: { health: 0, wellbeing: 65, bonds: 40 + 0.4 * parentCloseness, skills: 0 },
     location,
-    money: { householdPercentile, savings: 0, debt: 0 },
+    education: { level: "none", inSchool: false, years: 0 },
+    work: { status: "child", yearsWorked: 0, attachment },
+    money: { householdPercentile, percentile: householdPercentile, luck, savings: 0, debt: 0 },
     relationships: parents,
     conditions: [],
     flags: {},

@@ -5,7 +5,7 @@ import { lifeExpectancy } from "../../src/engine/mortality";
 import { createRng } from "../../src/engine/rng";
 import type { Relationship } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
-import { makePerson } from "../fixtures/person";
+import { makePerson, moneyAt } from "../fixtures/person";
 
 const country = makeCountry();
 const rel = (overrides: Partial<Relationship> = {}): Relationship => ({
@@ -94,7 +94,7 @@ describe("childLabourStatus (SIM-005)", () => {
     const working = new Array<number>(CHILD_LABOUR_AGES[1] + 1).fill(0);
     for (let i = 0; i < n; i++) {
       const percentile = 1 + (i % 100);
-      let person = makePerson({ age: 7, money: { householdPercentile: percentile, savings: 0, debt: 0 } });
+      let person = makePerson({ age: 7, money: moneyAt(percentile) });
       for (let age = CHILD_LABOUR_AGES[0]; age <= CHILD_LABOUR_AGES[1]; age++) {
         const status = childLabourStatus({ ...person, age }, country, createRng(`c${i}-${age}`));
         working[age]! += status ? 1 : 0;
@@ -111,7 +111,7 @@ describe("childLabourStatus (SIM-005)", () => {
       for (let i = 0; i < 4000; i++) {
         if (
           childLabourStatus(
-            makePerson({ age: 7, money: { householdPercentile: percentile, savings: 0, debt: 0 } }),
+            makePerson({ age: 7, money: moneyAt(percentile) }),
             country,
             createRng(`p${percentile}-${i}`),
           )

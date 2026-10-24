@@ -39,7 +39,7 @@ export function hazardMultiplier(person: Person, country: Country): number {
   let log = HAZARD_OFFSET;
   log += (1.2 * (healthNorm(person, country) - person.stats.health)) / 100;
   log -= 0.12 * person.traits.constitution;
-  log += (0.2 * (50 - person.money.householdPercentile)) / 50;
+  log += (0.2 * (50 - person.money.percentile)) / 50;
   log += person.location === "rural" ? 0.08 * urbanShare : -0.08 * (1 - urbanShare);
   for (const condition of person.conditions) log += 0.35 * condition.severity;
   return clamp(Math.exp(log), HAZARD_MIN, HAZARD_MAX);

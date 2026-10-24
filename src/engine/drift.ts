@@ -56,7 +56,7 @@ export function healthNorm(person: Person, country: Country): number {
   return clamp(
     interpolate(HEALTH_CURVE, person.age) +
       4 * person.traits.constitution +
-      (3 * (person.money.householdPercentile - 50)) / 50 +
+      (3 * (person.money.percentile - 50)) / 50 +
       CARE_BY_INCOME_GROUP[country.incomeGroup] -
       (person.location === "rural" ? 2 : 0) -
       (childLabour(person) ? 3 : 0),
@@ -68,7 +68,7 @@ export function healthNorm(person: Person, country: Country): number {
 const wellbeingNorm = (person: Person) =>
   62 +
   3 * person.traits.resilience -
-  (4 * (50 - person.money.householdPercentile)) / 50 +
+  (4 * (50 - person.money.percentile)) / 50 +
   0.1 * (person.stats.bonds - 50) -
   (childLabour(person) ? 3 : 0);
 

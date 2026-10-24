@@ -4,7 +4,7 @@ import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { Person, TraitId } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
-import { makePerson } from "../fixtures/person";
+import { makePerson, moneyAt } from "../fixtures/person";
 
 const country = makeCountry();
 const at = (age: number, overrides: Partial<Person> = {}) => makePerson({ age, stage: stageForAge(age), ...overrides });
@@ -34,8 +34,8 @@ describe("health norm (HEALTH-001)", () => {
     );
   });
   it("is lower for a poor household than a rich one", () => {
-    const poor = at(30, { money: { householdPercentile: 5, savings: 0, debt: 0 } });
-    const rich = at(30, { money: { householdPercentile: 95, savings: 0, debt: 0 } });
+    const poor = at(30, { money: moneyAt(5) });
+    const rich = at(30, { money: moneyAt(95) });
     expect(healthNorm(poor, country)).toBeLessThan(healthNorm(rich, country));
   });
   it("is lower in rural areas", () => {

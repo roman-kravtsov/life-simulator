@@ -9,8 +9,9 @@ import {
   rollDeath,
 } from "../../src/engine/mortality";
 import { createRng } from "../../src/engine/rng";
+import type { HealthCondition } from "../../src/engine/types";
 import { makeCountry, syntheticLifeTable } from "../fixtures/country";
-import { makePerson } from "../fixtures/person";
+import { makePerson, moneyAt } from "../fixtures/person";
 
 const country = makeCountry();
 
@@ -34,14 +35,14 @@ describe("hazardMultiplier (HEALTH-002)", () => {
     expect(hazardMultiplier(makePerson(), country)).toBeLessThan(1.25);
     const frail = makePerson({
       stats: { health: 0, wellbeing: 0, bonds: 0, skills: 0 },
-      money: { householdPercentile: 1, savings: 0, debt: 0 },
-      conditions: [1, 2, 3, 4, 5, 6].map((i) => ({ id: `c${i}`, severity: 3 as const })),
+      money: moneyAt(1),
+      conditions: [1, 2, 3, 4, 5, 6].map((i) => ({ id: `c${i}`, severity: 3 as const, since: 0 })),
       location: "rural",
     });
     expect(hazardMultiplier(frail, country)).toBe(HAZARD_MAX);
     const robust = makePerson({
       stats: { health: 100, wellbeing: 100, bonds: 100, skills: 100 },
-      money: { householdPercentile: 100, savings: 0, debt: 0 },
+      money: moneyAt(100),
       traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: 0, constitution: 2 },
     });
     expect(hazardMultiplier(robust, country)).toBeGreaterThanOrEqual(HAZARD_MIN);
@@ -52,13 +53,13 @@ describe("hazardMultiplier (HEALTH-002)", () => {
       hazardMultiplier(makePerson({ stats: { health: 30, wellbeing: 60, bonds: 60, skills: 20 } }), country),
     ).toBeGreaterThan(base);
     expect(
-      hazardMultiplier(makePerson({ money: { householdPercentile: 5, savings: 0, debt: 0 } }), country),
+      hazardMultiplier(makePerson({ money: moneyAt(5) }), country),
     ).toBeGreaterThan(base);
     expect(
-      hazardMultiplier(makePerson({ money: { householdPercentile: 95, savings: 0, debt: 0 } }), country),
+      hazardMultiplier(makePerson({ money: moneyAt(95) }), country),
     ).toBeLessThan(base);
     expect(hazardMultiplier(makePerson({ location: "rural" }), country)).toBeGreaterThan(base);
-    expect(hazardMultiplier(makePerson({ conditions: [{ id: "x", severity: 2 }] }), country)).toBeGreaterThan(base);
+    expect(hazardMultiplier(makePerson({ conditions: [{ id: "x", severity: 2, since: 0 }] }), country)).toBeGreaterThan(base);
     expect(
       hazardMultiplier(
         makePerson({
@@ -94,7 +95,7 @@ describe("deathProbability", () => {
     expect(deathProbability(makePerson({ age: 100 }), country)).toBe(1);
   });
   it("never exceeds 1", () => {
-    const frail = makePerson({ age: 99, conditions: [{ id: "x", severity: 3 }] });
+    const frail = makePerson({ age: 99, conditions: [{ id: "x", severity: 3, since: 0 }] });
     expect(deathProbability(frail, country)).toBeLessThanOrEqual(1);
   });
 });
@@ -117,7 +118,7 @@ describe("drawCause (HEALTH-003)", () => {
     sex: "female" | "male",
     age: number,
     id: string,
-    conditions = [] as { id: string; severity: 1 | 2 | 3; raises?: string }[],
+    conditions = [] as HealthCondition[],
     n = 20000,
   ) => {
     const rng = createRng(`cause-${sex}-${age}-${id}`);
@@ -138,11 +139,11 @@ describe("drawCause (HEALTH-003)", () => {
     expect(share("female", 100, "noncommunicable", [], 2000)).toBeGreaterThan(0.8);
   });
   it("nudges the draw towards a cause a condition raises", () => {
-    const heart = [{ id: "heart", severity: 3 as const, raises: "infectious" }];
+    const heart = [{ id: "heart", severity: 3 as const, since: 0, raises: "infectious" }];
     expect(share("female", 80, "infectious", heart)).toBeGreaterThan(share("female", 80, "infectious") * 2);
   });
   it("ignores a condition that raises a cause the band does not have", () => {
-    const odd = [{ id: "x", severity: 3 as const, raises: "unknown" }];
+    const odd = [{ id: "x", severity: 3 as const, since: 0, raises: "unknown" }];
     expect(share("female", 80, "noncommunicable", odd)).toBeCloseTo(0.9, 1);
   });
 });
