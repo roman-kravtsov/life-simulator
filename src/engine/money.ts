@@ -128,7 +128,7 @@ const spendingShare = (percentile: number) =>
 /** 0 to 1: how heavily debt weighs, as debt against half a year's income. Zero for a child. */
 export function debtStress(person: Person, country: Country): number {
   if (person.age < INDEPENDENCE_AGE || person.money.debt <= 0) return 0;
-  const annual = dailyIncome(country, person.money.percentile) * DAYS;
+  const annual = yearlyIncome(person, country);
   return clamp(person.money.debt / (HEAVY_DEBT * annual), 0, 1);
 }
 

@@ -251,7 +251,7 @@ describe("life panels", () => {
 
     it("says when there are no siblings", () => {
       renderLife({ age: 10, relationships: [family[0]!] });
-      expect(screen.getByRole("heading", { level: 3, name: "You have no brothers or sisters." })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 3, name: "You have no brothers or sisters" })).toBeInTheDocument();
     });
 
     it("names each sibling as a brother or sister, with age", () => {
@@ -282,7 +282,7 @@ describe("life panels", () => {
     it("says there are no living brothers or sisters when only the dead are left", () => {
       renderLife({ age: 10, relationships: [relative({ id: "k", name: "Kwame", alive: false, age: 9 })] });
       expect(
-        screen.getByRole("heading", { level: 3, name: "You have no living brothers or sisters." }),
+        screen.getByRole("heading", { level: 3, name: "You have no living brothers or sisters" }),
       ).toBeInTheDocument();
     });
 

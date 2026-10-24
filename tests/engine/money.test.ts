@@ -209,6 +209,15 @@ describe("debt stress (MONEY-004)", () => {
     expect(stress(2000)).toBeGreaterThan(stress(100));
     expect(stress(1e9)).toBe(1);
   });
+  it("weighs more on someone who lives on less than a worker's income", () => {
+    const debt = 500;
+    const worker = debtStress(adult({ money: moneyAt(20, { debt }) }), country);
+    const unemployed = debtStress(
+      adult({ money: moneyAt(20, { debt }), work: { status: "unemployed", yearsWorked: 5, attachment: 0.9 } }),
+      country,
+    );
+    expect(unemployed).toBeGreaterThan(worker);
+  });
   it("is zero for a child", () => {
     expect(debtStress(makePerson({ age: 9, money: moneyAt(5, { debt: 1e6 }) }), country)).toBe(0);
   });

@@ -366,8 +366,8 @@ export const en: Readonly<Record<string, string>> = {
   "severity.3": "severe",
 
   "family.parents": "Parents",
-  "family.siblings.none": "You have no brothers or sisters.",
-  "family.siblings.noneLiving": "You have no living brothers or sisters.",
+  "family.siblings.none": "You have no brothers or sisters",
+  "family.siblings.noneLiving": "You have no living brothers or sisters",
   "family.siblings.one": "You have {count} brother or sister",
   "family.siblings.other": "You have {count} brothers and sisters",
   "family.others": "Others in your life",
