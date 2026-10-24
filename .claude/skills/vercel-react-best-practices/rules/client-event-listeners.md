@@ -2,12 +2,12 @@
 title: Deduplicate Global Event Listeners
 impact: LOW
 impactDescription: single listener for N components
-tags: client, swr, event-listeners, subscription
+tags: client, event-listeners, subscription
 ---
 
 ## Deduplicate Global Event Listeners
 
-Use `useSWRSubscription()` to share global event listeners across component instances.
+Register one global listener and share it across component instances through a module-level registry.
 
 **Incorrect (N instances = N listeners):**
 
@@ -30,39 +30,28 @@ When using the `useKeyboardShortcut` hook multiple times, each instance will reg
 **Correct (N instances = 1 listener):**
 
 ```tsx
-import useSWRSubscription from 'swr/subscription'
-
 // Module-level Map to track callbacks per key
 const keyCallbacks = new Map<string, Set<() => void>>()
 
+function onKeyDown(e: KeyboardEvent) {
+  if (e.metaKey) keyCallbacks.get(e.key)?.forEach(cb => cb())
+}
+
 function useKeyboardShortcut(key: string, callback: () => void) {
-  // Register this callback in the Map
   useEffect(() => {
-    if (!keyCallbacks.has(key)) {
-      keyCallbacks.set(key, new Set())
-    }
+    // The first registered callback attaches the single shared listener
+    if (keyCallbacks.size === 0) window.addEventListener('keydown', onKeyDown)
+    if (!keyCallbacks.has(key)) keyCallbacks.set(key, new Set())
     keyCallbacks.get(key)!.add(callback)
 
     return () => {
-      const set = keyCallbacks.get(key)
-      if (set) {
-        set.delete(callback)
-        if (set.size === 0) {
-          keyCallbacks.delete(key)
-        }
-      }
+      const set = keyCallbacks.get(key)!
+      set.delete(callback)
+      if (set.size === 0) keyCallbacks.delete(key)
+      // The last callback to leave removes it
+      if (keyCallbacks.size === 0) window.removeEventListener('keydown', onKeyDown)
     }
   }, [key, callback])
-
-  useSWRSubscription('global-keydown', () => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.metaKey && keyCallbacks.has(e.key)) {
-        keyCallbacks.get(e.key)!.forEach(cb => cb())
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  })
 }
 
 function Profile() {
