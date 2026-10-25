@@ -10,6 +10,7 @@ import {
   type YearRecord,
 } from "../../src/engine/types";
 import {
+  birthSummary,
   browserSeed,
   closenessBand,
   createGameStore,
@@ -20,6 +21,7 @@ import {
   lifeStrip,
   planToSend,
   statBand,
+  statChanges,
 } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
@@ -1249,5 +1251,201 @@ describe("country facts (UI-004)", () => {
       demography: { ...base.demography, lifeTable: { ...base.demography.lifeTable, estimated: true } },
     });
     expect(countryFacts("male", estimated)).toEqual({});
+  });
+});
+
+describe("game store: reflection and the journal (UI-007, SUM-005)", () => {
+  const withFake = () => {
+    const fake = fakePersistence();
+    return { fake, store: createGameStore(seeds(), testWorld(), fake.persistence) };
+  };
+  const step = (store: ReturnType<typeof createGameStore>) => {
+    const { card } = store.getSnapshot();
+    if (card) store.choose(card.choices.find((c) => !c.lockedReason)!.id);
+    else store.continueYear();
+  };
+  /** Lives on, a year or a decision at a time, until a year has a prompt. */
+  const toAPrompt = async () => {
+    const { store, fake } = withFake();
+    store.setSettings({ pace: "every-year" });
+    await store.begin();
+    store.startLife();
+    for (let i = 0; i < 300 && !store.getSnapshot().reflection && store.getSnapshot().life?.person.alive; i++) {
+      step(store);
+    }
+    return { store, fake };
+  };
+
+  it("has no prompt at birth, while a decision waits, or once the life has ended", async () => {
+    const { store } = withFake();
+    await store.begin();
+    expect(store.getSnapshot().reflection).toBeNull();
+    store.startLife();
+    expect(store.getSnapshot().reflection).toBeNull();
+    for (let i = 0; i < 300 && store.getSnapshot().life?.person.alive; i++) {
+      step(store);
+      if (store.getSnapshot().card) expect(store.getSnapshot().reflection).toBeNull();
+    }
+    expect(store.getSnapshot().life?.person.alive).toBe(false);
+    expect(store.getSnapshot().reflection).toBeNull();
+  });
+
+  it("offers the prompt of the year just lived, with the age and its words", async () => {
+    const { store } = await toAPrompt();
+    const { reflection, life } = store.getSnapshot();
+    expect(reflection).not.toBeNull();
+    expect(reflection!.age).toBe(life!.person.age);
+    expect(reflection!.textKey).toBe(`reflection.${reflection!.id}`);
+    expect(reflection!.written).toBeUndefined();
+  });
+
+  it("keeps a line the player writes, saves it with the life, and offers it back for editing", async () => {
+    const { store, fake } = await toAPrompt();
+    const { reflection } = store.getSnapshot();
+    const savesBefore = fake.saved.length;
+    store.writeJournal("  I kept   her scarf.  ", reflection!.id);
+    const after = store.getSnapshot();
+    expect(after.life!.journal).toEqual([{ age: reflection!.age, prompt: reflection!.id, text: "I kept her scarf." }]);
+    expect(after.reflection!.written).toBe("I kept her scarf.");
+    expect(fake.saved).toHaveLength(savesBefore + 1);
+    expect(fake.saved.at(-1)!.journal).toEqual(after.life!.journal);
+    // It is the same prompt, so the line is replaced and not added.
+    store.writeJournal("Something else.", reflection!.id);
+    expect(store.getSnapshot().life!.journal).toHaveLength(1);
+  });
+
+  it("keeps a line of the player's own at the age they are, and removes a line that is emptied", async () => {
+    const { store } = withFake();
+    await store.begin();
+    store.startLife();
+    store.continueYear();
+    store.writeJournal("A quiet year.");
+    const { life } = store.getSnapshot();
+    expect(life!.journal).toEqual([{ age: life!.person.age, text: "A quiet year." }]);
+    store.writeJournal("   ");
+    expect(store.getSnapshot().life).not.toHaveProperty("journal");
+  });
+
+  it("changes nothing when there is no life, or when it is over", async () => {
+    const { store } = withFake();
+    const before = store.getSnapshot();
+    store.writeJournal("nothing");
+    expect(store.getSnapshot()).toBe(before);
+    const ended = createGameStore(seeds(), testWorld(deadlyCountry()), fakePersistence().persistence);
+    await ended.begin();
+    ended.startLife();
+    ended.continueYear();
+    const done = ended.getSnapshot();
+    ended.writeJournal("too late");
+    expect(ended.getSnapshot()).toBe(done);
+  });
+
+  it("puts what was written into the summary of the finished life", async () => {
+    const { store } = withFake();
+    await store.begin();
+    store.startLife();
+    store.continueYear();
+    store.writeJournal("The first year.");
+    for (let i = 0; i < 300 && store.getSnapshot().life?.person.alive; i++) step(store);
+    expect(store.getSnapshot().summary!.summary.journal).toEqual([{ age: 1, text: "The first year." }]);
+  });
+
+  it("keeps the line through a resumed life", async () => {
+    const fake = fakePersistence();
+    const first = createGameStore(seeds(), testWorld(), fake.persistence);
+    await first.begin();
+    first.startLife();
+    first.continueYear();
+    first.writeJournal("Remember this.");
+    const second = createGameStore(seeds(), testWorld(), fake.persistence);
+    second.init();
+    await second.resumeLife();
+    expect(second.getSnapshot().life!.journal).toEqual(first.getSnapshot().life!.journal);
+  });
+});
+
+describe("game store: the settings screen (UI-009)", () => {
+  it("opens from the start screen and goes back to it, keeping the settings", () => {
+    const store = setup();
+    store.setSettings({ softening: true });
+    store.openSettings();
+    expect(store.getSnapshot().screen).toBe("settings");
+    store.setSettings({ pace: "every-year" });
+    store.closeSettings();
+    expect(store.getSnapshot()).toMatchObject({
+      screen: "start",
+      settings: { softening: true, pace: "every-year" },
+    });
+  });
+});
+
+describe("what changed in the stats (A11Y-002)", () => {
+  const record = (age: number, stats: Partial<YearRecord["stats"]>): YearRecord => ({
+    age,
+    stage: "adulthood",
+    stageChanged: false,
+    stats: { health: 60, happiness: 60, belonging: 60, skills: 60, ...stats },
+    events: [],
+  });
+
+  it("lists the stats that moved by 3 or more since before the step, biggest first, with the sign", () => {
+    const history = [
+      record(30, {}),
+      record(31, { health: 55, happiness: 66, belonging: 61 }),
+      record(32, { health: 50, happiness: 66, belonging: 61, skills: 65 }),
+    ];
+    expect(statChanges(history, 1)).toEqual([
+      { stat: "health", delta: -10 },
+      { stat: "happiness", delta: 6 },
+      { stat: "skills", delta: 5 },
+    ]);
+    // A step of one year compares the last year with the one before it.
+    expect(statChanges(history, 2)).toEqual([
+      { stat: "health", delta: -5 },
+      { stat: "skills", delta: 5 },
+    ]);
+  });
+
+  it("has nothing for the first year, which has no year before it, or a step that changed little", () => {
+    expect(statChanges([record(1, {})], 0)).toEqual([]);
+    expect(statChanges([record(1, {}), record(2, { health: 61 })], 1)).toEqual([]);
+    expect(statChanges([], 0)).toEqual([]);
+  });
+
+  it("is in the snapshot for the year just taken, and gone while a decision waits", async () => {
+    const store = setup();
+    store.setSettings({ pace: "every-year" });
+    await store.begin();
+    store.startLife();
+    let seen = false;
+    for (let i = 0; i < 120 && store.getSnapshot().life?.person.alive; i++) {
+      const { card } = store.getSnapshot();
+      if (card) {
+        store.choose(card.choices.find((c) => !c.lockedReason)!.id);
+        continue;
+      }
+      store.continueYear();
+      const { statChanges: changes, card: waiting, life } = store.getSnapshot();
+      if (waiting) expect(changes).toEqual([]);
+      else if (life && life.history.length > 1) {
+        const [before, last] = [life.history.at(-2)!.stats, life.history.at(-1)!.stats];
+        const expected = (["health", "happiness", "belonging", "skills"] as const).filter(
+          (stat) => Math.abs(Math.round(last[stat] - before[stat])) >= 3,
+        );
+        expect(changes.map((c) => c.stat).sort()).toEqual([...expected].sort());
+        if (changes.length > 0) seen = true;
+      }
+    }
+    expect(seen).toBe(true);
+  });
+});
+
+describe("the birth summary and the country at birth (UI-003, WORLD-008)", () => {
+  it("says how many older brothers and sisters there are", async () => {
+    const store = setup();
+    await store.begin();
+    const { life, country } = store.getSnapshot();
+    const older = life!.person.relationships.filter((r) => r.kind === "sibling").length;
+    expect(birthSummary(life!, country!).siblings).toBe(older);
   });
 });

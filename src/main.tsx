@@ -5,9 +5,7 @@ import "./styles.css";
 import { browserPersistence } from "./save";
 import { App } from "./ui/App";
 import { browserSeed, createGameStore } from "./ui/store";
-import { applyStoredTheme } from "./ui/theme";
 
-applyStoredTheme();
 const store = createGameStore(browserSeed, { loadIndex, loadCountry }, browserPersistence());
 store.init();
 
