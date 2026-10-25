@@ -65,7 +65,9 @@ export interface GameSnapshot {
   /** Set when the browser refused to keep the life in progress, or the archive could not be written or read. */
   problem: "current" | "archive" | null;
   /** Set when a resumed life was not what was saved: rebuilt from its seed, or saved by an older version (SAVE-005, RNG-004). */
-  restored: "replayed" | "inexact" | null;
+  restored: "replayed" | "inexact" | "both" | null;
+  /** Set when everything stored in this browser was just deleted, so the start screen can say so (SAVE-007). */
+  deleted: boolean;
 }
 
 /** A finished life as the summary screen shows it. */
@@ -377,6 +379,7 @@ const START: GameSnapshot = {
   pastLives: null,
   problem: null,
   restored: null,
+  deleted: false,
 };
 
 const lastYearOf = (life: { history?: readonly { events?: EventRecord[] }[] }): EventRecord[] =>
@@ -466,6 +469,16 @@ export function createGameStore(
     }
   }
 
+  /** Removes the saved life only when it is this one: a newer life may have been saved since. */
+  function clearSavedLife(seed: string) {
+    try {
+      const found = persistence.loadCurrent();
+      if (found.status === "found" && (found.raw as { seed?: unknown } | null)?.seed === seed) clearSaved();
+    } catch {
+      // Nothing readable, nothing to clear.
+    }
+  }
+
   /** The snapshot with a new life state and everything the screens derive from it. */
   const lived = (life: LifeState, country: Country, changes: Partial<GameSnapshot> = {}): GameSnapshot => ({
     ...snapshot,
@@ -476,10 +489,14 @@ export function createGameStore(
     quietRun: quietRunOf(life, yearsFrom),
   });
 
-  /** Keeps a finished life in the archive; the snapshot learns if that failed. */
-  function keep(past: PastLife) {
+  /**
+   * Keeps a finished life in the archive; the snapshot learns if that failed. `stored` runs once the archive
+   * has it, which is when the life in progress may go: a failed write leaves it where it is.
+   */
+  function keep(past: PastLife, stored?: () => void) {
     persistence.archive.put(past).then(
       () => {
+        stored?.();
         if (snapshot.problem === "archive") set({ ...snapshot, problem: null });
       },
       () => set({ ...snapshot, problem: "archive" }),
@@ -493,8 +510,7 @@ export function createGameStore(
     const save = toSave(life, { dataVersion, contentVersion: CONTENT_VERSION, now: finishedAt, createdAt });
     shown = { id: life.seed, finishedAt, summary, save };
     createdAt = undefined;
-    clearSaved();
-    keep(shown);
+    keep(shown, () => clearSavedLife(life.seed));
     return {
       ...lived(life, country, changes),
       screen: "summary",
@@ -646,7 +662,8 @@ export function createGameStore(
           country,
           sources: index.sources,
           settings: life.settings,
-          restored: restored.source === "replay" ? "replayed" : restored.exact ? null : "inexact",
+          restored:
+            restored.source === "replay" ? (restored.exact ? "replayed" : "both") : restored.exact ? null : "inexact",
         };
         // A life saved at its end would be in the archive; if one is here, finish it rather than play it.
         set(
@@ -722,7 +739,7 @@ export function createGameStore(
       shown = null;
       createdAt = undefined;
       yearsFrom = 0;
-      set({ ...START, resume: null, pastLives: [] });
+      set({ ...START, resume: null, pastLives: [], deleted: true });
     },
   };
 }

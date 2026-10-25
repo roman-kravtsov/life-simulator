@@ -534,6 +534,7 @@ describe("game store: saving, death and the archive (M6)", () => {
       else store.continueYear();
     }
   };
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
   const lifeToTheEnd = async (store: ReturnType<typeof createGameStore>) => {
     await store.begin();
     store.startLife();
@@ -610,7 +611,9 @@ describe("game store: saving, death and the archive (M6)", () => {
       await store.begin();
       store.startLife();
       store.continueYear();
-      await Promise.resolve();
+      // The life in progress is only cleared once the archive has it.
+      expect(fake.current.status).toBe("found");
+      await settle();
       const snapshot = store.getSnapshot();
       expect(snapshot.screen).toBe("summary");
       expect(snapshot.card).toBeNull();
@@ -648,9 +651,29 @@ describe("game store: saving, death and the archive (M6)", () => {
       await store.begin();
       store.startLife();
       store.continueYear();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await settle();
       expect(store.getSnapshot().screen).toBe("summary");
       expect(store.getSnapshot().problem).toBe("archive");
+      // The life in progress is kept, so nothing is lost and it can be finished again later.
+      expect(fake.cleared).toBe(0);
+      expect(fake.current.status).toBe("found");
+    });
+
+    it("does not clear a newer life's save when the archive finishes late", async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const put = fake.persistence.archive.put;
+      fake.persistence.archive.put = (life) => gate.then(() => put(life));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await store.begin();
+      expect(fake.saved.at(-1)!.seed).toBe("seed-1");
+      release();
+      await settle();
+      expect(fake.lives.has("seed-0")).toBe(true);
+      expect(fake.current).toMatchObject({ status: "found", raw: { seed: "seed-1" } });
     });
 
     it("begins another life from the summary, and goes back to the start screen", async () => {
@@ -811,6 +834,18 @@ describe("game store: saving, death and the archive (M6)", () => {
       expect(store.getSnapshot().restored).toBe("inexact");
     });
 
+    it("says both when the snapshot was unusable and the save is from another version", async () => {
+      const { fake } = await savedMidLife(3);
+      const raw = fake.current.status === "found" ? (fake.current.raw as Record<string, unknown>) : {};
+      fake.current = { status: "found", raw: { ...raw, snapshot: { broken: true } } };
+      const world = testWorld();
+      const loadIndex = async () => ({ ...(await world.loadIndex()), dataVersion: "newer" });
+      const { store } = withFake({ ...world, loadIndex }, fake);
+      store.init();
+      await store.resumeLife();
+      expect(store.getSnapshot().restored).toBe("both");
+    });
+
     it("clears the note after the next turn", async () => {
       const { fake } = await savedMidLife(3);
       const world = testWorld();
@@ -882,6 +917,7 @@ describe("game store: saving, death and the archive (M6)", () => {
     it("does not offer a life that has ended", async () => {
       const { store } = withFake();
       await lifeToTheEnd(store);
+      await settle();
       store.backToStart();
       expect(store.getSnapshot().resume).toBeNull();
     });
@@ -1050,6 +1086,16 @@ describe("game store: saving, death and the archive (M6)", () => {
       });
       store.backToStart();
       expect(store.getSnapshot().resume).toBeNull();
+    });
+
+    it("says that everything was deleted, until the player goes anywhere else", async () => {
+      const { store } = withLives();
+      expect(store.getSnapshot().deleted).toBe(false);
+      await store.openPast();
+      await store.deleteAllData();
+      expect(store.getSnapshot().deleted).toBe(true);
+      store.openSources();
+      expect(store.getSnapshot().deleted).toBe(false);
     });
 
     it("leaves the store as it was when the data could not be deleted", async () => {
