@@ -21,6 +21,16 @@ const MIN_BADGE_RADIUS = MARK_RADIUS * 1.6;
 const STEP_OUT = MARK_RADIUS * 1.2;
 const STEPS_OUT = 6;
 
+/**
+ * Side of one repeat of a ring pattern, in view box units: large for a short life, whose rings are wide, and
+ * about 0.9 for one of 60 rings or more, whose rings are thin, so a pattern still shows in them.
+ */
+export const patternTile = (count: number): number => {
+  const [roomy, tight, fewest, most] = [2.4, 0.9, 10, 60];
+  const along = Math.min(1, Math.max(0, (count - fewest) / (most - fewest)));
+  return roomy + (tight - roomy) * along;
+};
+
 export interface RingShape {
   /** Index in the rings given. */
   ring: number;
@@ -50,20 +60,22 @@ export interface RingLayout {
 }
 
 /**
- * The oldest ring is innermost and each ring is as wide as its thickness, scaled so the whole life
+ * The oldest ring is innermost and each ring is as wide as the square root of its thickness, scaled so the whole life
  * fills the circle. A mark for a key moment sits in the middle of its ring; the first is at the top and
  * each next one is turned round the circle by the golden angle, then a little more if it would touch an
  * earlier mark. A badge that cannot fit on a very narrow ring near the centre, or has no room round it,
  * moves outward and keeps a line to its ring.
  */
 export function layoutRings(rings: readonly Ring[]): RingLayout {
-  const total = rings.reduce((sum, ring) => sum + ring.thickness, 0);
+  // Width follows the square root of the thickness: still thicker for a happier year, but the thinnest rings
+  // of a long life stay wide enough to see. The thickness data itself is the engine's and is not changed.
+  const total = rings.reduce((sum, ring) => sum + Math.sqrt(ring.thickness), 0);
   if (total === 0) return { shapes: [], marks: [] };
   const unit = OUTER_RADIUS / total;
   let edge = 0;
   const shapes = rings.map((ring, index): RingShape => {
     const inner = edge;
-    edge += ring.thickness * unit;
+    edge += Math.sqrt(ring.thickness) * unit;
     return {
       ring: index,
       age: ring.age,

@@ -239,10 +239,10 @@ test("a whole life ends on the summary screen: passage, rings, numbered moments,
   // The summary replaces the life screen and takes focus on the person's name.
   const heading = page.getByRole("heading", { level: 1 });
   await expect(heading).toBeFocused();
-  await expect(heading).toContainText(/Died at \d+\./);
+  await expect(page.getByText(/^Died at \d+, of .+\.$/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue to the next year" })).toBeHidden();
   // The closing passage and the line after it.
-  const passage = page.locator("h1 + div p");
+  const passage = page.locator("h1 + p + div p");
   await expect(passage).toHaveCount(2);
   await expect(passage.first()).toContainText(/\S/);
   // The expectancy line names its source.
@@ -253,7 +253,13 @@ test("a whole life ends on the summary screen: passage, rings, numbered moments,
   await expect(rings).toBeVisible();
   const ringCount = await rings.locator("circle[data-ring]").count();
   expect(ringCount).toBeGreaterThan(0);
-  await page.getByText("Year by year").click();
+  // The paper line between rings is at least about half a pixel where it is drawn, even at 360 px.
+  const separator = await rings.evaluate((svg) => {
+    const circle = svg.querySelector("circle[data-ring]")!;
+    return parseFloat(getComputedStyle(circle).strokeWidth) * (svg.getBoundingClientRect().width / 100);
+  });
+  expect(separator).toBeGreaterThanOrEqual(0.5);
+  await page.getByText("Year by year", { exact: true }).click();
   await expect(page.getByRole("table")).toBeVisible();
   await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(ringCount);
 
@@ -375,6 +381,7 @@ test("deleting all local data empties the list and leaves nothing of the game in
 
   await expect(page.getByRole("button", { name: "Begin a life" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Continue your life" })).toBeHidden();
+  await expect(page.getByRole("status")).toContainText("All local data in this browser was deleted.");
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("birthright:")))).toEqual(
     [],
   );

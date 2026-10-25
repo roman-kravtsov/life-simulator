@@ -38,7 +38,8 @@
 /* A thin line of paper between rings, and round the outside, so neighbours never merge. */
 .ring {
   stroke: var(--paper);
-  stroke-width: 0.12;
+  /* About 0.6 px where the picture is 328 px wide, which is as narrow as it gets (360 px screens). */
+  stroke-width: 0.18;
 }
 
 .ring:first-of-type {
@@ -51,14 +52,21 @@
   fill: var(--paper);
 }
 
+/* The stroke width is set on each pattern, from the size of its tile. */
 .markLine {
   fill: none;
   stroke: var(--paper);
-  stroke-width: 0.4;
 }
 
 .mark {
   pointer-events: none;
+}
+
+/* The line from a moved badge to its ring: ink over a wider line of paper, as the badge disc has its edge. */
+.leaderCasing {
+  stroke: var(--paper);
+  stroke-width: 1;
+  stroke-linecap: round;
 }
 
 .leader {
@@ -81,6 +89,7 @@
 .markNumber {
   fill: var(--paper);
   font-family: var(--font-ui);
+  /* "px" here is a view box unit, not a screen pixel: the figure scales, and this is 4.2% of its width. */
   font-size: 4.2px;
   font-weight: 700;
 }
@@ -123,20 +132,6 @@
 .table {
   font-family: var(--font-ui);
   font-size: 0.95rem;
-}
-
-.table summary {
-  /* A list item, so the browser's open/closed marker stays; the padding makes the touch target. */
-  display: list-item;
-  list-style-position: inside;
-  padding: 0.6rem 0;
-  min-height: 2.75rem;
-  cursor: pointer;
-}
-
-.table summary:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
 }
 
 .table table {

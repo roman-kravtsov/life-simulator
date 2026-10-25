@@ -30,7 +30,7 @@
 
 .input[data-invalid] {
   border-style: dashed;
-  border-color: var(--rust);
+  border-color: var(--invalid);
 }
 
 .input[data-disabled] {

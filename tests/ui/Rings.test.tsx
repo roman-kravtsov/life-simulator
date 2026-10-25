@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { Ring } from "../../src/engine/rings";
 import { Rings } from "../../src/ui/Rings";
-import { layoutRings, MARK_RADIUS, OUTER_RADIUS } from "../../src/ui/ringsLayout";
+import { layoutRings, MARK_RADIUS, OUTER_RADIUS, patternTile } from "../../src/ui/ringsLayout";
 
 const THEMES = ["study", "work", "love", "loss", "illness", "move", "plain"] as const;
 
@@ -26,8 +26,11 @@ describe("SUM-002: where the rings and their marks go", () => {
     for (let i = 1; i < shapes.length; i++) expect(shapes[i]!.outer).toBeGreaterThan(shapes[i - 1]!.outer);
     expect(shapes.at(-1)!.outer).toBeCloseTo(OUTER_RADIUS, 6);
     const widths = shapes.map((s) => s.outer - s.inner);
-    const unit = widths[0]! / rings[0]!.thickness;
-    widths.forEach((w, i) => expect(w / rings[i]!.thickness).toBeCloseTo(unit, 6));
+    // Width follows the square root of the thickness, so the thinnest rings of a long life do not vanish.
+    const unit = widths[0]! / Math.sqrt(rings[0]!.thickness);
+    widths.forEach((w, i) => expect(w / Math.sqrt(rings[i]!.thickness)).toBeCloseTo(unit, 6));
+    const thicker = rings.findIndex((r) => r.thickness > rings[0]!.thickness);
+    expect(widths[thicker]).toBeGreaterThan(widths[0]!);
     expect(shapes[0]!.inner).toBe(0);
   });
 
@@ -66,6 +69,24 @@ describe("SUM-002: where the rings and their marks go", () => {
         );
       }
     }
+  });
+
+  it("keeps the rings of a hundred-year life wide enough to see: at 360 px the thinnest is about a pixel", () => {
+    const { shapes } = layoutRings(life(100, []).map((r, i) => ({ ...r, thickness: i % 2 ? 0.2 : 1 })));
+    const widths = shapes.map((s) => s.outer - s.inner);
+    // The picture is at most 328 px wide on a phone, 100 view box units across.
+    const pixelsPerUnit = 328 / 100;
+    expect(Math.min(...widths) * pixelsPerUnit).toBeGreaterThanOrEqual(0.9);
+    expect((widths.reduce((a, b) => a + b, 0) / widths.length) * pixelsPerUnit).toBeGreaterThanOrEqual(1.5);
+  });
+
+  it("makes the pattern tile smaller as lives get longer: about 0.9 over 60 rings, larger below", () => {
+    expect(patternTile(100)).toBeCloseTo(0.9, 6);
+    expect(patternTile(60)).toBeCloseTo(0.9, 6);
+    expect(patternTile(10)).toBeGreaterThan(patternTile(30));
+    expect(patternTile(30)).toBeGreaterThan(patternTile(59));
+    expect(patternTile(1)).toBe(patternTile(5));
+    expect(patternTile(1)).toBeLessThanOrEqual(2.4);
   });
 
   it("is deterministic, handles a single ring and no rings", () => {
@@ -120,6 +141,43 @@ describe("SUM-002: the rings figure", () => {
       .map((p) => p.outerHTML.replace(/ (class|id)="[^"]*"/g, ""));
     expect(new Set(signatures).size).toBe(signatures.length);
     expect(used.get("plain")).not.toMatch(/^url/);
+  });
+
+  it("draws the pattern at the size its number of rings asks for", () => {
+    const long = render(<Rings rings={life(90, [])} name="Long" />);
+    const tile = Number(long.container.querySelector("pattern")!.getAttribute("width"));
+    expect(tile).toBeCloseTo(0.9, 6);
+    long.unmount();
+    const short = render(<Rings rings={life(4, [])} name="Short" />);
+    expect(Number(short.container.querySelector("pattern")!.getAttribute("width"))).toBeGreaterThan(tile);
+  });
+
+  it("gives a mark that moved out from a narrow ring a paper casing under its line, for contrast", () => {
+    const { container } = setup(life(90, [0, 1, 2]));
+    const joined = [...container.querySelectorAll("[data-mark]")].filter(
+      (mark) => mark.querySelectorAll("line").length > 0,
+    );
+    expect(joined.length).toBeGreaterThan(0);
+    for (const mark of joined) {
+      const lines = mark.querySelectorAll("line");
+      expect(lines).toHaveLength(2);
+      expect(lines[0]!.getAttribute("class")).toMatch(/casing/i);
+      expect(lines[1]!.getAttribute("class")).not.toMatch(/casing/i);
+    }
+  });
+
+  it("is a figure named by its caption, with a list for its legend, pointing to the table", () => {
+    const { container } = setup(life(10));
+    const figure = container.querySelector("figure")!;
+    const caption = figure.querySelector("figcaption")!;
+    expect(figure.getAttribute("aria-labelledby")).toBe(caption.id);
+    expect(caption.id).not.toBe("");
+    expect(caption).toHaveTextContent("The table under the picture gives the same, year by year.");
+    expect(screen.getByRole("list", { name: "What each colour and pattern means" }).tagName).toBe("UL");
+    expect(container.querySelector("ul")!.getAttribute("role")).toBe("list");
+    const summary = container.querySelector("summary")!;
+    expect(screen.getByRole("img").getAttribute("aria-describedby")).toBe(summary.id);
+    expect(screen.getByRole("img")).toHaveAccessibleDescription("Year by year");
   });
 
   it("numbers the marks like the key moments", () => {

@@ -32,7 +32,7 @@
 
 .group[data-invalid] {
   border-style: dashed;
-  border-color: var(--rust);
+  border-color: var(--invalid);
 }
 
 .group[data-disabled] {

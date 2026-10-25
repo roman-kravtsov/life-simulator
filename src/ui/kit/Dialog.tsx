@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Dialog as AriaDialog, DialogTrigger, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { Button } from "./Button";
 import styles from "./Dialog.module.css";
@@ -52,18 +52,20 @@ export interface ConfirmDialogProps {
 
 /** A modal that asks before something that cannot be undone (UI-009, SAVE-007). Confirming acts, then closes. */
 export function ConfirmDialog({ trigger, title, children, confirmLabel, cancelLabel, onConfirm }: ConfirmDialogProps) {
+  // The body is the description of the dialog, so a screen reader reads what will happen when it opens.
+  const bodyId = useId();
   return (
     <DialogTrigger>
       {trigger}
       <ModalOverlay className={styles.overlay} isDismissable>
         <Modal className={styles.modal}>
-          <AriaDialog role="alertdialog" className={styles.dialog}>
+          <AriaDialog role="alertdialog" aria-describedby={bodyId} className={styles.dialog}>
             {({ close }) => (
               <>
                 <Heading slot="title" className={styles.title}>
                   {title}
                 </Heading>
-                {children}
+                <div id={bodyId}>{children}</div>
                 <div className={styles.actions}>
                   <Button autoFocus onPress={close}>
                     {cancelLabel}

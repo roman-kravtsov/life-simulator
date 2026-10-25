@@ -169,7 +169,9 @@ describe("kit", () => {
       </ConfirmDialog>,
     );
     await user.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByRole("alertdialog", { name: "Delete this?" })).toHaveTextContent("It cannot be undone.");
+    expect(
+      screen.getByRole("alertdialog", { name: "Delete this?", description: /It cannot be undone\./ }),
+    ).toBeInTheDocument();
     // The safe answer has focus, so Enter does not delete by accident.
     expect(screen.getByRole("button", { name: "Keep it" })).toHaveFocus();
     await user.keyboard("{Escape}");
