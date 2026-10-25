@@ -30,6 +30,15 @@ export class ReplayError extends Error {
 
 /** The life the logs describe, lived again year by year. Throws a `ReplayError` when they do not fit. */
 export function replay(input: ReplayInput, country: Country, catalog: EventCatalog = contentCatalog): LifeState {
+  try {
+    return replayLife(input, country, catalog);
+  } catch (error) {
+    if (error instanceof ReplayError) throw error;
+    throw new ReplayError(error instanceof Error ? error.message : String(error));
+  }
+}
+
+function replayLife(input: ReplayInput, country: Country, catalog: EventCatalog): LifeState {
   let state = newLife({ seed: input.seed, country, settings: input.settings });
   const plans = new Map(input.planLog.map((entry) => [entry.age, entry.plan]));
   let nextSetting = 0;

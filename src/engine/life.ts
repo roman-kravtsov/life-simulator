@@ -98,7 +98,7 @@ export const EPITAPH_MAX_LENGTH = 140;
 
 /** The life with the player's few words for the person (DEATH-004): tidied, cut to length, and removed when empty. */
 export function withEpitaph(state: LifeState, text: string): LifeState {
-  const epitaph = text.replace(/\s+/g, " ").trim().slice(0, EPITAPH_MAX_LENGTH).trim();
+  const epitaph = Array.from(text.replace(/\s+/g, " ").trim()).slice(0, EPITAPH_MAX_LENGTH).join("").trim();
   return epitaph ? { ...state, epitaph } : withoutKeys(state, "epitaph");
 }
 

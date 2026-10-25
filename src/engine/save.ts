@@ -181,11 +181,11 @@ const withoutTurn = (life: LifeState): LifeState => {
 };
 
 /**
- * The life in a save: its snapshot when that is sound, otherwise the life lived again from the seed and the
- * logs (SAVE-005). A snapshot made with the same data and content as this version is also checked against
- * that replay, which costs a few milliseconds, so a snapshot that has drifted from its logs is not trusted.
- * A waiting decision that this version of the game no longer has is dropped, and the year starts again when
- * the player continues.
+ * The life in a save: its snapshot when that has the shape of a life that matches the logs, otherwise the
+ * life lived again from the seed and the logs (SAVE-005). The snapshot is trusted over a replay, because only
+ * the data and content are versioned: a change to the engine itself (a retuned model, say) would make a
+ * replay of a life in progress a different life from the one the player has been living. A waiting decision
+ * that this version of the game no longer has is dropped, and the year starts again when the player continues.
  */
 export function restoreLife(
   save: SaveFile,
@@ -194,14 +194,6 @@ export function restoreLife(
   catalog: EventCatalog = contentCatalog,
 ): RestoreResult {
   const exact = save.dataVersion === versions.dataVersion && save.contentVersion === versions.contentVersion;
-  const rebuilt = (): LifeState | undefined => {
-    try {
-      return replay(save, country, catalog);
-    } catch (error) {
-      if (error instanceof ReplayError) return undefined;
-      throw error;
-    }
-  };
   const finish = (life: LifeState, source: "snapshot" | "replay"): RestoreResult => {
     const kept = save.epitaph ? { ...life, epitaph: save.epitaph } : life;
     try {
@@ -211,14 +203,11 @@ export function restoreLife(
       return kept.turn ? { ok: true, life: withoutTurn(kept), source, exact } : { ok: false, reason: "damaged" };
     }
   };
-
-  const { snapshot } = save;
-  if (isSnapshotOf(snapshot, save)) {
-    if (!exact) return finish(snapshot, "snapshot");
-    const again = rebuilt();
-    if (!again || JSON.stringify(again) === JSON.stringify(snapshot)) return finish(snapshot, "snapshot");
-    return finish(again, "replay");
+  if (isSnapshotOf(save.snapshot, save)) return finish(save.snapshot, "snapshot");
+  try {
+    return finish(replay(save, country, catalog), "replay");
+  } catch (error) {
+    if (error instanceof ReplayError) return { ok: false, reason: "damaged" };
+    throw error;
   }
-  const again = rebuilt();
-  return again ? finish(again, "replay") : { ok: false, reason: "damaged" };
 }

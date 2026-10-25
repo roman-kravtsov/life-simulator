@@ -183,13 +183,19 @@ describe("SAVE-005: restoring a life, from the snapshot or by replay", () => {
     expect(result.ok && result.life).toEqual(written);
   });
 
-  it("does not trust a snapshot that has drifted from its logs when the versions match", () => {
+  it("trusts a sound snapshot over a replay, because only data and content are versioned and the engine may have changed", () => {
     const life = lifeAt(15);
-    const tampered = raw(saved(life));
-    tampered.snapshot.person.stats.health = 1;
-    const result = restoreLife(tampered, country, versions);
-    expect(result).toMatchObject({ ok: true, source: "replay" });
-    expect(result.ok && result.life).toEqual(life);
+    const changed = raw(saved(life));
+    changed.snapshot.person.stats.health = 1;
+    const result = restoreLife(changed, country, versions);
+    expect(result).toMatchObject({ ok: true, source: "snapshot" });
+    expect(result.ok && result.life.person.stats.health).toBe(1);
+  });
+
+  it("is damaged, not a crash, when a log entry is not what it should be", () => {
+    const life = lifeAt(10);
+    const save = { ...raw(saved(life)), snapshot: null, planLog: [null], years: 10 } as unknown as SaveFile;
+    expect(restoreLife(save, country, versions)).toEqual({ ok: false, reason: "damaged" });
   });
 
   it("keeps a snapshot made with other data or content, and says the replay is no longer exact", () => {
