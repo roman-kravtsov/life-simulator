@@ -33,9 +33,9 @@ The prompts started from agents in [VoltAgent/awesome-claude-code-subagents](htt
 - `docs-drift-editor`: from the VoltAgent file of the same name.
 - `surgeon-reviewer`: the VoltAgent file credits the Agent Pack collection ([LucianFord/agent-pack](https://github.com/LucianFord/agent-pack), MIT).
 
-- `engine-developer` and `content-reviewer`: written for this repo from `CLAUDE.md` (engine rules, the content rules and the sensitive-content rules), not adapted from VoltAgent. Scored against the rubric in `/mnt/project-files/subagents/fitness-rubric.md` on 2026-10-25: `engine-developer` 345 of 400 (86%, adopt), `content-reviewer` 370 of 400 (92%, adopt). The rubric file is in the project's shared folder, not in this repo.
+- `engine-developer` and `content-reviewer`: written for this repo from `CLAUDE.md` (engine rules, the content rules and the sensitive-content rules), not adapted from VoltAgent. Scored against the rubric below on 2026-10-25: `engine-developer` 345 of 400 (86%, adopt), `content-reviewer` 370 of 400 (92%, adopt).
 
-How they were chosen: each candidate was scored against a weighted rubric (relevance, fit with `CLAUDE.md`, unique value, tool safety, prompt quality, content fit, cost). Rejected candidates include VoltAgent's `frontend-developer` (multi-framework, no knowledge of the kit or `t()`; replaced by our own tailored version), `code-reviewer` (overlaps `/code-review`) and the infra, backend and orchestration agents.
+How they were chosen: each candidate was scored 0 to 4 on seven criteria, multiplied by a weight and summed to a percentage of 400: relevance to the stack and roadmap (25), fit with `CLAUDE.md` (20), unique value over existing tooling (15), tool permissions and safety (15), prompt quality (10), domain fit for content (10), cost and context footprint (5). Candidates that need a framework or language we do not use, add tracking or third-party requests, write outside their task, or have an unclear licence are excluded whatever the score. 80% and above is adopted, 60 to 79% adopted after edits, 40 to 59% reference only, below 40% skipped. Rejected candidates include VoltAgent's `frontend-developer` (multi-framework, no knowledge of the kit or `t()`; replaced by our own tailored version), `code-reviewer` (overlaps `/code-review`) and the infra, backend and orchestration agents.
 
 ## Rules for agents
 

@@ -11,7 +11,7 @@ Events and decisions are content, not engine code (`CLAUDE.md`, "Code rules"). W
 
 - One file per life stage in `src/content/events/` (`early.ts` is infancy and childhood, then `adolescence.ts`, `youth.ts`, `adulthood.ts`, `midlife.ts`, `elder.ts`; `shocks.ts` for rare large events). Strings go in the matching file in `src/content/strings/events/`; lens phrases shared by several events go in `strings/events/lens.ts`.
 - Read two neighbouring events in the same file first, and copy their shape. Reuse `ANY_STAGE`, `costShare` and `withRole` from `src/content/events/helpers.ts`.
-- The id is dotted lower case and stable: `<stage>.<snake_case>`, for example `childhood.found_coin`. Ids are never renamed or reused; a saved life refers to them.
+- The id is dotted lower case and stable: `<stage>.<snake_case>`, for example `childhood.found_coin`; events in `shocks.ts` use the `shock.` prefix instead (`shock.theft`). Ids are never renamed or reused; a saved life refers to them.
 
 ## 2. Write the event def (`EventDef` in `src/engine/events.ts`)
 
@@ -26,7 +26,7 @@ Events and decisions are content, not engine code (`CLAUDE.md`, "Code rules"). W
 
 - One decision a year at most; the pacing in `src/engine/events.ts` handles it, but do not add events meant to bypass it.
 - Each choice has an `id`, a `text` key and `outcomes` whose probabilities sum to 1 (or all weights). Mark the course the calibrated models assume as `default: true`. A choice with several outcomes needs a `lens` phrase on each outcome. The odds lens reads these same probabilities; never keep a separate number.
-- Use `locks` or `requires` to hide or disable a choice, with a reason string. Money costs go through `cost`, in PPP dollars.
+- Use `requires` (conditions) to hide a choice when it does not apply. Use `locks` to show it but disable it: each lock carries a `reason` string shown to the player. Money costs go through `cost`, in PPP dollars.
 - Choices shift the odds but never escape them: do not make any outcome certain unless the choice truly is.
 - Suicide is never a choice or an outcome the player picks.
 
