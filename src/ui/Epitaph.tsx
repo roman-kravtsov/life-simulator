@@ -27,13 +27,25 @@ export function Epitaph({ name, epitaph, onSave }: Props) {
 
   function save(event: FormEvent) {
     event.preventDefault();
-    // Nothing to save when there was nothing and still is nothing.
-    if (!hasWords && !epitaph) return;
+    // Nothing to save when there was nothing and still is nothing: say so, so a press is never silent.
+    if (!hasWords && !epitaph) {
+      setAnnouncement(t("summary.epitaph.empty"));
+      return;
+    }
     onSave(draft);
     setActed(true);
     setEditing(!hasWords);
     setAnnouncement(t(hasWords ? "summary.epitaph.saved" : "summary.epitaph.removed", { name }));
     if (!hasWords) setDraft("");
+  }
+
+  /** Typing says nothing, except once when the last character is used, and what was said is cleared as it goes. */
+  function change(next: string) {
+    const full = next.length === EPITAPH_MAX_LENGTH;
+    setAnnouncement(
+      full && draft.length !== EPITAPH_MAX_LENGTH ? t("summary.epitaph.limit") : full ? announcement : "",
+    );
+    setDraft(next);
   }
 
   function edit() {
@@ -62,7 +74,7 @@ export function Epitaph({ name, epitaph, onSave }: Props) {
             description={t(pluralKey("summary.epitaph.left", left), { count: formatNumber(left) })}
             maxLength={EPITAPH_MAX_LENGTH}
             value={draft}
-            onChange={setDraft}
+            onChange={change}
             autoFocus={acted}
           />
           <div className={styles.actions}>

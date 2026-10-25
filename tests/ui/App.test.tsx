@@ -205,7 +205,7 @@ describe("App", () => {
       expect(store.getSnapshot().life?.person.alive).toBe(false);
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(store.getSnapshot().life!.person.name);
       expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
-      expect(screen.getByText(/Died at 0\./)).toBeInTheDocument();
+      expect(screen.getByText(/^Died at 0, of /)).toBeInTheDocument();
     });
   });
 });

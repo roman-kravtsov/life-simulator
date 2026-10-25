@@ -140,6 +140,22 @@ describe("SAVE-005, RNG-004: notes on a resumed life", () => {
     ).toBeInTheDocument();
   });
 
+  it("says both when the saved copy could not be read and the game has been updated", async () => {
+    const { fake } = await savedAfter(3);
+    const raw = fake.current.status === "found" ? (fake.current.raw as object) : {};
+    fake.current = { status: "found", raw: { ...raw, snapshot: { broken: true } } };
+    const world = testWorld(country);
+    const { user } = open(fake, {
+      ...world,
+      loadIndex: async () => ({ ...(await world.loadIndex()), dataVersion: "newer" }),
+    });
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    const note = await screen.findByText(
+      /could not be read, so it was rebuilt from its seed\. The game has also been updated/,
+    );
+    expect(note).toHaveAttribute("role", "note");
+  });
+
   it("says nothing when the saved copy was used as it was", async () => {
     const { fake } = await savedAfter(2);
     const { user } = open(fake);
@@ -259,6 +275,34 @@ describe("SAVE-003, SAVE-007: the past lives", () => {
     expect(fake.lives.has("older-life")).toBe(false);
     expect(fake.lives.has("newer-life")).toBe(true);
     await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveFocus());
+  });
+
+  it("says a life was deleted in a status region that was on the page before", async () => {
+    const [older, newer] = lives();
+    const fake = fakePersistence({ status: "none" }, [older!, newer!]);
+    const { user } = await openPast(fake);
+    const status = await screen.findByRole("status");
+    expect(status).toBeEmptyDOMElement();
+    await user.click(screen.getByRole("button", { name: `Delete the life of ${older!.summary.name}` }));
+    await user.click(screen.getByRole("button", { name: "Delete this life" }));
+    await waitFor(() => expect(screen.getByRole("status")).toBe(status));
+    expect(await within(status).findByText(`The life of ${older!.summary.name} was deleted.`)).toBeInTheDocument();
+  });
+
+  it("says that all local data was deleted in the start screen's status region, which is there before the words", async () => {
+    const [older] = lives();
+    const fake = fakePersistence({ status: "none" }, [older!]);
+    const { user } = await openPast(fake);
+    await user.click(await screen.findByRole("button", { name: "Delete all local data" }));
+    await user.click(screen.getByRole("button", { name: "Delete everything" }));
+    const begin = await screen.findByRole("button", { name: "Begin a life" });
+    expect(begin).toBeInTheDocument();
+    const status = screen.getByRole("status");
+    expect(await within(status).findByText("All local data in this browser was deleted.")).toBeInTheDocument();
+    // The words are not there on the first render, so the region is announced as it fills.
+    await user.click(screen.getByRole("button", { name: "Past lives" }));
+    await user.click(await screen.findByRole("button", { name: "Back to start" }));
+    expect(screen.queryByText("All local data in this browser was deleted.")).not.toBeInTheDocument();
   });
 
   it("says plainly what deleting all local data removes, and does it once confirmed (SAVE-007)", async () => {

@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useDeferredValue, useId } from "react";
 import type { Settings } from "../engine/types";
 import { countryName } from "../format";
 import { t } from "../i18n";
@@ -14,6 +14,8 @@ interface Props {
   settings: Settings;
   /** A life saved in this browser, or why it cannot be opened (SAVE-002). */
   resume: ResumeOffer | null;
+  /** Everything stored in this browser was just deleted (SAVE-007). */
+  deleted: boolean;
   onSettings: (changes: Partial<Settings>) => void;
   onBegin: () => void;
   onResume: () => void;
@@ -35,6 +37,7 @@ export function StartScreen({
   status,
   settings,
   resume,
+  deleted,
   onSettings,
   onBegin,
   onResume,
@@ -45,6 +48,8 @@ export function StartScreen({
   const heading = useFocusOn<HTMLHeadingElement>();
   const resumeHeading = useId();
   const loading = status === "loading";
+  // The words arrive after the status region is on the page (the first render has none), so they are announced.
+  const done = useDeferredValue(deleted ? t("start.deleted") : "", "");
   return (
     <section>
       <Header />
@@ -85,7 +90,10 @@ export function StartScreen({
       >
         {t("start.begin")}
       </Button>
-      <div role="status">{loading && <p className="small">{t("start.loading")}</p>}</div>
+      <div role="status">
+        {loading && <p className="small">{t("start.loading")}</p>}
+        {done && <p className="small">{done}</p>}
+      </div>
       {status === "error" && <p role="alert">{t("start.error")}</p>}
       <p className="small">{t("start.privacy")}</p>
       <div className={styles.links}>

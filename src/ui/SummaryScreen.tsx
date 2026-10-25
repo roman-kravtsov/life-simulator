@@ -1,11 +1,13 @@
 // The end of a life (SUM-001, SUM-003, SUM-004, DEATH-002, DEATH-003, DEATH-004): the closing passage, the
 // years against the life expectancy of the place, the rings, the key moments, what shaped the life, a few plain
 // facts, the last year and the epitaph. No score and no rank: a life is told, not graded.
-import type { LifeFacts } from "../engine/summary";
+import type { Ring } from "../engine/rings";
+import type { LifeFacts, LifeSummary } from "../engine/summary";
 import type { EventRecord } from "../engine/types";
 import type { CountryIndex } from "../engine/world/types";
+import { useMemo } from "react";
 import { countryName, formatList, formatNumber, formatPercent, pluralKey } from "../format";
-import { t } from "../i18n";
+import { hasString, t } from "../i18n";
 import { Epitaph } from "./Epitaph";
 import { DecisionLine, EventLine } from "./EventLine";
 import { Header } from "./Header";
@@ -15,7 +17,7 @@ import { Rings } from "./Rings";
 import type { GameSnapshot, SummaryView } from "./store";
 import styles from "./SummaryScreen.module.css";
 import { useFocusOn } from "./useFocusOn";
-import { sourceTitle, wholePercents, yearsWords } from "./words";
+import { causeWords, sourceTitle, tryT, wholePercents, yearsWords } from "./words";
 
 const STATS = ["health", "happiness", "belonging", "skills"] as const;
 
@@ -27,13 +29,14 @@ const ADULT_AGE = 18;
 /** The plain facts of the life, one sentence each, saying only what is true. */
 function factLines(facts: LifeFacts, age: number): string[] {
   const lines: string[] = [];
-  if (facts.education !== "none" || age >= SCHOOL_AGE) lines.push(t(`summary.facts.education.${facts.education}`));
+  const education = `summary.facts.education.${facts.education}`;
+  if (hasString(education) && (facts.education !== "none" || age >= SCHOOL_AGE)) lines.push(t(education));
   if (facts.literate !== undefined)
     lines.push(t(facts.literate ? "summary.facts.literate.yes" : "summary.facts.literate.no"));
   if (facts.yearsWorked > 0) {
     const years = yearsWords(facts.yearsWorked);
     lines.push(
-      facts.sector
+      facts.sector && hasString(`work.sector.${facts.sector}`)
         ? t("summary.facts.work.sector", { years, sector: t(`work.sector.${facts.sector}`) })
         : t("summary.facts.work", { years }),
     );
@@ -55,8 +58,10 @@ function factLines(facts: LifeFacts, age: number): string[] {
   if (facts.partnered || age >= ADULT_AGE) {
     lines.push(t(facts.partnered ? "summary.facts.partner.yes" : "summary.facts.partner.no"));
   }
-  if (facts.conditions.length > 0) {
-    lines.push(t("summary.facts.conditions", { list: formatList(facts.conditions.map((id) => t(`condition.${id}`))) }));
+  // A condition this version has no name for is left out, not guessed at.
+  const conditions = facts.conditions.filter((id) => hasString(`condition.${id}`));
+  if (conditions.length > 0) {
+    lines.push(t("summary.facts.conditions", { list: formatList(conditions.map((id) => t(`condition.${id}`))) }));
   }
   if (facts.moves > 0) {
     lines.push(t(pluralKey("summary.facts.moves", facts.moves), { count: formatNumber(facts.moves) }));
@@ -98,6 +103,30 @@ function carriesSuicideHelp({ helpTopic }: EventRecord): boolean {
   return helpTopic === "suicide";
 }
 
+/**
+ * The key moments this version can still tell, numbered from 1 in order, and the rings renumbered to match, so
+ * the marks on the rings and the numbers in the list always agree. A moment whose text is gone is left out and
+ * its ring keeps no mark.
+ */
+function tellable(summary: LifeSummary) {
+  const told = summary.moments.map((moment, index) => ({
+    moment,
+    was: index + 1,
+    text: tryT(moment.textKey, moment.vars),
+  }));
+  const kept = told.filter((entry): entry is typeof entry & { text: string } => entry.text !== null);
+  if (kept.length === told.length) return { moments: kept, rings: summary.rings };
+  const renumbered = new Map(kept.map((entry, index) => [entry.was, index + 1]));
+  const rings = summary.rings.map((ring): Ring => {
+    const copy = { ...ring };
+    delete copy.moment;
+    const number = ring.moment === undefined ? undefined : renumbered.get(ring.moment);
+    if (number !== undefined) copy.moment = number;
+    return copy;
+  });
+  return { moments: kept, rings };
+}
+
 export interface SummaryScreenProps {
   view: SummaryView;
   sources: CountryIndex["sources"];
@@ -111,12 +140,16 @@ export interface SummaryScreenProps {
 
 export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, onPast, onBack }: SummaryScreenProps) {
   const { summary, lastYear } = view;
-  const { death, shaping, moments, facts } = summary;
+  const { death, shaping, facts } = summary;
+  const { moments, rings } = useMemo(() => {
+    return tellable(summary);
+  }, [summary]);
   const heading = useFocusOn<HTMLHeadingElement>();
   // A death by suicide is stated plainly and the help is always there, unless the year's own event carries it.
   const deathHelp = death.cause === "selfHarm" && !lastYear.some(carriesSuicideHelp);
   const percents = wholePercents(shaping.overall);
   const lines = factLines(facts, death.age);
+  const coda = tryT(death.codaKey);
 
   return (
     <section>
@@ -128,13 +161,13 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
             country: countryName(summary.country),
             born: summary.birthYear,
             died: death.year,
-            age: death.age,
           })}
         </span>
       </h1>
+      <p className={styles.died}>{t("summary.died", { age: death.age, cause: causeWords(death.cause) })}</p>
       <div className={styles.passage}>
-        <p>{t(death.passageKey)}</p>
-        <p>{t(death.codaKey)}</p>
+        <p>{tryT(death.passageKey) ?? t("death.passage.other")}</p>
+        {coda && <p>{coda}</p>}
       </div>
       {deathHelp && <HelpNote topic="suicide" />}
 
@@ -142,16 +175,16 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
       <p>{expectancyText(summary, sources)}</p>
 
       <h2 className={`eyebrow ${styles.heading}`}>{t("summary.rings.heading")}</h2>
-      <Rings rings={summary.rings} name={summary.name} />
+      <Rings rings={rings} name={summary.name} />
 
       {moments.length > 0 && (
         <>
           <h2 className={`eyebrow ${styles.heading}`}>{t("summary.moments.heading")}</h2>
           <p className="small">{t("summary.moments.intro")}</p>
           <ol className={styles.moments}>
-            {moments.map((moment) => (
+            {moments.map(({ moment, text }) => (
               <li key={`${moment.age}-${moment.eventId}`}>
-                {t("summary.moment", { age: moment.age, text: t(moment.textKey, moment.vars) })}
+                {t("summary.moment", { age: moment.age, text })}
                 {moment.decision && <DecisionLine decision={moment.decision} vars={moment.vars} />}
               </li>
             ))}
@@ -172,7 +205,7 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
           chance: formatPercent(percents.chance / 100),
         })}
       </p>
-      <details className={styles.how}>
+      <details className={`disclosure ${styles.how}`}>
         <summary>{t("summary.shaped.how")}</summary>
         <p>{t("summary.shaped.how.one")}</p>
         <p>{t("summary.shaped.how.two")}</p>

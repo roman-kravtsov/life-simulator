@@ -1,13 +1,15 @@
 // The archive of finished lives (SAVE-003, SAVE-007, UI-008): kept plain here; thumbnails come with UI-008. Each
 // life can be opened or deleted after a confirmation, and everything the game keeps in the browser can be
 // deleted at once.
+import { useState } from "react";
 import type { PastLifeListing } from "../save";
 import { countryName, formatDay } from "../format";
-import { hasString, t } from "../i18n";
+import { t } from "../i18n";
 import { Header } from "./Header";
 import { Button, ConfirmDialog } from "./kit";
 import styles from "./PastLivesScreen.module.css";
 import { useFocusOn } from "./useFocusOn";
+import { causeWords } from "./words";
 
 interface Props {
   /** Null while they are being loaded. */
@@ -23,7 +25,6 @@ interface Props {
 }
 
 function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () => void; onDelete: () => void }) {
-  const cause = t(hasString(`cause.${life.cause}`) ? `cause.${life.cause}` : "cause.other");
   return (
     <li className={styles.life}>
       <h2 className={styles.name}>{life.name}</h2>
@@ -32,7 +33,7 @@ function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () =>
           born: life.birthYear,
           country: countryName(life.country),
           age: life.age,
-          cause,
+          cause: causeWords(life.cause),
         })}
       </p>
       {life.epitaph && <p className={styles.epitaph}>{life.epitaph}</p>}
@@ -58,6 +59,8 @@ function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () =>
 export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete, onDeleteAll, onBack }: Props) {
   // Focus returns to the heading when the list arrives and when a life is deleted, whose button is gone.
   const heading = useFocusOn<HTMLHeadingElement>(lives?.length ?? -1);
+  // The one status region, always on the page, says what was deleted once the life's own button is gone.
+  const [notice, setNotice] = useState("");
   return (
     <section>
       <Header />
@@ -70,12 +73,23 @@ export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete
           {t("past.problem")}
         </p>
       )}
-      <div role="status">{lives === null && <p className="small">{t("past.loading")}</p>}</div>
+      <div role="status">
+        {lives === null && <p className="small">{t("past.loading")}</p>}
+        {notice && <p className="small">{notice}</p>}
+      </div>
       {lives !== null && lives.length === 0 && <p>{t("past.empty")}</p>}
       {lives !== null && lives.length > 0 && (
-        <ul className={styles.list}>
+        <ul role="list" className={styles.list}>
           {lives.map((life) => (
-            <Life key={life.id} life={life} onOpen={() => onOpen(life.id)} onDelete={() => onDelete(life.id)} />
+            <Life
+              key={life.id}
+              life={life}
+              onOpen={() => onOpen(life.id)}
+              onDelete={() => {
+                setNotice(t("past.deleted", { name: life.name }));
+                onDelete(life.id);
+              }}
+            />
           ))}
         </ul>
       )}

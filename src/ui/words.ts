@@ -4,7 +4,7 @@ import type { OddsBand } from "../engine/decisions";
 import type { CountryIndex } from "../engine/world/types";
 import type { EventRecord } from "../engine/types";
 import { formatNumber, formatPercent, pluralKey } from "../format";
-import { t } from "../i18n";
+import { hasString, t } from "../i18n";
 import type { QuietRun } from "./store";
 
 /** Odds as the lens speaks them (DEC-005): "about 1 in 3", never a decimal or a percentage. */
@@ -71,3 +71,18 @@ export function wholePercents<K extends string>(shares: Record<K, number>): Reco
   }
   return Object.fromEntries(keys.map((key, i) => [key, floors[i]!])) as Record<K, number>;
 }
+
+/**
+ * A string, or null when its key or one of its variables is missing. Lives that were saved earlier name keys
+ * and variables by text, so a version of the game without one must leave that line out rather than fail.
+ */
+export function tryT(key: string, vars?: Parameters<typeof t>[1]): string | null {
+  try {
+    return t(key, vars);
+  } catch {
+    return null;
+  }
+}
+
+/** The cause of death in words, or "a cause not listed here" when this version has no words for it. */
+export const causeWords = (cause: string): string => t(hasString(`cause.${cause}`) ? `cause.${cause}` : "cause.other");

@@ -102,4 +102,13 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "life.restored.inexact":
     "The game has been updated since this life was saved, so it may play out a little differently from here.",
   "life.problem.current": "This life could not be saved in your browser. If you close this tab, it will be lost.",
+  "life.restored.both":
+    "The saved copy of your life could not be read, so it was rebuilt from its seed. The game has also been updated since the life was saved, so it may play out a little differently from here.",
+
+  "start.deleted": "All local data in this browser was deleted.",
+  "past.deleted": "The life of {name} was deleted.",
+
+  // When a screen cannot be shown (for example a saved life that names text this version no longer has).
+  "app.error.title": "Something went wrong",
+  "app.error.body": "This part of the game could not be shown. Your saved lives have not been changed.",
 };

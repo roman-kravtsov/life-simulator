@@ -1,8 +1,9 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../i18n";
 import { BirthScreen } from "./BirthScreen";
 import { LifeScreen } from "./LifeScreen";
 import { PastLivesScreen } from "./PastLivesScreen";
+import { ScreenBoundary } from "./ScreenBoundary";
 import { SourcesScreen } from "./SourcesScreen";
 import { StartScreen } from "./StartScreen";
 import { SummaryScreen } from "./SummaryScreen";
@@ -25,13 +26,20 @@ function CurrentScreen({ store }: { store: GameStore }) {
     pastLives,
     problem,
     restored,
+    deleted,
   } = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // The screens that show stored lives are guarded, so text a version no longer has cannot blank the app.
+  const guarded = (element: ReactNode) => (
+    <ScreenBoundary key={screen} onBack={store.backToStart}>
+      {element}
+    </ScreenBoundary>
+  );
   if (screen === "birth" && life && country) {
     return <BirthScreen life={life} country={country} onContinue={store.startLife} />;
   }
   if (screen === "life" && life && country) {
     // Not keyed by year: the status region must stay mounted for screen readers to announce changes.
-    return (
+    return guarded(
       <LifeScreen
         life={life}
         country={country}
@@ -47,11 +55,11 @@ function CurrentScreen({ store }: { store: GameStore }) {
         onChoose={store.choose}
         onSettings={store.setSettings}
         onBack={store.backToStart}
-      />
+      />,
     );
   }
   if (screen === "summary" && summary) {
-    return (
+    return guarded(
       <SummaryScreen
         view={summary}
         sources={sources ?? {}}
@@ -60,11 +68,11 @@ function CurrentScreen({ store }: { store: GameStore }) {
         onAnother={store.begin}
         onPast={store.openPast}
         onBack={store.backToStart}
-      />
+      />,
     );
   }
   if (screen === "past") {
-    return (
+    return guarded(
       <PastLivesScreen
         lives={pastLives}
         problem={problem === "archive"}
@@ -73,7 +81,7 @@ function CurrentScreen({ store }: { store: GameStore }) {
         onDelete={store.deletePastLife}
         onDeleteAll={store.deleteAllData}
         onBack={store.backToStart}
-      />
+      />,
     );
   }
   if (screen === "sources") {
@@ -84,6 +92,7 @@ function CurrentScreen({ store }: { store: GameStore }) {
       status={status}
       settings={settings}
       resume={resume}
+      deleted={deleted}
       onSettings={store.setSettings}
       onBegin={store.begin}
       onResume={store.resumeLife}

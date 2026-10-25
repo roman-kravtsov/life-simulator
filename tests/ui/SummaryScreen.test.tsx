@@ -55,8 +55,17 @@ describe("SUM-001: the summary screen", () => {
     render(<SummaryScreen {...props(view())} />);
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading).toHaveTextContent(base.name);
-    expect(heading).toHaveTextContent(`Testland, ${base.birthYear} to ${base.death.year}. Died at ${base.death.age}.`);
+    expect(heading).toHaveTextContent(`Testland, ${base.birthYear} to ${base.death.year}`);
     expect(heading).toHaveFocus();
+  });
+
+  it("says plainly how old the person was and what they died of, in words (DEATH-001)", () => {
+    const { rerender } = render(
+      <SummaryScreen {...props(view({ death: { ...base.death, age: 41, cause: "cancer" } }))} />,
+    );
+    expect(screen.getByText("Died at 41, of cancer.")).toBeInTheDocument();
+    rerender(<SummaryScreen {...props(view({ death: { ...base.death, age: 34, cause: "selfHarm" } }))} />);
+    expect(screen.getByText("Died at 34, of suicide.")).toBeInTheDocument();
   });
 
   it("tells the closing passage and the line after it (DEATH-002)", () => {
@@ -464,6 +473,35 @@ describe("DEATH-004: the epitaph", () => {
     await user.type(field(), "   {Enter}");
     expect(onSave).not.toHaveBeenCalled();
     expect(field()).toBeInTheDocument();
+  });
+
+  it("says to write a few words first when Save is pressed with nothing written, through the live region", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const live = screen.getByText(
+      (_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P",
+    );
+    expect(live).toBeEmptyDOMElement();
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(live).toHaveTextContent("Write a few words first.");
+    expect(field()).toBeInTheDocument();
+  });
+
+  it("says once that no characters are left when the limit is reached, and stops saying it after a deletion", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const live = screen.getByText(
+      (_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P",
+    );
+    await user.type(field(), "x".repeat(EPITAPH_MAX_LENGTH - 1));
+    expect(live).toBeEmptyDOMElement();
+    await user.type(field(), "y");
+    expect(live).toHaveTextContent("No characters left");
+    // More typing is stopped by the field and says nothing new.
+    await user.type(field(), "zz");
+    expect(field()).toHaveValue("x".repeat(EPITAPH_MAX_LENGTH - 1) + "y");
+    await user.keyboard("{Backspace}");
+    expect(live).toBeEmptyDOMElement();
   });
 
   it("is edited from the quotation, with the keyboard, and can be cancelled", async () => {

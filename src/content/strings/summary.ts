@@ -49,7 +49,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
   "ring.felt.gentle": "A gentle year",
   "ring.felt.happy": "A happy year",
 
-  "summary.subtitle": "{country}, {born} to {died}. Died at {age}.",
+  "summary.subtitle": "{country}, {born} to {died}",
+  "summary.died": "Died at {age}, of {cause}.",
 
   "summary.expectancy.heading": "How long you lived",
   "summary.someone.female": "a woman",
@@ -69,7 +70,7 @@ export const summaryStrings: Readonly<Record<string, string>> = {
   "summary.rings.label.other":
     "The rings of {name}'s life: {count} rings, one for each year, from age {first} to age {last}.",
   "summary.rings.caption":
-    "Each ring is one year, the first at the centre. Thicker rings were happier years. The colour and the pattern say what the year was mostly about, and the numbers mark the key moments below.",
+    "Each ring is one year, the first at the centre. Thicker rings were happier years. The colour and the pattern say what the year was mostly about, and the numbers mark the key moments below. The table under the picture gives the same, year by year.",
   "summary.rings.legend": "What each colour and pattern means",
   "summary.rings.table": "Year by year",
   "summary.rings.table.caption": "How each year of the life is drawn",
@@ -125,6 +126,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
   "summary.epitaph.edit": "Edit",
   "summary.epitaph.cancel": "Cancel",
   "summary.epitaph.saved": "Your words for {name} are saved.",
+  "summary.epitaph.empty": "Write a few words first.",
+  "summary.epitaph.limit": "No characters left",
   "summary.epitaph.removed": "The words for {name} were removed.",
 
   "summary.seed": "The seed of this life is {seed}. It is what the game used to draw this birth.",
