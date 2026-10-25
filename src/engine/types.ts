@@ -258,4 +258,14 @@ export interface LifeState {
   planLog?: PlanLogEntry[];
   /** A few words the player wrote for the person at the end (DEATH-004). Not part of what a replay needs. */
   epitaph?: string;
+  /** The lines the player wrote along the way (UI-007), in the order of the years. Not part of what a replay needs. */
+  journal?: JournalEntry[];
+}
+
+/** One line of the journal: written at an age, and when it answered a reflection prompt, which one. */
+export interface JournalEntry {
+  age: number;
+  /** The id of the reflection prompt it answered; none for a line the player started. */
+  prompt?: string;
+  text: string;
 }

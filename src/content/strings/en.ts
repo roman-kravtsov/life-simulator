@@ -8,6 +8,7 @@ import { lensStrings } from "./events/lens";
 import { midlifeStrings } from "./events/midlife";
 import { shockStrings } from "./events/shocks";
 import { youthStrings } from "./events/youth";
+import { reflectionStrings } from "./reflection";
 import { summaryStrings } from "./summary";
 import { systemStrings } from "./systems";
 import { uiStrings } from "./ui";
@@ -17,6 +18,7 @@ export const en: Readonly<Record<string, string>> = {
   ...uiStrings,
   ...deathStrings,
   ...summaryStrings,
+  ...reflectionStrings,
   ...earlyStrings,
   ...adolescenceStrings,
   ...youthStrings,

@@ -10,6 +10,7 @@ import {
   type Cause,
   type EducationLevel,
   type EventRecord,
+  type JournalEntry,
   type LifeState,
   type RingTheme,
   type Sector,
@@ -230,6 +231,8 @@ export interface LifeSummary {
   /** The stats at the end of the life. */
   stats: Stats;
   epitaph?: string;
+  /** The lines the player wrote along the way (UI-007, SUM-005); absent when there are none. */
+  journal?: JournalEntry[];
 }
 
 /** The summary of a life that has ended (SUM-001). */
@@ -253,5 +256,6 @@ export function summarize(life: LifeState, country: Country): LifeSummary {
     shaping: shaping(life.history),
     stats: person.stats,
     ...(life.epitaph ? { epitaph: life.epitaph } : {}),
+    ...(life.journal?.length ? { journal: life.journal } : {}),
   };
 }

@@ -5,7 +5,7 @@ import { catalog as contentCatalog } from "../content/events";
 import { decisionCard } from "./life";
 import type { EventCatalog } from "./events";
 import { replay, ReplayError } from "./replay";
-import type { DecisionLogEntry, LifeState, PlanLogEntry, Settings, SettingsLogEntry } from "./types";
+import type { DecisionLogEntry, JournalEntry, LifeState, PlanLogEntry, Settings, SettingsLogEntry } from "./types";
 import type { Country } from "./world/types";
 
 /** The version of the save format this code writes and reads. */
@@ -30,6 +30,8 @@ export interface SaveFile {
   waiting: boolean;
   /** The player's few words for the person (DEATH-004). */
   epitaph?: string;
+  /** The lines the player wrote along the way (UI-007). Absent when there are none, as in every save made before the journal. */
+  journal?: JournalEntry[];
   /** The life as it stood, so loading is instant. A cache: the seed and the logs are the real save. */
   snapshot: LifeState;
   createdAt: string;
@@ -63,6 +65,7 @@ export function toSave(life: LifeState, { dataVersion, contentVersion, now, crea
     years: life.history.length,
     waiting: life.turn !== undefined,
     ...(life.epitaph ? { epitaph: life.epitaph } : {}),
+    ...(life.journal?.length ? { journal: life.journal } : {}),
     snapshot: life,
     createdAt: createdAt ?? now,
     updatedAt: now,
@@ -195,7 +198,12 @@ export function restoreLife(
 ): RestoreResult {
   const exact = save.dataVersion === versions.dataVersion && save.contentVersion === versions.contentVersion;
   const finish = (life: LifeState, source: "snapshot" | "replay"): RestoreResult => {
-    const kept = save.epitaph ? { ...life, epitaph: save.epitaph } : life;
+    // What the player wrote is not part of what a replay lives again, so it is put back from the save.
+    const kept: LifeState = {
+      ...life,
+      ...(save.epitaph ? { epitaph: save.epitaph } : {}),
+      ...(Array.isArray(save.journal) && save.journal.length > 0 ? { journal: save.journal } : {}),
+    };
     try {
       decisionCard(kept, country, catalog);
       return { ok: true, life: kept, source, exact };

@@ -1,0 +1,27 @@
+// Reflection prompts (UI-007): short, second person, a question or an invitation. They are offered after what
+// happened in the year and are always optional.
+export const reflectionStrings: Readonly<Record<string, string>> = {
+  "reflection.loss.first": "Someone who was part of your days is gone. What do you want to keep of them?",
+  "reflection.loss.later": "Someone else is gone. What was left unsaid, and what was said well?",
+  "reflection.health.diagnosis": "Something has begun in your body that may stay. How are you carrying it?",
+  "reflection.work.lost": "The work has ended. What do you need now, and who could you ask?",
+  "reflection.love.wed": "Your life is joined to another's. What do you hope for, and what are you unsure of?",
+  "reflection.love.met": "You have met someone. What did you notice first?",
+  "reflection.child.born": "A child is born into your days. What do you wish for them?",
+  "reflection.grandchild.born": "The family has reached another generation. What would you want the child to know?",
+  "reflection.sibling.born": "There is one more at the table. What changes in the house?",
+  "reflection.move": "You have moved. What did you leave, and what are you hoping to find?",
+  "reflection.work.retired": "You stop working. What will the days be for?",
+  "reflection.school.left": "You are leaving school. What do you carry out of it, and what stays behind?",
+  "reflection.school.done": "A stage of school is finished. Who helped you get here?",
+  "reflection.work.first": "You have started to work. What does it ask of you, and what does it give?",
+  "reflection.school.start": "School begins. What do you hope to find there?",
+  "reflection.money.debt": "Money is pressing on you. What would ease it, and who knows?",
+  "reflection.friend.first": "You have made a friend. What do you like about them?",
+  "reflection.stage.childhood": "You are growing, and the world is getting bigger. What do you notice?",
+  "reflection.stage.adolescence": "You are no longer a small child. What do you want that you did not know you wanted?",
+  "reflection.stage.youth": "Adult life is opening. What do you want it to look like?",
+  "reflection.stage.adulthood": "You are in the middle of things. What are you holding up, and who holds you up?",
+  "reflection.stage.midlife": "Part of the road is behind you. What do you want to do with the rest?",
+  "reflection.stage.elder": "You are among the old now. What do you know that you did not know before?",
+};
