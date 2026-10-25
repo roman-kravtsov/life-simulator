@@ -676,6 +676,28 @@ describe("game store: saving, death and the archive (M6)", () => {
       expect(fake.current).toMatchObject({ status: "found", raw: { seed: "seed-1" } });
     });
 
+    it("does not let a late archive write for an earlier life clear the note about this one", async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const put = fake.persistence.archive.put;
+      let calls = 0;
+      fake.persistence.archive.put = (life) =>
+        calls++ === 0 ? gate.then(() => put(life)) : Promise.reject(new Error("full"));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await settle();
+      expect(store.getSnapshot()).toMatchObject({ screen: "summary", problem: "archive" });
+      release();
+      await settle();
+      expect(fake.lives.has("seed-0")).toBe(true);
+      expect(store.getSnapshot().problem).toBe("archive");
+    });
+
     it("begins another life from the summary, and goes back to the start screen", async () => {
       const { store } = withFake(testWorld(deadlyCountry()));
       await store.begin();

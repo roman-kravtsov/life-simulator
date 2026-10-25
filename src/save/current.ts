@@ -38,15 +38,28 @@ export function clearCurrent(storage?: Storage): void {
   }
 }
 
-/** Removes everything the game keeps in localStorage: the life in progress and the preferences. */
-export function clearLocalStorage(storage?: Storage): void {
+/**
+ * Removes everything the game keeps in localStorage: the life in progress and the preferences. False when the
+ * browser refused to remove one of the keys, so some may remain; storage that is not there has nothing to remove.
+ */
+export function clearLocalStorage(storage?: Storage): boolean {
+  let store: Storage;
+  let keys: string[];
   try {
-    const store = storage ?? localStorage;
-    const keys = Array.from({ length: store.length }, (_, i) => store.key(i)).filter(
+    store = storage ?? localStorage;
+    keys = Array.from({ length: store.length }, (_, i) => store.key(i)).filter(
       (key): key is string => key !== null && key.startsWith(KEY_PREFIX),
     );
-    for (const key of keys) store.removeItem(key);
   } catch {
-    // Nothing to remove if storage is not there.
+    return true;
   }
+  let cleared = true;
+  for (const key of keys) {
+    try {
+      store.removeItem(key);
+    } catch {
+      cleared = false;
+    }
+  }
+  return cleared;
 }

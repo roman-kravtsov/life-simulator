@@ -498,7 +498,8 @@ export function createGameStore(
     persistence.archive.put(past).then(
       () => {
         stored?.();
-        if (snapshot.problem === "archive") set({ ...snapshot, problem: null });
+        // Only the life on screen may clear the note: a late write for an earlier life says nothing of this one.
+        if (snapshot.problem === "archive" && shown === past) set({ ...snapshot, problem: null });
       },
       () => set({ ...snapshot, problem: "archive" }),
     );

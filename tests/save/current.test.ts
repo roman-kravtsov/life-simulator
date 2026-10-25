@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { advanceAuto, newLife } from "../../src/engine/life";
 import { readSave, toSave } from "../../src/engine/save";
 import { DATABASE } from "../../src/save/archive";
-import { CURRENT_KEY, clearCurrent, loadCurrent, saveCurrent } from "../../src/save/current";
+import { CURRENT_KEY, clearCurrent, clearLocalStorage, loadCurrent, saveCurrent } from "../../src/save/current";
 import { browserPersistence, noPersistence } from "../../src/save";
 import { makeCountry } from "../fixtures/country";
 
@@ -82,6 +82,35 @@ describe("SAVE-007: delete all local data", () => {
     expect(localStorage.getItem("other-site:keep")).toBe("yes");
     expect((await indexedDB.databases()).map((d) => d.name)).not.toContain(DATABASE);
     expect(Object.keys(localStorage).filter((key) => key.startsWith("birthright"))).toEqual([]);
+  });
+
+  it("says so, and still clears the other keys and the archive, when the browser refuses to remove one", async () => {
+    const persistence = browserPersistence();
+    persistence.saveCurrent(save());
+    localStorage.setItem("birthright:theme", "dark");
+    const remove = Storage.prototype.removeItem;
+    Storage.prototype.removeItem = function (key: string) {
+      if (key === "birthright:theme") throw new DOMException("blocked", "SecurityError");
+      remove.call(this, key);
+    };
+    try {
+      expect(clearLocalStorage()).toBe(false);
+      await expect(persistence.deleteAll()).rejects.toThrow();
+      expect(persistence.loadCurrent()).toEqual({ status: "none" });
+      expect(localStorage.getItem("birthright:theme")).toBe("dark");
+      expect((await indexedDB.databases()).map((d) => d.name)).not.toContain(DATABASE);
+    } finally {
+      Storage.prototype.removeItem = remove;
+    }
+  });
+
+  it("has nothing to remove when storage is not there", () => {
+    const missing = {
+      get length(): number {
+        throw new DOMException("blocked", "SecurityError");
+      },
+    } as unknown as Storage;
+    expect(clearLocalStorage(missing)).toBe(true);
   });
 
   it("keeps nothing at all without persistence", async () => {

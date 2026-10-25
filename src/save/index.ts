@@ -11,7 +11,7 @@ export interface Persistence {
   saveCurrent(save: SaveFile): boolean;
   clearCurrent(): void;
   archive: Archive;
-  /** Removes every life and every preference the game has stored in this browser (SAVE-007). */
+  /** Removes every life and every preference the game has stored in this browser (SAVE-007). Rejects if any remains. */
   deleteAll(): Promise<void>;
 }
 
@@ -23,8 +23,9 @@ export function browserPersistence(): Persistence {
     clearCurrent: () => clearCurrent(),
     archive,
     async deleteAll() {
-      clearLocalStorage();
+      const cleared = clearLocalStorage();
       await archive.clear();
+      if (!cleared) throw new Error("Some local data could not be removed");
     },
   };
 }
