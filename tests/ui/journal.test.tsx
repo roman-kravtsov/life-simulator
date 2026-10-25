@@ -226,7 +226,9 @@ describe("the reflection prompt after a year (UI-007)", () => {
     const live = within(pause()).getByText(
       (_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P",
     );
-    await user.type(promptField(), "x".repeat(JOURNAL_MAX_LENGTH));
+    // Pasted, not typed: 200 key presses one by one can pass the test timeout on a slow runner.
+    await user.click(promptField());
+    await user.paste("x".repeat(JOURNAL_MAX_LENGTH));
     expect(live).toHaveTextContent("No characters left");
     const said = live.firstElementChild;
     // One character replaced: still at the limit, so the words and their node stay as they were.
