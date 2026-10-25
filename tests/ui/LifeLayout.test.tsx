@@ -409,6 +409,14 @@ describe("the ledger of years (UI-004)", () => {
     expect(within(list).getAllByRole("listitem")).toHaveLength(4);
   });
 
+  it("keeps the last year in the ledger while a decision waits, as the page tells the wait and not that year", () => {
+    renderLife({ age: 16 }, { card }, history);
+    expect(within(screen.getByRole("status")).queryByText("You turn 16.")).not.toBeInTheDocument();
+    const items = within(screen.getByRole("list", { name: "Earlier years" })).getAllByRole("listitem");
+    expect(items.map((item) => /^Age (\d+)/.exec(item.textContent ?? "")?.[1])).toEqual(["16", "15", "14", "13", "12"]);
+    expect(items[0]).toHaveTextContent(/telling a story you have never told/);
+  });
+
   it("has no list of earlier years before there are any", () => {
     renderLife({ age: 1 }, {}, (person) => [year(person, 1)]);
     expect(screen.queryByRole("list", { name: "Earlier years" })).not.toBeInTheDocument();

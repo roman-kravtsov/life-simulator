@@ -101,6 +101,7 @@ export function LifeScreen({
       ? t("life.stageReached", { stage: t(`life.stage.${last.stage}`) })
       : t("life.yearPassed", { age: last.age });
   const events = last?.events ?? [];
+  // While a decision waits the page tells the wait, not the last year, so that year goes into the ledger with the rest.
   // The panels only change with the life, not with a plan being placed.
   const overview = useMemo(() => lifeOverview(life, country), [life, country]);
   const facts = useMemo(() => countryFacts(person.sex, country), [person.sex, country]);
@@ -122,7 +123,7 @@ export function LifeScreen({
   const storyColumn = (
     <Ledger
       age={person.age}
-      earlier={life.history.slice(0, -1)}
+      earlier={card ? life.history : life.history.slice(0, -1)}
       narrow={narrow}
       tray={
         plan && draft && !card ? (
@@ -232,13 +233,13 @@ export function LifeScreen({
           className={styles.narrow}
         >
           {/* All three stay in the page, so what is in them keeps its place; the two not shown are out of sight and reach. */}
-          <TabPanel id="story" forceMount>
+          <TabPanel id="story" forceMount className={styles.pane}>
             {storyColumn}
           </TabPanel>
-          <TabPanel id="you" forceMount>
+          <TabPanel id="you" forceMount className={styles.pane}>
             {youColumn}
           </TabPanel>
-          <TabPanel id="around" forceMount>
+          <TabPanel id="around" forceMount className={styles.pane}>
             {aroundColumn}
           </TabPanel>
         </Tabs>

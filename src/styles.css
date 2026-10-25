@@ -8,7 +8,7 @@
   --accent: #7a5c3e; /* bark */
   --accent-ink: #fbf8f2;
   --moss: #5f7148;
-  --ochre: #b0862f;
+  --ochre: #a67c28; /* 3.4:1 on the paper, so the dots of the life strip can use it */
   --river: #3f6b85;
   --rust: #9c4a2f;
   --slate: #5b6470;
@@ -30,6 +30,8 @@
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   --measure: 38rem;
+  /* The fixed bar of tabs on a phone (UI-010): the kit draws it this tall and the page leaves room for it. */
+  --tab-bar-height: 3.25rem;
   --gutter: 1rem;
   --radius: 0.5rem;
   color-scheme: light;
@@ -85,6 +87,8 @@
 
 body {
   margin: 0;
+  /* With viewport-fit=cover the page can run under a notch at the sides of a phone held sideways. */
+  padding-inline: env(safe-area-inset-left, 0) env(safe-area-inset-right, 0);
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-story);
@@ -104,9 +108,24 @@ main:has(> #content[data-layout="wide"]) {
   padding: 0;
 }
 
-/* Focus moved into the page is not left under the header at the top or the plan tray at the foot. */
+/* Focus moved into the page is not left under the header at the top, or under what is fixed at the foot: the plan
+   tray in the wide layout when the window is big enough to dock it, the bar of tabs on a phone, nothing between.
+   The widths are in em, so they follow the reader's text size; they match NARROW_QUERY (useNarrow.ts) and the tray's
+   query (Ledger.module.css). The tray is about 12rem tall where it is docked. */
 html:has(#content[data-layout="wide"]) {
-  scroll-padding-block: 6rem 9rem;
+  scroll-padding-block: 6rem 13rem;
+}
+
+@media (width <= 68.75em), (height <= 43.75em) {
+  html:has(#content[data-layout="wide"]) {
+    scroll-padding-block: 6rem 1rem;
+  }
+}
+
+@media (width < 56.25em) {
+  html:has(#content[data-layout="wide"]) {
+    scroll-padding-block: 5rem calc(var(--tab-bar-height) + 1rem);
+  }
 }
 
 main:focus,
@@ -126,6 +145,8 @@ main:focus,
 
 .skip-link:focus {
   left: 0.5rem;
+  /* Above the life screen's sticky header and its bar of tabs. */
+  z-index: 200;
 }
 
 :focus-visible {

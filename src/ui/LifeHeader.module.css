@@ -31,19 +31,18 @@
   color: var(--accent);
 }
 
+/* One line: when the name and place do not fit, they end in an ellipsis (the whole is the title), they do not wrap. */
 .who {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 0.6rem;
   min-width: 0;
-  max-height: 3.5rem;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 0.9rem;
   color: var(--ink-soft);
 }
 
 .name {
+  margin-right: 0.6rem;
   font-family: var(--font-story);
   font-size: 1.15rem;
   color: var(--ink);
@@ -100,9 +99,11 @@
   color: var(--ink-soft);
 }
 
+/* The margins leave room for the marker (6 px across) at either end, so it is never cut off. */
 .track {
   flex: 1;
   min-width: 0;
+  margin-inline: 7px;
   overflow: visible;
 }
 
@@ -116,6 +117,8 @@
 
 .moment {
   fill: var(--ochre);
+  stroke: var(--paper);
+  stroke-width: 1;
 }
 
 .now {

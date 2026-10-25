@@ -35,7 +35,7 @@ interface Props {
   children: ReactNode;
   /** The years before this one, oldest first, as the life records them. */
   earlier: readonly YearRecord[];
-  /** The plan tray, docked under the ledger; absent while a decision waits. */
+  /** The plan tray, docked under the ledger when the window is big enough; absent while a decision waits. */
   tray: ReactNode;
   narrow: boolean;
 }
@@ -43,23 +43,27 @@ interface Props {
 export function Ledger({ age, children, earlier, tray, narrow }: Props) {
   return (
     <div className={`${styles.centre} ${narrow ? styles.flow : ""}`}>
-      <div className={styles.ledger}>
-        <div className={`${styles.entry} ${styles.now}`}>
+      <div className={styles.part}>
+        <div className={`${styles.entry} ${earlier.length === 0 ? styles.last : ""}`}>
           <span className={styles.year} aria-hidden="true">
             {age}
             <small>{t("life.now")}</small>
           </span>
           <div className={styles.body}>{children}</div>
         </div>
-        {earlier.length > 0 && (
+      </div>
+      {/* After this year and before the earlier ones, so the plan is next to what it is for and the keyboard reaches it
+          before a long history; where it is docked at the foot of the window, CSS puts it last. */}
+      {tray && <div className={styles.tray}>{tray}</div>}
+      {earlier.length > 0 && (
+        <div className={`${styles.part} ${styles.rest}`}>
           <ol aria-label={t("life.earlier")} className={styles.earlier}>
             {[...earlier].reverse().map((record) => (
               <PastYear key={record.age} record={record} />
             ))}
           </ol>
-        )}
-      </div>
-      {tray && <div className={styles.tray}>{tray}</div>}
+        </div>
+      )}
     </div>
   );
 }

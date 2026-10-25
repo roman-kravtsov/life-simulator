@@ -539,7 +539,7 @@ test("a whole year can be played by keyboard alone: Continue, a decision, the pl
   const region = page.getByRole("region", { name: "Where your attention goes" });
   const ageNow = async () => Number(/Age (\d+)/.exec((await heading.textContent()) ?? "")?.[1]);
 
-  // Continue is the first thing the Tab key reaches in the header's actions; a decision then takes focus.
+  // Continue is in the header, so the Tab key reaches it from anywhere in the page; a decision then takes focus.
   for (let step = 0; step < 14 && (await ageNow()) < 6; step++) {
     await tabTo(page, next);
     await page.keyboard.press("Enter");
@@ -634,4 +634,32 @@ test("on a phone the bar of tabs shows one of Story, You and Around you at a tim
   await expect(bar.getByRole("tab", { name: "Story", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(around).toBeHidden();
   expect(await noHorizontalScroll(page)).toBe(true);
+});
+
+test("the wide layout holds up in smaller windows: no sideways scroll, and the plan tray docks only where there is room (UI-010)", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "The wide layout is only for windows 900 px and up");
+  await fixedRandom(page, 20261024);
+  await page.goto("./");
+  await beginLife(page);
+  const heading = page.getByRole("heading", { level: 1 });
+  const region = page.getByRole("region", { name: "Where your attention goes" });
+  for (let step = 0; step < 14 && !(await region.isVisible()); step++) await liveStep(page);
+  await expect(region).toBeVisible();
+
+  // The tray is docked (sticky) in a big window, and an ordinary block in a small one.
+  const position = () => region.evaluate((node) => getComputedStyle(node.parentElement!).position);
+  for (const [width, height, docked] of [
+    [1440, 900, true],
+    [1101, 701, true],
+    [1100, 700, false],
+    [900, 600, false],
+    [1280, 560, false],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await expect(heading).toBeVisible();
+    expect(await noHorizontalScroll(page), `${width} x ${height}: the page scrolls sideways`).toBe(true);
+    expect(await position(), `${width} x ${height}`).toBe(docked ? "sticky" : "static");
+  }
 });

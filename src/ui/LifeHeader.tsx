@@ -104,14 +104,15 @@ export function LifeHeader({
   onBack,
 }: Props) {
   const whyId = useId();
+  const line = t("life.who.line", { age, where });
   return (
     <header className={`${styles.header} ${narrow ? styles.narrow : ""}`}>
       <div className={styles.row}>
         <span className={styles.wordmark}>{t("app.title")}</span>
         {!narrow && (
-          <div className={styles.who}>
+          <div className={styles.who} title={`${name} ${line}`}>
             <span className={styles.name}>{name}</span>
-            <span>{t("life.who.line", { age, where })}</span>
+            <span>{line}</span>
           </div>
         )}
         <div className={styles.tools}>

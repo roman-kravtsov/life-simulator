@@ -20,6 +20,10 @@
 }
 
 /* The narrow layout: the column is one tab of the page and as tall as its content. */
+.flow {
+  flex: 1 0 auto;
+}
+
 .flow .tabs {
   flex: none;
 }
@@ -117,9 +121,10 @@
   outline: none;
 }
 
+/* Inside the box: the panel scrolls, so a ring drawn outside the text would be cut off. */
 .notes:focus-visible {
   outline: 3px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: -3px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
