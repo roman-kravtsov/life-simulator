@@ -1,4 +1,6 @@
 // Shared by the component tests of the life screen. Everything here is SYNTHETIC.
+import { screen, within } from "@testing-library/react";
+import type userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import type { Country } from "../../src/engine/world/types";
 import { DEFAULT_SETTINGS, type LifeState, type Person } from "../../src/engine/types";
@@ -37,4 +39,12 @@ export function lifeScreenProps(
     onBack: vi.fn(),
     ...overrides,
   };
+}
+
+/** Goes back to the start from the life screen, where that action lives in the settings dialog (UI-004). */
+export async function backToStart(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Settings" }));
+  await user.click(
+    within(screen.getByRole("dialog", { name: "Settings" })).getByRole("button", { name: "Back to start" }),
+  );
 }

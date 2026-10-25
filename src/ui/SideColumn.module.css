@@ -1,0 +1,135 @@
+/* The two side columns of the life screen. In the wide layout each is as tall as the window below the header and stays
+   in place while the page scrolls; what is in it must fit without scrolling (the panels share what is left). */
+.column {
+  display: flex;
+  flex-direction: column;
+  padding: 0.65rem 1rem;
+  background: var(--paper-raised);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.sticky {
+  position: sticky;
+  top: var(--life-header-height);
+  height: calc(100vh - var(--life-header-height));
+  height: calc(100dvh - var(--life-header-height));
+  /* A safety net, never a plan: the panels are sized to fit. */
+  overflow-y: auto;
+}
+
+/* The narrow layout: the column is one tab of the page and as tall as its content. */
+.flow {
+  flex: 1 0 auto;
+}
+
+.flow .tabs {
+  flex: none;
+}
+
+.flow .panel {
+  flex: none;
+  overflow: visible;
+}
+
+.ringRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.45rem;
+}
+
+.heading {
+  margin: 0 0 0.3rem;
+}
+
+.ringRow .heading {
+  margin: 0;
+}
+
+.caption {
+  margin: 0;
+}
+
+.stats {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  line-height: 1.2;
+}
+
+.stat {
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr) 2.2ch;
+  align-items: center;
+  gap: 0 0.6rem;
+}
+
+.value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.meter {
+  width: 100%;
+  height: 0.5rem;
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: var(--rule);
+}
+
+.meter::-webkit-meter-bar {
+  background: var(--rule);
+  border: none;
+  border-radius: 999px;
+  height: 0.5rem;
+}
+
+.meter::-webkit-meter-optimum-value,
+.meter::-webkit-meter-suboptimum-value,
+.meter::-webkit-meter-even-less-good-value {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.meter::-moz-meter-bar {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The panel takes the height that is left, so switching tabs never moves anything. */
+.panel {
+  flex: 1 1 0;
+  min-height: 0;
+  padding-top: 0.6rem;
+  overflow-y: auto;
+}
+
+.notes {
+  margin: 0;
+  padding: 0.5rem;
+  outline: none;
+}
+
+/* Inside the box: the panel scrolls, so a ring drawn outside the text would be cut off. */
+.notes:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel {
+    scroll-behavior: smooth;
+  }
+}

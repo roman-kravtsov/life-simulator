@@ -104,12 +104,17 @@ function CurrentScreen({ store }: { store: GameStore }) {
 }
 
 export function App({ store }: { store: GameStore }) {
+  // The life screen runs the width of the window, in columns; every other screen keeps the reading measure (UI-010).
+  const wide = useSyncExternalStore(store.subscribe, () => {
+    const { screen, life, country } = store.getSnapshot();
+    return screen === "life" && life !== null && country !== null;
+  });
   return (
     <>
       <a className="skip-link" href="#content">
         {t("app.skipToContent")}
       </a>
-      <div id="content" tabIndex={-1}>
+      <div id="content" tabIndex={-1} data-layout={wide ? "wide" : undefined}>
         <CurrentScreen store={store} />
       </div>
     </>

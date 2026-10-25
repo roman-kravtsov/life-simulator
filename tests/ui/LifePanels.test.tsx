@@ -25,9 +25,17 @@ function renderLife(overrides: Partial<Person> = {}, options: { showUsPrices?: b
       })}
     />,
   );
+  return userEvent.setup();
 }
 
-const panel = (name: string) => screen.getByRole("region", { name });
+/** The panel of a tab; the tab is named by what it holds (UI-004). */
+const panel = (name: string) => screen.getByRole("tabpanel", { name });
+
+/** Opens a tab of a side column, as a player does, and returns its panel. */
+async function open(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(screen.getByRole("tab", { name }));
+  return panel(name);
+}
 
 const relative = (overrides: Partial<Relationship>): Relationship => ({
   id: "r",
@@ -41,14 +49,19 @@ const relative = (overrides: Partial<Relationship>): Relationship => ({
 });
 
 describe("life panels", () => {
-  it("labels each panel with its own h2 and keeps the one live region", () => {
-    renderLife({
+  it("names each panel by its tab, in the two columns, and keeps the one live region", async () => {
+    const user = renderLife({
       age: 30,
       conditions: [{ id: "malaria", severity: 1, since: 20 }],
       relationships: [relative({ id: "m", kind: "mother", name: "Ama" })],
     });
-    for (const name of ["School", "Work", "Money", "Health conditions", "Family"]) {
-      expect(within(panel(name)).getByRole("heading", { level: 2, name })).toBeInTheDocument();
+    expect(panel("School & work")).toBeInTheDocument();
+    for (const name of ["Money", "Health"]) {
+      expect(await open(user, name)).toBeInTheDocument();
+    }
+    expect(panel("Family")).toBeInTheDocument();
+    for (const name of ["Country", "Notes"]) {
+      expect(await open(user, name)).toBeInTheDocument();
     }
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
@@ -56,12 +69,12 @@ describe("life panels", () => {
   describe("School (EDU-001, EDU-002)", () => {
     it("says a newborn is too young for school", () => {
       renderLife({ age: 0, stage: "infancy" });
-      expect(within(panel("School")).getByText("Too young for school yet.")).toBeInTheDocument();
+      expect(within(panel("School & work")).getByText("Too young for school yet.")).toBeInTheDocument();
     });
 
     it("says which school a child attends and for how long", () => {
       renderLife({ age: 8, education: { level: "none", inSchool: true, years: 2 } });
-      const school = within(panel("School"));
+      const school = within(panel("School & work"));
       expect(school.getByText("In primary school.")).toBeInTheDocument();
       expect(school.getByText("2 years")).toBeInTheDocument();
       expect(school.queryByText(/read/)).not.toBeInTheDocument();
@@ -72,7 +85,7 @@ describe("life panels", () => {
         age: 40,
         education: { level: "lower-secondary", inSchool: false, years: 9, literate: true },
       });
-      const school = within(panel("School"));
+      const school = within(panel("School & work"));
       expect(school.getByText("Finished lower secondary school.")).toBeInTheDocument();
       expect(school.getByText("9 years")).toBeInTheDocument();
       expect(school.getByText("You can read and write.")).toBeInTheDocument();
@@ -80,7 +93,7 @@ describe("life panels", () => {
 
     it("says honestly when someone did not go to school or cannot read", () => {
       renderLife({ age: 40, education: { level: "none", inSchool: false, years: 0, literate: false } });
-      const school = within(panel("School"));
+      const school = within(panel("School & work"));
       expect(school.getByText("You did not go to school.")).toBeInTheDocument();
       expect(school.getByText("You never learned to read well.")).toBeInTheDocument();
       expect(school.queryByText("Time in school")).not.toBeInTheDocument();
@@ -88,7 +101,7 @@ describe("life panels", () => {
 
     it("uses the singular for one year", () => {
       renderLife({ age: 7, education: { level: "none", inSchool: true, years: 1 } });
-      expect(within(panel("School")).getByText("1 year")).toBeInTheDocument();
+      expect(within(panel("School & work")).getByText("1 year")).toBeInTheDocument();
     });
   });
 
@@ -100,24 +113,24 @@ describe("life panels", () => {
       ...w,
     });
 
-    it("has no work panel before age six", () => {
+    it("says nothing about work before age six", () => {
       renderLife({ age: 5 });
-      expect(screen.queryByRole("region", { name: "Work" })).not.toBeInTheDocument();
+      expect(within(panel("School & work")).queryByText("Now")).not.toBeInTheDocument();
     });
 
     it("says a child is too young for paid work", () => {
       renderLife({ age: 10 });
-      expect(within(panel("Work")).getByText("Too young for paid work.")).toBeInTheDocument();
+      expect(within(panel("School & work")).getByText("Too young for paid work.")).toBeInTheDocument();
     });
 
     it("says a teenager out of school is at home", () => {
       renderLife({ age: 16 });
-      expect(within(panel("Work")).getByText(/^At home\./)).toBeInTheDocument();
+      expect(within(panel("School & work")).getByText(/^At home\./)).toBeInTheDocument();
     });
 
     it("describes formal and informal jobs by sector, with years worked", () => {
       renderLife({ age: 35, work: work({ status: "employed", sector: "industry", formal: true, yearsWorked: 12 }) });
-      const formal = within(panel("Work"));
+      const formal = within(panel("School & work"));
       expect(formal.getByText("Working in industry: steady, formal work.")).toBeInTheDocument();
       expect(formal.getByText("12 years")).toBeInTheDocument();
     });
@@ -125,7 +138,7 @@ describe("life panels", () => {
     it("describes informal work with no contract", () => {
       renderLife({ age: 35, work: work({ status: "informal", sector: "agriculture", formal: false, yearsWorked: 3 }) });
       expect(
-        within(panel("Work")).getByText("Working in agriculture: informal work with no contract."),
+        within(panel("School & work")).getByText("Working in agriculture: informal work with no contract."),
       ).toBeInTheDocument();
     });
 
@@ -135,36 +148,36 @@ describe("life panels", () => {
       ["retired", "Retired."],
     ] as const)("describes %s", (status, text) => {
       renderLife({ age: 50, work: work({ status }) });
-      expect(within(panel("Work")).getByText(text)).toBeInTheDocument();
+      expect(within(panel("School & work")).getByText(text)).toBeInTheDocument();
     });
   });
 
   describe("Money (MONEY-002, MONEY-004, MONEY-007)", () => {
-    it("shows the daily and yearly income and what it means in words", () => {
-      renderLife(adultAt(11, country));
-      const money = within(panel("Money"));
+    it("shows the daily and yearly income and what it means in words", async () => {
+      const user = renderLife(adultAt(11, country));
+      const money = within(await open(user, "Money"));
       expect(money.getByText("$6.00")).toBeInTheDocument();
       expect(money.getByText("$2,190")).toBeInTheDocument();
       expect(money.getByText("Very little to spare, and a bad year could undo it")).toBeInTheDocument();
       expect(money.getByText(/international dollars/)).toBeInTheDocument();
     });
 
-    it("names the household while the person is a child, and hides savings and debt", () => {
-      renderLife({ age: 10, money: moneyAt(11, { savings: 500, debt: 500 }) });
-      const money = within(panel("Money"));
+    it("names the household while the person is a child, and hides savings and debt", async () => {
+      const user = renderLife({ age: 10, money: moneyAt(11, { savings: 500, debt: 500 }) });
+      const money = within(await open(user, "Money"));
       expect(money.getByText("Each person in your household, a day")).toBeInTheDocument();
       expect(money.queryByText("Savings")).not.toBeInTheDocument();
       expect(money.queryByText(/No savings/)).not.toBeInTheDocument();
     });
 
-    it("says there are no savings and no debts when both are zero", () => {
-      renderLife({ age: 30, money: moneyAt(50) });
-      expect(within(panel("Money")).getByText("No savings and no debts.")).toBeInTheDocument();
+    it("says there are no savings and no debts when both are zero", async () => {
+      const user = renderLife({ age: 30, money: moneyAt(50) });
+      expect(within(await open(user, "Money")).getByText("No savings and no debts.")).toBeInTheDocument();
     });
 
-    it("shows savings and debt for an adult", () => {
-      renderLife({ age: 30, money: moneyAt(50, { savings: 1234, debt: 80 }) });
-      const money = within(panel("Money"));
+    it("shows savings and debt for an adult", async () => {
+      const user = renderLife({ age: 30, money: moneyAt(50, { savings: 1234, debt: 80 }) });
+      const money = within(await open(user, "Money"));
       expect(money.getByText("$1,234")).toBeInTheDocument();
       expect(money.getByText("$80.00")).toBeInTheDocument();
       expect(money.queryByText("No savings and no debts.")).not.toBeInTheDocument();
@@ -172,8 +185,8 @@ describe("life panels", () => {
 
     it("hides the comparison with US prices until the switch is on, and the switch reports the press", async () => {
       const onToggle = vi.fn();
-      const user = userEvent.setup();
-      renderLife({ age: 30 }, { onToggle });
+      const user = renderLife({ age: 30 }, { onToggle });
+      await open(user, "Money");
       expect(screen.queryByText(/buys what the same amount buys in the United States/)).not.toBeInTheDocument();
       const toggle = screen.getByRole("switch", { name: "Compare with US prices" });
       expect(toggle).not.toBeChecked();
@@ -183,30 +196,30 @@ describe("life panels", () => {
       expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
-    it("keeps a polite live region for the comparison, so turning the switch on is announced", () => {
-      renderLife({ age: 30 });
-      const live = panel("Money").querySelector("[aria-live]")!;
+    it("keeps a polite live region for the comparison, so turning the switch on is announced", async () => {
+      const user = renderLife({ age: 30 });
+      const live = (await open(user, "Money")).querySelector("[aria-live]")!;
       expect(live).toHaveAttribute("aria-live", "polite");
       expect(live).toBeEmptyDOMElement();
     });
 
-    it("shows the comparison with US prices when the switch is on", () => {
-      renderLife({ age: 30 }, { showUsPrices: true });
-      expect(screen.getByRole("switch", { name: "Compare with US prices" })).toBeChecked();
-      expect(
-        within(panel("Money")).getByText(/an amount here buys what the same amount buys in the United States/),
-      ).toBeInTheDocument();
+    it("shows the comparison with US prices when the switch is on", async () => {
+      const user = renderLife({ age: 30 }, { showUsPrices: true });
+      const money = within(await open(user, "Money"));
+      expect(money.getByRole("switch", { name: "Compare with US prices" })).toBeChecked();
+      expect(money.getByText(/an amount here buys what the same amount buys in the United States/)).toBeInTheDocument();
     });
   });
 
   describe("Health conditions (HEALTH-004)", () => {
-    it("is hidden when there are none", () => {
-      renderLife({ age: 30 });
-      expect(screen.queryByRole("region", { name: "Health conditions" })).not.toBeInTheDocument();
+    it("says there are none when there are none", async () => {
+      const user = renderLife({ age: 30 });
+      expect(await open(user, "Health")).toHaveTextContent("No lasting health conditions.");
+      expect(within(panel("Health")).queryByRole("listitem")).not.toBeInTheDocument();
     });
 
-    it("lists conditions with severity in words and the age they began", () => {
-      renderLife({
+    it("lists conditions with severity in words and the age they began", async () => {
+      const user = renderLife({
         age: 30,
         conditions: [
           { id: "malaria", severity: 2, since: 7 },
@@ -214,7 +227,7 @@ describe("life panels", () => {
           { id: "congenital_condition", severity: 1, since: 0 },
         ],
       });
-      const items = within(panel("Health conditions")).getAllByRole("listitem");
+      const items = within(await open(user, "Health")).getAllByRole("listitem");
       expect(items.map((item) => item.textContent)).toEqual([
         "Malaria, moderate, since age 7",
         "A serious injury, severe, since age 25",
@@ -224,18 +237,18 @@ describe("life panels", () => {
   });
 
   describe("Help beside persistent conditions", () => {
-    it("shows the help line and link while a condition with a help topic lasts", () => {
-      renderLife({ age: 30, conditions: [{ id: "depression", severity: 2, since: 25 }] });
-      const conditions = within(panel("Health conditions"));
+    it("shows the help line and link while a condition with a help topic lasts", async () => {
+      const user = renderLife({ age: 30, conditions: [{ id: "depression", severity: 2, since: 25 }] });
+      const conditions = within(await open(user, "Health"));
       expect(conditions.getByText(/helplines exist around the world/)).toBeInTheDocument();
       expect(conditions.getByRole("link", { name: "findahelpline.com" })).toHaveAttribute(
         "href",
         "https://findahelpline.com",
       );
     });
-    it("shows no help line for conditions without a topic", () => {
-      renderLife({ age: 30, conditions: [{ id: "malaria", severity: 1, since: 7 }] });
-      expect(within(panel("Health conditions")).queryByRole("link")).not.toBeInTheDocument();
+    it("shows no help line for conditions without a topic", async () => {
+      const user = renderLife({ age: 30, conditions: [{ id: "malaria", severity: 1, since: 7 }] });
+      expect(within(await open(user, "Health")).queryByRole("link")).not.toBeInTheDocument();
     });
   });
 

@@ -91,3 +91,31 @@
   font-size: 0.85rem;
   color: var(--ink-soft);
 }
+
+/* One stacked cell of a row: label, then the control, then any note, all centred. */
+.compact {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "label"
+    "group"
+    "description";
+  justify-items: center;
+  align-content: start;
+  row-gap: 0.1rem;
+  text-align: center;
+}
+
+.compact .label {
+  font-size: 0.9rem;
+}
+
+.compact .description {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.compact .group {
+  border-color: var(--rule);
+  background: var(--paper);
+}

@@ -19,7 +19,7 @@ You build the UI of Birthright, a browser life simulation: React 19, strict Type
 - **Accessibility is part of done:** full keyboard play, visible focus, labelled controls, a live region for new events (follow the `role="status"` pattern in `src/ui/LifeScreen.tsx`), and focus moved on screen change with `src/ui/useFocusOn.ts`.
 - **Sensitive content** is never graphic, carries a sensitivity tag from the content data, and is followed by help resources where relevant. Suicide is never a player choice.
 - **No tracking, analytics or third-party requests**, fonts included (system fonts only). No new dependencies without asking Roman.
-- **Layouts work at 360 px and 1440 px** with no horizontal scroll at 360 px. Design phone-first.
+- **Layouts work at about 400 px and 1440 px** with no horizontal scroll at about 400 px. Design phone-first.
 - **Tone:** reflective and literary; keep copy plain and calm. Do not invent data or copy text, art or code from the reference game.
 
 ## Workflow
@@ -28,7 +28,7 @@ You build the UI of Birthright, a browser life simulation: React 19, strict Type
 2. **Look first.** Read the neighbouring screens, their `.module.css` files, `src/ui/App.tsx`, the store and the existing tests in `tests/ui/`. Reuse before adding.
 3. **Test first.** Write the failing component test (React Testing Library, `// @vitest-environment jsdom` at the top, `user-event`, query by role and accessible name, keyboard as well as mouse). Kit components are tested in `tests/ui/kit.test.tsx`. Run it and see it fail for the right reason.
 4. **Build** with kit components until the test passes. Match the surrounding naming, comment density and idiom.
-5. **E2E:** when a screen flow changes, add or update a step in `e2e/` (it runs at 360 px and 1440 px). Use role and label locators, no fixed sleeps.
+5. **E2E:** when a screen flow changes, add or update a step in `e2e/` (it runs at about 400 px and 1440 px). Use role and label locators, no fixed sleeps.
 6. **Docs:** in the same change, update `docs/features.md` (status and PR link, `done` only when the acceptance criteria are met) and `docs/design-system.md` (new kit components or rules).
 7. **Check** and fix until all pass; never skip, disable or loosen a test:
 

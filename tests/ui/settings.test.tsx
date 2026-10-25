@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "../../src/ui/App";
 import { createGameStore } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
+import { backToStart } from "./helpers";
 
 const country = makeCountry({ region: "Western Africa" });
 
@@ -34,7 +35,7 @@ describe("settings (EVENT-006, TIME-002)", () => {
     await screen.findByRole("button", { name: "Begin this life" });
     expect(store.getSnapshot().life?.settings).toEqual({ softening: true, pace: "every-year" });
     await user.click(screen.getByRole("button", { name: "Begin this life" }));
-    await user.click(screen.getByRole("button", { name: "Back to start" }));
+    await backToStart(user);
     expect(screen.getByRole("switch", { name: "Softer telling" })).toBeChecked();
     expect(screen.getByRole("switch", { name: "Skip quiet years" })).not.toBeChecked();
   });
@@ -44,14 +45,17 @@ describe("settings (EVENT-006, TIME-002)", () => {
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
     await screen.findByRole("button", { name: "Begin this life" });
     await user.click(screen.getByRole("button", { name: "Begin this life" }));
-    expect(screen.getByRole("region", { name: "How you want to play" })).toBeInTheDocument();
-    const softer = screen.getByRole("switch", { name: "Softer telling" });
+    // During a life they are in the settings dialog of the header.
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Settings" }));
+    expect(dialog.getByRole("region", { name: "How you want to play" })).toBeInTheDocument();
+    const softer = dialog.getByRole("switch", { name: "Softer telling" });
     await user.click(softer);
     expect(softer).toBeChecked();
     expect(store.getSnapshot().life?.settings.softening).toBe(true);
     expect(store.getSnapshot().settings.softening).toBe(true);
     // The life's own record changes with it, so replaying it tells the same story.
-    await user.click(screen.getByRole("switch", { name: "Skip quiet years" }));
+    await user.click(dialog.getByRole("switch", { name: "Skip quiet years" }));
     expect(store.getSnapshot().life?.settings.pace).toBe("every-year");
   });
 

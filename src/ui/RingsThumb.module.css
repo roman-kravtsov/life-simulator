@@ -1,0 +1,38 @@
+.thumb {
+  display: block;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: none;
+}
+
+/* A thin line of paper between rings, so neighbours never merge. */
+.ring {
+  stroke: var(--paper-raised);
+  stroke-width: 1;
+}
+
+.seed {
+  fill: var(--ring-plain);
+}
+
+.fill-study {
+  fill: var(--ring-study);
+}
+.fill-work {
+  fill: var(--ring-work);
+}
+.fill-love {
+  fill: var(--ring-love);
+}
+.fill-loss {
+  fill: var(--ring-loss);
+}
+.fill-illness {
+  fill: var(--ring-illness);
+}
+.fill-move {
+  fill: var(--ring-move);
+}
+.fill-plain {
+  fill: var(--ring-plain);
+}

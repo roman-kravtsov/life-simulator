@@ -1,65 +1,67 @@
-.stats {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.5rem 1rem;
-  font-family: var(--font-ui);
-  font-size: 0.95rem;
-  margin: 0 0 1.5rem;
-}
-
-.row {
-  display: contents;
-}
-
-.row dt {
-  color: var(--ink-soft);
-  align-self: center;
-}
-
-.row dd {
-  margin: 0;
+.screen {
+  /* The header is a fixed height in the wide layout, so the side columns can sit exactly below it. */
+  --life-header-height: 5.5rem;
+  /* A share of the window as well as rems, so large text or a small window leaves the story room. */
+  --life-side-width: min(18rem, 28vw);
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
-.meter {
+/* The page scrolls as one. The story is first in the page; grid puts the columns side by side. */
+.columns {
+  display: grid;
+  grid-template-columns: var(--life-side-width) minmax(0, 1fr) var(--life-side-width);
+  align-items: start;
+}
+
+.columns > :nth-child(1) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.columns > :nth-child(2) {
+  grid-column: 1;
+  grid-row: 1;
+  border-right: 1px solid var(--rule);
+}
+
+.columns > :nth-child(3) {
+  grid-column: 3;
+  grid-row: 1;
+  border-left: 1px solid var(--rule);
+}
+
+/* The narrow layout leaves room under the page for the bar of tabs fixed to the foot of the window. */
+.narrow {
   flex: 1;
-  height: 0.5rem;
-  appearance: none;
-  border: none;
-  border-radius: 999px;
-  background: var(--rule);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0));
 }
 
-.meter::-webkit-meter-bar {
-  background: var(--rule);
-  border: none;
-  border-radius: 999px;
-  height: 0.5rem;
+/* A part of the narrow layout grows to the foot of the window, so a short one does not leave the page two-toned. */
+.pane {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.meter::-webkit-meter-optimum-value,
-.meter::-webkit-meter-suboptimum-value,
-.meter::-webkit-meter-even-less-good-value {
-  background: var(--accent);
-  border-radius: 999px;
+.title {
+  margin: 0 0 0.25rem;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  line-height: 1.1;
 }
 
-.meter::-moz-meter-bar {
-  background: var(--accent);
-  border-radius: 999px;
-}
-
-.value {
-  min-width: 2ch;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.line {
+  margin: 0 0 0.5rem;
 }
 
 .storyLine {
   font-style: italic;
-  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  margin: 0.75rem 0 0.5rem;
 }
 
 .sectionHeading {
@@ -73,11 +75,4 @@
 
 .events li {
   margin-bottom: 0.5rem;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
 }

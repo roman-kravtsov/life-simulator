@@ -1,0 +1,146 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  height: var(--life-header-height);
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-ui);
+}
+
+.narrow {
+  height: auto;
+}
+
+.row {
+  flex: none;
+  height: 3.5rem;
+  display: grid;
+  grid-template-columns: var(--life-side-width) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 1.5rem;
+  padding: 0 1.25rem;
+}
+
+.wordmark {
+  font-family: var(--font-story);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+/* One line: when the name and place do not fit, they end in an ellipsis (the whole is the title), they do not wrap. */
+.who {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.name {
+  margin-right: 0.6rem;
+  font-family: var(--font-story);
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.withIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.withIcon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.talk {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: 0.25rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.dialogRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+/* The strip: birth, the line of the life so far with a dot for each key moment, and where it ends. */
+.strip {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0 1.25rem;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+/* The margins leave room for the marker (6 px across) at either end, so it is never cut off. */
+.track {
+  flex: 1;
+  min-width: 0;
+  margin-inline: 7px;
+  overflow: visible;
+}
+
+.line {
+  fill: var(--rule);
+}
+
+.filled {
+  fill: var(--accent);
+}
+
+.moment {
+  fill: var(--ochre);
+  stroke: var(--paper);
+  stroke-width: 1;
+}
+
+.now {
+  fill: var(--accent);
+  stroke: var(--paper);
+  stroke-width: 2;
+}
+
+/* Narrow: the wordmark, then the help link, Settings and Continue, as far as they fit. */
+/* With larger text they do not all fit on one line, so the tools wrap under the wordmark rather than overlap it. */
+.narrow .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 0.5rem;
+  padding: 0.25rem 0.9rem;
+  height: auto;
+  min-height: 3.5rem;
+}
+
+.narrow .tools {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}

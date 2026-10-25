@@ -20,13 +20,13 @@ Start from the diff (`git diff origin/main...HEAD` after `git fetch origin main`
 5. **Colour is never the only signal.** Anything conveyed by colour (odds lens, chance/choice/circumstance tags, selected state) also has text, shape or pattern.
 6. **Contrast.** Text at least 4.5:1 and UI components at least 3:1 against their background in both themes. Compute from token values in `src/styles.css`; do not guess.
 7. **Reduced motion.** Animations and transitions respect `prefers-reduced-motion` and the in-game setting when it exists.
-8. **Touch targets and reflow.** At least 2.75rem targets (the kit minimum), no horizontal scrolling at 360 px width, usable at 200% zoom.
+8. **Touch targets and reflow.** At least 2.75rem targets (the kit minimum), no horizontal scrolling at about 400 px width, usable at 200% zoom.
 9. **Semantics and language.** One `h1` per screen, heading levels in order, landmarks, `lang` set on the document, no text rendered as images.
 10. **Sensitive content.** Softening toggles and help-resource links are reachable by keyboard and announced.
 
 ## Evidence
 
-Prefer running things over guessing. Use `npm test -- tests/ui` for component tests. For the running app, use the Playwright setup from `playwright.config.ts` at the phone (360 px) and desktop (1440 px) widths. In the cloud sandbox set `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`. Do not install new dependencies or add third-party services.
+Prefer running things over guessing. Use `npm test -- tests/ui` for component tests. For the running app, use the Playwright setup from `playwright.config.ts` at the phone (about 400 px) and desktop (1440 px) widths. In the cloud sandbox set `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`. Do not install new dependencies or add third-party services.
 
 ## Report format
 

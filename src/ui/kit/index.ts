@@ -5,5 +5,6 @@ export { ConfirmDialog, Dialog, type ConfirmDialogProps, type DialogProps } from
 export { Slider, type SliderProps } from "./Slider";
 export { Stepper, type StepperProps } from "./Stepper";
 export { Switch, type SwitchProps } from "./Switch";
+export { TabPanel, Tabs, type TabItem, type TabPanelProps, type TabsProps } from "./Tabs";
 export { TextField, type TextFieldPropsWithLabel } from "./TextField";
 export { Tooltip, type TooltipProps } from "./Tooltip";
