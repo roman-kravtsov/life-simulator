@@ -15,12 +15,12 @@ Events and decisions are content, not engine code (`CLAUDE.md`, "Code rules"). W
 
 ## 2. Write the event def (`EventDef` in `src/engine/events.ts`)
 
-- `stage`, `conditions` (for example `{ age: [6, 11] }`), `chance` (`weight` for narrative events, `fixed` or `indicator` for statistical ones, `scheduled` when something else raises it) and `tier` (`major` or the default minor).
+- `stage`, `conditions` (for example `{ age: [6, 11] }`), `chance` (`weight` for narrative events, as every shipped event does, with `modifiers` that make it likelier in some lives; `indicator` when a sourced country rate is the chance; `fixed` only for a documented probability; `scheduled` when something else raises it) and `tier` (`major` or the default minor).
 - A repeatable notable event needs `cooldownYears` of at least 6, unless it is `quiet` or `once`. `tests/engine/content.test.ts` enforces it.
 - `text` is a string key. The text may only name the event's `roles` (`{friend}`, `{mother}`), and each role needs `roles: [...]` so the event happens only when a living relative can play it.
 - `effects` and outcomes use the tagged effects in `src/engine/effects.ts`; set `cause` ("chance" by default, "circumstance" for what the world dealt) so the summary's chance/choice/circumstance shares stay honest.
 - A `dataNote` must read a real, sourced indicator (`path` such as `demography.tfr`); its note text uses `{share}`, `{oneIn}` or `{value}`. Never write a number into the text by hand.
-- Statistical events take their chance from the country data, so that the odds of the event follow the real odds; do not invent a rate.
+- Weights and fixed probabilities are authored, not data. When the event stands on a real rate, read it with `indicator` or put it in a `dataNote`; do not present an authored number as a statistic. Record a new authored assumption in the decisions log in `docs/design.md` (section 7).
 
 ## 3. A decision (an event with `choices`)
 
