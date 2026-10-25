@@ -18,9 +18,12 @@ import { RadioGroup, Switch } from "./kit";
 interface Props {
   /** Injected in tests; the page's own preferences otherwise. */
   store?: DisplayStore;
+  /** 2 on a page; 3 in the life screen's settings dialog, under its title. */
+  headingLevel?: 2 | 3;
 }
 
-export function DisplaySettings({ store = displayStore }: Props) {
+export function DisplaySettings({ store = displayStore, headingLevel = 2 }: Props) {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
   const display = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const headingId = useId();
   const motionAbout = useId();
@@ -28,9 +31,9 @@ export function DisplaySettings({ store = displayStore }: Props) {
   const systemReduces = systemReducesMotion();
   return (
     <section aria-labelledby={headingId} className={styles.display}>
-      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
+      <Heading id={headingId} className={`eyebrow ${styles.heading}`}>
         {t("display.heading")}
-      </h2>
+      </Heading>
       <RadioGroup
         label={t("display.theme")}
         description={t("display.theme.about")}

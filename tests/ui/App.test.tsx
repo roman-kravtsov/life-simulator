@@ -138,7 +138,7 @@ describe("App", () => {
     const status = screen.getByRole("status");
     await nextYear(user);
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent(/This year/);
+    expect(status).toHaveTextContent(/You turn \d+\.|A new chapter begins|A decision is waiting\./);
   });
 
   it("tells each year's events or says it was quiet", async () => {
@@ -146,9 +146,10 @@ describe("App", () => {
     await startLife(user);
     for (let i = 0; i < 6 && store.getSnapshot().life?.person.alive; i++) {
       await nextYear(user);
-      const status = screen.getByRole("status");
-      const quiet = within(status).queryByText("A quiet year.");
-      const items = within(status).queryAllByRole("listitem");
+      // The year as the story shows it (the live region says the same in plain lines).
+      const story = within(screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!);
+      const quiet = story.queryByText("A quiet year.");
+      const items = story.queryAllByRole("listitem");
       expect(Boolean(quiet) !== items.length > 0).toBe(true);
     }
   });

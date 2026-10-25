@@ -156,7 +156,8 @@ html:has(main[data-layout="wide"]) {
 
 @media (width < 56.25em) {
   html:has(main[data-layout="wide"]) {
-    scroll-padding-block: 5rem calc(var(--tab-bar-height) + 1rem);
+    /* The narrow header can wrap to two rows at large text: keep a focused control clear of it. */
+    scroll-padding-block: 7rem calc(var(--tab-bar-height) + 1rem);
   }
 }
 

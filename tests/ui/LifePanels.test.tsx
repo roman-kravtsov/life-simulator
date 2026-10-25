@@ -183,6 +183,19 @@ describe("life panels", () => {
       expect(money.queryByText("No savings and no debts.")).not.toBeInTheDocument();
     });
 
+    it("puts its lines before the switch, so a keyboard player who reaches the switch has passed everything", async () => {
+      const user = renderLife({ age: 30, money: moneyAt(11) }, { showUsPrices: true });
+      const money = await open(user, "Money");
+      const toggle = within(money).getByRole("switch", { name: "Compare with US prices" });
+      const lines = [
+        within(money).getByText(/^Amounts are in international dollars/),
+        within(money).getByText(/^In international dollars, an amount here buys/),
+      ];
+      for (const line of lines) {
+        expect(line.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
+    });
+
     it("hides the comparison with US prices until the switch is on, and the switch reports the press", async () => {
       const onToggle = vi.fn();
       const user = renderLife({ age: 30 }, { onToggle });
@@ -352,17 +365,18 @@ describe("life panels", () => {
         expect(family.queryByText(/died at/)).not.toBeInTheDocument();
         expect(family.getByText(/^Ama,/)).toBeInTheDocument();
         expect(family.getByText(/^Yaa,/)).toBeInTheDocument();
-        expect(family.getByRole("button", { name: "And 6 more" })).toBeInTheDocument();
+        expect(family.getByRole("button", { name: "And 6 more people" })).toBeInTheDocument();
       });
 
       it("lists everyone, in the same groups, in a dialog that Escape closes", async () => {
         const user = renderLife({ age: 34, relationships: many });
-        const more = within(panel("Family")).getByRole("button", { name: "And 6 more" });
+        const more = within(panel("Family")).getByRole("button", { name: "And 6 more people" });
         await user.click(more);
         const dialog = within(screen.getByRole("dialog", { name: "Everyone in your life" }));
         expect(dialog.getAllByRole("listitem")).toHaveLength(14);
-        // Under the dialog's own title, the groups are one level down.
-        expect(dialog.getAllByRole("heading", { level: 4 }).map((h) => h.textContent)).toEqual([
+        // Under the dialog's own title (an h2), the groups are one level down.
+        expect(dialog.getByRole("heading", { level: 2, name: "Everyone in your life" })).toBeInTheDocument();
+        expect(dialog.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
           "Parents",
           "You have 6 brothers and sisters",
           "Others in your life",

@@ -36,7 +36,7 @@ import {
 } from "./store";
 import { useFocusOn } from "./useFocusOn";
 import { useNarrow } from "./useNarrow";
-import { quietRunLine, statChangesLine } from "./words";
+import { eventWords, quietRunLine, statChangesLine } from "./words";
 import { YouColumn } from "./YouColumn";
 
 export interface LifeScreenProps {
@@ -143,10 +143,28 @@ export function LifeScreen({
   const rings = useMemo(() => lifeRings(life.history), [life.history]);
   const where = t("life.where", { country: countryName(country), place: t(`life.place.${person.location}`) });
 
+  /**
+   * Keeps every line being written this year before the life moves on or is left, so nothing typed is lost; in the
+   * year a person dies this is the last chance, as a finished life takes no more lines. An empty draft is not saved.
+   */
+  const saveDrafts = () => {
+    if (drafts.age !== person.age) return;
+    for (const [key, text] of Object.entries(drafts.lines)) {
+      if (text.trim() === "") continue;
+      if (key === OWN) onJournal(text);
+      else onJournal(text, key);
+    }
+    setDrafts({ age: person.age, lines: {} });
+  };
   const sendPlan = () => {
+    saveDrafts();
     // The new year is told in the story, so that is where the narrow layout goes back to.
     setView("story");
     onContinue(plan && draft ? planToSend(plan, draft) : undefined);
+  };
+  const leave = () => {
+    saveDrafts();
+    onBack();
   };
   const openJournal = () => {
     setAroundTab("notes");
@@ -185,7 +203,8 @@ export function LifeScreen({
           </p>
         )}
       </div>
-      <div role="status">
+      {/* What the live region below says, for the eye; not live itself, so nothing is read twice. */}
+      <div>
         {quietRun && <p className={styles.storyLine}>{quietRunLine(quietRun)}</p>}
         {card ? (
           <p className={styles.storyLine}>{t("decision.waiting")}</p>
@@ -206,8 +225,6 @@ export function LifeScreen({
                 )}
               </>
             )}
-            {/* Said only to a screen reader: the bars in the column show it to the eye. */}
-            {statChanges.length > 0 && <p className="visually-hidden">{statChangesLine(statChanges)}</p>}
           </>
         )}
       </div>
@@ -260,6 +277,7 @@ export function LifeScreen({
           onDraft={(text) => setDraft(OWN, text)}
           onSave={(text) => onJournal(text)}
           inputRef={notes}
+          narrow={narrow}
         />
       }
       narrow={narrow}
@@ -278,12 +296,43 @@ export function LifeScreen({
       onSettings={onSettings}
       onJournal={openJournal}
       onContinue={sendPlan}
-      onBack={onBack}
+      onBack={leave}
     />
+  );
+
+  // The one live region of the screen (A11Y-002), outside the tabs so it speaks whichever part a phone shows. It is
+  // on the page from the first render; its contents are keyed by the years lived and the wait, so a year told in
+  // the same words as the one before is new nodes, and is said again.
+  const live = (
+    <div role="status" className="visually-hidden">
+      <div key={`${life.history.length}-${card ? "waiting" : "told"}`}>
+        {quietRun && <p>{quietRunLine(quietRun)}</p>}
+        {card ? (
+          <p>{t("decision.waiting")}</p>
+        ) : (
+          last && (
+            <>
+              <p>{story}</p>
+              {events.length === 0 ? (
+                <p>{t("life.quietYear")}</p>
+              ) : (
+                events.map((event, index) => {
+                  const words = eventWords(event, sources);
+                  return words && <p key={`${index}-${event.id}`}>{words}</p>;
+                })
+              )}
+              {/* Said only to a screen reader: the bars in the column show it to the eye. */}
+              {statChanges.length > 0 && <p>{statChangesLine(statChanges)}</p>}
+            </>
+          )
+        )}
+      </div>
+    </div>
   );
 
   return (
     <Page header={header} layout="wide">
+      {live}
       {narrow ? (
         <Tabs
           label={t("life.nav.label")}

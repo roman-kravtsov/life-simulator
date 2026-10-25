@@ -87,9 +87,10 @@ describe("help resources (UI-012)", () => {
         effects: [],
       };
       render(<LifeScreen {...lifeScreenProps(country, { life: lastYearOf([event]) })} />);
-      const status = screen.getByRole("status");
-      expect(status).toHaveTextContent(en[`help.${topic}`]!);
-      const link = within(status).getByRole("link", { name: "findahelpline.com" });
+      expect(screen.getByRole("status")).toHaveTextContent(en[`help.${topic}`]!);
+      const story = screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!;
+      expect(story).toHaveTextContent(en[`help.${topic}`]!);
+      const link = within(story).getByRole("link", { name: "findahelpline.com" });
       expect(link).toHaveAttribute("href", "https://findahelpline.com");
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");

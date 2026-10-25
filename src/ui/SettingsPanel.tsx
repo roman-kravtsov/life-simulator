@@ -11,17 +11,20 @@ interface Props {
   onChange: (changes: Partial<Settings>) => void;
   /** A line under the heading on when the settings apply, where that needs saying (the settings screen). */
   about?: string;
+  /** 2 on a page; 3 in the life screen's settings dialog, under its title. */
+  headingLevel?: 2 | 3;
 }
 
-export function SettingsPanel({ settings, onChange, about }: Props) {
+export function SettingsPanel({ settings, onChange, about, headingLevel = 2 }: Props) {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
   const headingId = useId();
   const softeningAbout = useId();
   const paceAbout = useId();
   return (
     <section aria-labelledby={headingId} className={styles.settings}>
-      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
+      <Heading id={headingId} className={`eyebrow ${styles.heading}`}>
         {t("settings.heading")}
-      </h2>
+      </Heading>
       {about && <p className={`small ${styles.about}`}>{about}</p>}
       <div className={styles.setting}>
         <Switch

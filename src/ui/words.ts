@@ -20,6 +20,32 @@ export function statChangesLine(changes: readonly StatChange[]): string {
     .join(" ");
 }
 
+/**
+ * One event of the year in plain words, for the life screen's live region (A11Y-002): its text, what the player
+ * chose and what came of it, the data note and the help line, as the story shows them. Null when this version
+ * cannot tell it.
+ */
+export function eventWords(event: EventRecord, sources: CountryIndex["sources"]): string | null {
+  const text = tryT(event.textKey, event.vars);
+  if (text === null) return null;
+  const parts = [text];
+  const { decision, dataNote, helpTopic } = event;
+  if (decision) {
+    const choice = tryT(decision.choiceTextKey, event.vars);
+    const outcome = tryT(decision.outcomeTextKey, event.vars);
+    if (choice !== null && outcome !== null) parts.push(`${t("decision.chose", { choice })}.`, outcome);
+  }
+  if (dataNote) {
+    try {
+      parts.push(dataNoteLine(dataNote, sources));
+    } catch {
+      // A note this version cannot word is left out.
+    }
+  }
+  if (helpTopic && hasString(`help.${helpTopic}`)) parts.push(t(`help.${helpTopic}`));
+  return parts.join(" ");
+}
+
 /** Odds as the lens speaks them (DEC-005): "about 1 in 3", never a decimal or a percentage. */
 export function oddsWords(band: OddsBand): string {
   if (band.kind === "fraction") return t("odds.fraction", { num: formatNumber(band.num), den: formatNumber(band.den) });

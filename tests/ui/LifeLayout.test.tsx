@@ -387,9 +387,9 @@ describe("the ledger of years (UI-004)", () => {
   it("puts this year on top: the age, the story and the year's events", () => {
     renderLife({ age: 16 }, {}, history);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Age 16");
-    const status = within(screen.getByRole("status"));
-    expect(status.getByText("You turn 16.")).toBeInTheDocument();
-    expect(status.getByRole("heading", { level: 2, name: "This year" })).toBeInTheDocument();
+    expect(within(screen.getByRole("status")).getByText("You turn 16.")).toBeInTheDocument();
+    const story = within(screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!);
+    expect(story.getByText("You turn 16.")).toBeInTheDocument();
   });
 
   it("lists the earlier years below, newest first, one paragraph each, in a list with a name", () => {
@@ -537,6 +537,18 @@ describe("the narrow layout (UI-010)", () => {
     expect(screen.getByRole("complementary", { name: "Around you" }).closest("[inert]")).toBeNull();
     await user.click(screen.getByRole("tab", { name: "Notes" }));
     expect(screen.getByRole("tabpanel", { name: "Notes" })).toBeInTheDocument();
+  });
+
+  it("puts the two parts of the settings dialog one level under its title", async () => {
+    windowIsNarrow(false);
+    const { user } = renderLife({ age: 16 });
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Settings" }));
+    expect(dialog.getByRole("heading", { level: 2, name: "Settings" })).toBeInTheDocument();
+    expect(dialog.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
+      "How you want to play",
+      "How it looks",
+    ]);
   });
 
   it("has the settings in a dialog too", async () => {

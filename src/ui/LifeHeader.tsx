@@ -134,8 +134,9 @@ export function LifeHeader({
               </Button>
             }
           >
-            <SettingsPanel settings={settings} onChange={onSettings} />
-            <DisplaySettings />
+            {/* One level under the dialog's title, which is an h2. */}
+            <SettingsPanel settings={settings} onChange={onSettings} headingLevel={3} />
+            <DisplaySettings headingLevel={3} />
             <div className={styles.dialogRow}>
               <Button onPress={onBack}>{t("life.backToStart")}</Button>
             </div>

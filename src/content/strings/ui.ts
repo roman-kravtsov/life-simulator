@@ -189,8 +189,8 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "life.statChange.fell.other": "{stat} fell by {count}.",
 
   // A large family in the Family tab: the rest are one press away (UI-004).
-  "family.more.one": "And {count} more",
-  "family.more.other": "And {count} more",
+  "family.more.one": "And {count} more person",
+  "family.more.other": "And {count} more people",
   "family.all.title": "Everyone in your life",
   "family.all.close": "Close",
 
@@ -212,6 +212,7 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "notes.dialog.title": "Your journal",
   "notes.dialog.close": "Close",
   "summary.notes.heading": "Your notes",
+  "birth.back": "Back",
 
   // When a screen cannot be shown (for example a saved life that names text this version no longer has).
   "app.error.title": "Something went wrong",

@@ -4,7 +4,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { en } from "../../src/content/strings/en";
 import type { JournalEntry, LifeState, Person } from "../../src/engine/types";
 import { hasString } from "../../src/i18n";
@@ -13,11 +13,31 @@ import { LifeScreen, type LifeScreenProps } from "../../src/ui/LifeScreen";
 import { createGameStore, JOURNAL_MAX_LENGTH, type ReflectionView, type StatChange } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { makePerson } from "../fixtures/person";
-import { lifeOf, lifeScreenProps } from "./helpers";
+import { deadlyCountry } from "./fakes";
+import { backToStart, lifeOf, lifeScreenProps } from "./helpers";
 
 const country = makeCountry({ region: "Western Africa" });
 
 const PROMPT = en["reflection.school.start"]!;
+
+/** Makes the window narrow (or not) for the screen, which asks the browser through matchMedia. */
+function windowIsNarrow(narrow: boolean) {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: narrow,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }),
+  });
+}
+
+afterEach(() => {
+  // @ts-expect-error jsdom has no matchMedia of its own; remove what a test added.
+  delete window.matchMedia;
+});
 const LATER = en["reflection.stage.adolescence"]!;
 
 /** A life at `age` with that year told, and the journal given. */
@@ -145,12 +165,17 @@ describe("the reflection prompt after a year (UI-007)", () => {
     expect(promptField()).toHaveValue("Friends, I hope.");
   });
 
-  it("keeps a line not yet saved while the year is on screen, and starts empty in the next year", async () => {
+  it("keeps a line not yet saved while the year is on screen, saves it on Continue, and starts empty the next year", async () => {
     const { props, rerender, user } = renderLife({ reflection: prompt(7) });
     await user.type(promptField(), "Half a thought");
     // The same year again, as when the store sends a new snapshot (a setting changed, the plan moved).
     rerender(<LifeScreen {...props} life={{ ...props.life }} reflection={prompt(7)} />);
     expect(promptField()).toHaveValue("Half a thought");
+    // Continue keeps what was written before the year moves on.
+    await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+    expect(props.onJournal).toHaveBeenCalledWith("Half a thought", "school.start");
+    const saved = vi.mocked(props.onJournal).mock.invocationCallOrder[0]!;
+    expect(saved).toBeLessThan(vi.mocked(props.onContinue).mock.invocationCallOrder[0]!);
     // The next year, with a prompt of its own.
     rerender(
       <LifeScreen
@@ -161,6 +186,53 @@ describe("the reflection prompt after a year (UI-007)", () => {
     );
     expect(within(pause()).getByRole("textbox", { name: LATER })).toHaveValue("");
     expect(within(pause()).queryByText(/saved/)).not.toBeInTheDocument();
+  });
+
+  it("saves both lines being written on Continue, the prompt's with its id and the player's own without, and not an empty one", async () => {
+    const { props, user } = renderLife({ reflection: prompt(7, { written: "Kept." }) });
+    await user.clear(promptField());
+    await user.click(screen.getByRole("tab", { name: "Notes" }));
+    await user.type(screen.getByRole("textbox", { name: "A line for this year" }), "Mine.");
+    await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+    expect(vi.mocked(props.onJournal).mock.calls).toEqual([["Mine."]]);
+    expect(props.onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves a line being written before going back to the start", async () => {
+    const { props, user } = renderLife({ reflection: prompt(7) });
+    await user.type(promptField(), "Before I go");
+    await backToStart(user);
+    expect(props.onJournal).toHaveBeenCalledWith("Before I go", "school.start");
+    const saved = vi.mocked(props.onJournal).mock.invocationCallOrder[0]!;
+    expect(saved).toBeLessThan(vi.mocked(props.onBack).mock.invocationCallOrder[0]!);
+  });
+
+  it("keeps a line written in the year the person dies: it is saved before the year is lived, and is in the notes", async () => {
+    const store = createGameStore(() => "seed-0", testWorld(deadlyCountry()));
+    await store.begin();
+    store.startLife();
+    render(<App store={store} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "Notes" }));
+    await user.type(screen.getByRole("textbox", { name: "A line for this year" }), "Not yet saved.");
+    await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+    expect(store.getSnapshot().screen).toBe("summary");
+    expect(store.getSnapshot().summary!.summary.journal).toEqual([{ age: 0, text: "Not yet saved." }]);
+    expect(screen.getByRole("region", { name: "Your notes" })).toHaveTextContent("Not yet saved.");
+  });
+
+  it("says nothing new when a change at the limit leaves the length at the limit", async () => {
+    const { user } = renderLife({ reflection: prompt(7) });
+    const live = within(pause()).getByText(
+      (_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P",
+    );
+    await user.type(promptField(), "x".repeat(JOURNAL_MAX_LENGTH));
+    expect(live).toHaveTextContent("No characters left");
+    const said = live.firstElementChild;
+    // One character replaced: still at the limit, so the words and their node stay as they were.
+    await user.type(promptField(), "y", { initialSelectionStart: 0, initialSelectionEnd: 1 });
+    expect(promptField()).toHaveValue("y" + "x".repeat(JOURNAL_MAX_LENGTH - 1));
+    expect(live.firstElementChild).toBe(said);
   });
 
   it("is a real pause in a real life: the store's prompt, written and saved through the store", async () => {
@@ -265,6 +337,15 @@ describe("the Notes tab (UI-004, UI-007)", () => {
     expect(within(screen.getByRole("dialog", { name: "Your journal" })).getByText("Only one.")).toBeInTheDocument();
   });
 
+  it("shows the lines whole in the narrow layout, where the column is the page's width", async () => {
+    windowIsNarrow(true);
+    const { user } = renderLife({ life: lifeAt(9, [{ age: 6, prompt: "school.start", text: "School." }]) });
+    await user.click(screen.getByRole("tab", { name: "Around you" }));
+    const panel = await notes(user);
+    expect(within(panel.getByRole("list")).getByText("School.")).not.toHaveAttribute("title");
+    expect(within(panel.getByRole("list")).getByText(PROMPT)).not.toHaveAttribute("title");
+  });
+
   it("keeps a line not yet saved when the player looks at another tab and comes back", async () => {
     const { user } = renderLife();
     await user.type((await notes(user)).getByRole("textbox", { name: "A line for this year" }), "Not done");
@@ -288,6 +369,81 @@ describe("the Notes tab (UI-004, UI-007)", () => {
   });
 });
 
+describe("the one live region of the life screen (A11Y-002)", () => {
+  /** Every year the same: twelve, quiet. */
+  const sameYears = (count: number) => {
+    const person = makePerson({ age: 12 });
+    const record = { age: 12, stage: "childhood" as const, stageChanged: false, stats: person.stats, events: [] };
+    return lifeOf(person, { history: Array.from({ length: count }, () => record) });
+  };
+
+  it("is on the page from the first render, before there is anything to say, and out of sight", () => {
+    renderLife({ life: lifeOf(makePerson({ age: 0 })) });
+    const status = screen.getByRole("status");
+    expect(status).toHaveClass("visually-hidden");
+    expect(status).not.toHaveTextContent(/\S/);
+  });
+
+  it("is outside the tabs on a phone, so it still speaks while You or Around you is shown", async () => {
+    windowIsNarrow(true);
+    const { user } = renderLife();
+    await user.click(screen.getByRole("tab", { name: "You" }));
+    const status = screen.getByRole("status");
+    expect(status.closest("[inert]")).toBeNull();
+    expect(status.closest("[role=tabpanel]")).toBeNull();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+  });
+
+  it("says the year again as new nodes when its words are the same as the year before", () => {
+    const { props, rerender } = renderLife({ life: sameYears(1) });
+    const status = screen.getByRole("status");
+    const first = within(status).getByText("You turn 12.");
+    rerender(<LifeScreen {...props} life={sameYears(2)} />);
+    expect(screen.getByRole("status")).toBe(status);
+    const second = within(status).getByText("You turn 12.");
+    expect(second).not.toBe(first);
+  });
+
+  it("carries the year: the quiet run, the year's line, the events in words and the stats; the story itself is not live", () => {
+    const person = makePerson({ age: 12 });
+    const life = lifeOf(person, {
+      history: [
+        {
+          age: 12,
+          stage: "childhood",
+          stageChanged: false,
+          stats: person.stats,
+          events: [
+            {
+              id: "e",
+              textKey: "event.childhood.bully",
+              vars: { friend: "Kofi" },
+              decision: {
+                choiceId: "stand_up",
+                choiceTextKey: "choice.childhood.bully.stand_up",
+                outcomeTextKey: "outcome.youth.lend_money.repaid",
+              },
+              helpTopic: "grief",
+              effects: [],
+            },
+          ],
+        },
+      ],
+    });
+    renderLife({ life, quietRun: { from: 9, to: 11 }, statChanges: [{ stat: "health", delta: 5 }] });
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Years 9 to 11 pass quietly.");
+    expect(status).toHaveTextContent("You turn 12.");
+    expect(status).toHaveTextContent("You chose: Stand up to them.");
+    expect(status).toHaveTextContent("Kofi pays you back");
+    expect(status).toHaveTextContent(en["help.grief"]!);
+    expect(status).toHaveTextContent("Health rose by 5.");
+    // The visible story says the same, once, and is not a live region of its own.
+    const story = screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!;
+    expect(story.closest("[aria-live], [role=status]")).toBeNull();
+  });
+});
+
 describe("the stats that moved, said to a screen reader (A11Y-002)", () => {
   const changes: StatChange[] = [
     { stat: "health", delta: 4 },
@@ -295,13 +451,13 @@ describe("the stats that moved, said to a screen reader (A11Y-002)", () => {
     { stat: "belonging", delta: 12 },
   ];
 
-  it("are told in the story's live region, in words and out of sight", () => {
+  it("are told in the live region, in words and out of sight, and nowhere else", () => {
     renderLife({ statChanges: changes });
-    const line = within(screen.getByRole("status")).getByText(
-      "Health rose by 4. Happiness fell by 3. Belonging rose by 12.",
-    );
+    const status = screen.getByRole("status");
+    const line = within(status).getByText("Health rose by 4. Happiness fell by 3. Belonging rose by 12.");
     expect(line.tagName).toBe("P");
-    expect(line).toHaveClass("visually-hidden");
+    expect(status).toHaveClass("visually-hidden");
+    expect(screen.getAllByText(/rose by/)).toHaveLength(1);
   });
 
   it("say nothing when nothing moved by much", () => {

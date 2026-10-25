@@ -44,7 +44,15 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
     </ScreenBoundary>
   );
   if (screen === "birth" && life && country) {
-    return <BirthScreen life={life} country={country} sources={sources ?? {}} onContinue={store.startLife} />;
+    return (
+      <BirthScreen
+        life={life}
+        country={country}
+        sources={sources ?? {}}
+        onContinue={store.startLife}
+        onBack={store.backToStart}
+      />
+    );
   }
   if (screen === "life" && life && country) {
     // Not keyed by year: the status region must stay mounted for screen readers to announce changes.

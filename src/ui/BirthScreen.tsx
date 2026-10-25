@@ -19,13 +19,15 @@ interface Props {
   /** Source details, for the source and year under each fact about the country. */
   sources: CountryIndex["sources"];
   onContinue: () => void;
+  /** Back to the start; the life is already saved, so the start screen offers to continue it. */
+  onBack: () => void;
 }
 
 /** Older brothers and sisters, said plainly for a first child too. */
 const siblingsLine = (count: number) =>
   t(count === 0 ? "birth.siblings.none" : pluralKey("birth.siblings", count), { count: formatNumber(count) });
 
-export function BirthScreen({ life, country, sources, onContinue }: Props) {
+export function BirthScreen({ life, country, sources, onContinue, onBack }: Props) {
   const { person, seed } = life;
   const heading = useFocusOn<HTMLHeadingElement>();
   const countryHeading = useId();
@@ -70,6 +72,10 @@ export function BirthScreen({ life, country, sources, onContinue }: Props) {
           {t("birth.continue")}
         </Button>
         <p className="small">{t("birth.seed", { seed })}</p>
+      </div>
+      {/* Quiet, and after Begin: the life is already saved, so the start screen offers to continue it. */}
+      <div className={styles.back}>
+        <Button onPress={onBack}>{t("birth.back")}</Button>
       </div>
     </Page>
   );

@@ -67,6 +67,15 @@ describe("SAVE-002: continuing a life from the start screen", () => {
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   });
 
+  it("is offered after going back from the birth screen, where the life is already saved", async () => {
+    const { user } = open(fakePersistence());
+    await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await screen.findByRole("button", { name: "Begin this life" });
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Birthright");
+    expect(screen.getByRole("region", { name: "Continue your life" })).toBeInTheDocument();
+  });
+
   it("is reached by keyboard before the button that begins a new life", async () => {
     const { fake } = await savedAfter(2);
     const { user } = open(fake);

@@ -40,18 +40,31 @@ const newborn = (siblings: number, percentile = 50) =>
 
 function renderBirth(siblings = 0, { country = makeCountry(), percentile = 50 } = {}) {
   const onContinue = vi.fn();
+  const onBack = vi.fn();
   render(
     <BirthScreen
       life={newborn(siblings, percentile)}
       country={country}
       sources={testSources}
       onContinue={onContinue}
+      onBack={onBack}
     />,
   );
-  return { onContinue, user: userEvent.setup() };
+  return { onContinue, onBack, user: userEvent.setup() };
 }
 
 describe("the birth screen (UI-003)", () => {
+  it("offers a quiet way back to the start after Begin this life, by keyboard too", async () => {
+    const { onBack, onContinue, user } = renderBirth();
+    const back = screen.getByRole("button", { name: "Back" });
+    const begin = screen.getByRole("button", { name: "Begin this life" });
+    expect(begin.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    back.focus();
+    await user.keyboard("{Enter}");
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(onContinue).not.toHaveBeenCalled();
+  });
+
   it("tells the birth in prose, with the heading in focus", () => {
     renderBirth();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^You are born in Testland\s*Born in 2023$/);

@@ -48,10 +48,12 @@ export function JournalLine({ label, labelStyle, written, draft, onDraft, onSave
   /** Typing says nothing, except once when the last character is used, and what was said is cleared as it goes. */
   function change(next: string) {
     const full = next.length === JOURNAL_MAX_LENGTH;
-    setSpoken((was) => ({
-      text: full && value.length !== JOURNAL_MAX_LENGTH ? t("journal.limit") : full ? was.text : "",
-      n: was.n + 1,
-    }));
+    setSpoken((was) => {
+      if (full && value.length !== JOURNAL_MAX_LENGTH) return { text: t("journal.limit"), n: was.n + 1 };
+      // Still at the limit: what was said stays, as the same node, so it is not said again.
+      if (full) return was;
+      return { text: "", n: was.n + 1 };
+    });
     onDraft(next);
   }
 
@@ -100,7 +102,7 @@ export function JournalEntries({ entries, variant = "full", className }: Entries
         return (
           <li key={`${entry.age}-${entry.prompt ?? ""}`} className={styles.entry}>
             <p className={styles.age}>{t("journal.age", { age: entry.age })}</p>
-            <div className={styles.body}>
+            <div>
               {words && (
                 <p className={styles.prompt} title={compact ? words : undefined}>
                   {words}
@@ -130,14 +132,16 @@ interface NotesPanelProps {
   onSave: (text: string) => void;
   /** The field, so the Journal button can send focus to it. */
   inputRef: Ref<HTMLInputElement>;
+  /** The narrow layout, where the column is the page's width and the lines are shown whole. */
+  narrow: boolean;
 }
 
 /**
  * The Notes tab (UI-004, UI-007): a line of the player's own for this year, then the latest lines, newest first, one
- * row each. The whole journal is a press away in a dialog, from the first line on, so a line cut short here can
+ * row each in the wide side column (whole in the narrow layout, which scrolls with the page). The whole journal is a press away in a dialog, from the first line on, so a line cut short here can
  * always be read in full.
  */
-export function NotesPanel({ journal, age, draft, onDraft, onSave, inputRef }: NotesPanelProps) {
+export function NotesPanel({ journal, age, draft, onDraft, onSave, inputRef, narrow }: NotesPanelProps) {
   const own = journal.find((entry) => entry.age === age && !entry.prompt)?.text;
   const newest = [...journal].reverse();
   return (
@@ -156,7 +160,7 @@ export function NotesPanel({ journal, age, draft, onDraft, onSave, inputRef }: N
       ) : (
         <>
           <h3 className={styles.heading}>{t("notes.latest")}</h3>
-          <JournalEntries entries={newest.slice(0, LATEST)} variant="compact" />
+          <JournalEntries entries={newest.slice(0, LATEST)} variant={narrow ? "full" : "compact"} />
           <div>
             <Dialog
               title={t("notes.dialog.title")}

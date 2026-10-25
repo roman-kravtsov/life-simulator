@@ -117,14 +117,16 @@ export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanel
         )}
         {holdings && !hasHoldings && <Fact label={t("money.field.holdings")}>{t("money.none")}</Fact>}
       </dl>
-      <Switch isSelected={showUsPrices} onChange={() => onToggleUsPrices()}>
-        {t("money.usSwitch")}
-      </Switch>
+      {/* The lines come before the switch, the panel's only control, so a keyboard player who reaches it has passed
+          them all, even when large text makes the panel scroll. */}
+      <p className={`small ${styles.note}`}>{t("money.note", { year: money.year })}</p>
       {/* Always present, so a screen reader hears the text arrive when the switch is turned on. */}
       <p className={`small ${styles.note}`} aria-live="polite">
         {showUsPrices && t("money.usComparison")}
       </p>
-      <p className={`small ${styles.note}`}>{t("money.note", { year: money.year })}</p>
+      <Switch isSelected={showUsPrices} onChange={() => onToggleUsPrices()}>
+        {t("money.usSwitch")}
+      </Switch>
     </>
   );
 }
@@ -215,28 +217,28 @@ interface GroupsProps {
   family: FamilySummary;
   /** Only these people, in their groups; everyone when absent. */
   shown?: Set<Relationship> | null;
-  /** h3 in the tab; h4 under a dialog's own title. */
-  level?: 3 | 4;
 }
 
-/** The groups, each with its heading, even when none of its people has room; the siblings heading counts them all. */
-function FamilyGroups({ family, shown, level = 3 }: GroupsProps) {
+/**
+ * The groups, each with its heading (h3, in the tab and under the dialog's h2 title), even when none of its people has
+ * room; the siblings heading counts them all.
+ */
+function FamilyGroups({ family, shown }: GroupsProps) {
   const { parents, siblings, others } = family;
-  const Heading = `h${level}` as const;
   const only = (people: readonly Relationship[]) => (shown ? people.filter((r) => shown.has(r)) : people);
   return (
     <>
       {parents.length > 0 && (
         <>
-          <Heading className={styles.group}>{t("family.parents")}</Heading>
+          <h3 className={styles.group}>{t("family.parents")}</h3>
           <RelativeList relatives={only(parents)} />
         </>
       )}
-      <Heading className={styles.group}>{siblingsHeading(siblings)}</Heading>
+      <h3 className={styles.group}>{siblingsHeading(siblings)}</h3>
       <RelativeList relatives={only(siblings)} />
       {others.length > 0 && (
         <>
-          <Heading className={styles.group}>{t("family.others")}</Heading>
+          <h3 className={styles.group}>{t("family.others")}</h3>
           <RelativeList relatives={only(others)} />
         </>
       )}
@@ -262,7 +264,7 @@ export function FamilyPanel({ family }: { family: FamilySummary }) {
             closeLabel={t("family.all.close")}
             trigger={<Button>{t(pluralKey("family.more", hidden), { count: formatNumber(hidden) })}</Button>}
           >
-            <FamilyGroups family={family} level={4} />
+            <FamilyGroups family={family} />
           </Dialog>
         </div>
       )}

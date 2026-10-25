@@ -152,6 +152,9 @@ describe("the settings screen (UI-009)", () => {
     expect(play).toHaveTextContent(/lives you begin from now/);
     expect(play).toHaveTextContent(/A life in progress keeps its own/);
     expect(main.getByRole("region", { name: "How it looks" })).toBeInTheDocument();
+    // On the screen of their own the parts are sections under the h1.
+    expect(main.getByRole("heading", { level: 2, name: "How you want to play" })).toBeInTheDocument();
+    expect(main.getByRole("heading", { level: 2, name: "How it looks" })).toBeInTheDocument();
     const stored = main.getByRole("region", { name: "What is stored on this device" });
     expect(within(stored).getByRole("button", { name: "Delete all local data" })).toBeInTheDocument();
   });
