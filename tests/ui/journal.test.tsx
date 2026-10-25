@@ -504,3 +504,31 @@ describe("strings built from data (journal)", () => {
     expect(en["life.stat.belonging"]).toBe("Belonging");
   });
 });
+
+describe("a line typed while a decision waits (UI-007)", () => {
+  it("is kept when the player answers the decision, as it is when they continue", async () => {
+    let found = false;
+    for (let s = 0; s < 30 && !found; s++) {
+      const store = createGameStore(() => `seed-${s}`, testWorld(country));
+      await store.begin();
+      store.startLife();
+      for (let i = 0; i < 60 && store.getSnapshot().life?.person.alive && !store.getSnapshot().card; i++) {
+        store.continueYear();
+      }
+      const waiting = store.getSnapshot();
+      if (!waiting.card || !waiting.life?.person.alive) continue;
+      found = true;
+      const ageBefore = waiting.life.person.age;
+      render(<App store={store} />);
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("tab", { name: "Notes" }));
+      await user.type(screen.getByRole("textbox", { name: "A line for this year" }), "About the choice.");
+      const choices = within(screen.getByRole("list", { name: "Your choices" })).getAllByRole("button");
+      await user.click(choices.find((button) => button.getAttribute("aria-disabled") !== "true")!);
+      const after = store.getSnapshot();
+      expect(after.life?.person.age).toBeGreaterThan(ageBefore);
+      expect(after.life?.journal).toContainEqual({ age: ageBefore, text: "About the choice." });
+    }
+    expect(found).toBe(true);
+  });
+});

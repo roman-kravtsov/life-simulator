@@ -162,6 +162,11 @@ export function LifeScreen({
     setView("story");
     onContinue(plan && draft ? planToSend(plan, draft) : undefined);
   };
+  // Answering a decision moves the year on as Continue does, so what is typed is kept first.
+  const choose = (choiceId: string) => {
+    saveDrafts();
+    onChoose(choiceId);
+  };
   const leave = () => {
     saveDrafts();
     onBack();
@@ -245,7 +250,7 @@ export function LifeScreen({
           />
         </section>
       )}
-      {card && <DecisionCardView key={card.eventId} card={card} sources={sources} onChoose={onChoose} />}
+      {card && <DecisionCardView key={card.eventId} card={card} sources={sources} onChoose={choose} />}
     </Ledger>
   );
   const youColumn = (

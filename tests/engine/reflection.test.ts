@@ -310,4 +310,21 @@ describe("UI-007: a damaged journal in a save", () => {
     const restored = read.ok ? restoreLife(read.save, country, versions) : undefined;
     expect(restored?.ok && restored.life.journal).toEqual([{ age: 4, text: "kept" }]);
   });
+
+  it("does the same when the life comes from its snapshot, even when every line is damaged", () => {
+    const versions = { dataVersion: "d1", contentVersion: "c1" };
+    let life = newLife({ seed: "journal-damage-2", country, settings: { pace: "every-year" } });
+    while (life.person.alive && life.history.length < 4) life = advanceAuto(life, country);
+    const damaged = [
+      { age: 2, text: { oops: 1 } },
+      { age: 3, prompt: 7, text: "y" },
+    ] as never;
+    const save = JSON.parse(JSON.stringify(toSave(life, { ...versions, now: "2026-10-25T10:00:00.000Z" })));
+    save.journal = damaged;
+    save.snapshot.journal = damaged;
+    const read = readSave(save);
+    const restored = read.ok ? restoreLife(read.save, country, versions) : undefined;
+    expect(restored?.ok && restored.source).toBe("snapshot");
+    expect(restored?.ok && restored.life).not.toHaveProperty("journal");
+  });
 });

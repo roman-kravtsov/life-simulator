@@ -211,11 +211,11 @@ export function restoreLife(
   const exact = save.dataVersion === versions.dataVersion && save.contentVersion === versions.contentVersion;
   const finish = (life: LifeState, source: "snapshot" | "replay"): RestoreResult => {
     // What the player wrote is not part of what a replay lives again, so it is put back from the save.
-    const kept: LifeState = {
-      ...life,
-      ...(save.epitaph ? { epitaph: save.epitaph } : {}),
-      ...(soundJournal(save.journal).length > 0 ? { journal: soundJournal(save.journal) } : {}),
-    };
+    // Only the sound lines are kept, from the save's own copy and else from the snapshot's, whichever way the life came back.
+    const journal = soundJournal(isArray(save.journal) ? save.journal : life.journal);
+    const kept: LifeState = { ...life, ...(save.epitaph ? { epitaph: save.epitaph } : {}) };
+    delete kept.journal;
+    if (journal.length > 0) kept.journal = journal;
     try {
       decisionCard(kept, country, catalog);
       return { ok: true, life: kept, source, exact };
