@@ -7,6 +7,7 @@ import {
   displayStore,
   motionChoice,
   reducesMotion,
+  subscribeSystemMotion,
   systemReducesMotion,
   TEXT_SIZES,
   THEMES,
@@ -27,8 +28,8 @@ export function DisplaySettings({ store = displayStore, headingLevel = 2 }: Prop
   const display = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const headingId = useId();
   const motionAbout = useId();
-  // Read when shown: the system's preference can change while the game is open, and the switch says what holds now.
-  const systemReduces = systemReducesMotion();
+  // The system's preference can change while the game is open, and the switch says what holds now.
+  const systemReduces = useSyncExternalStore(subscribeSystemMotion, systemReducesMotion);
   return (
     <section aria-labelledby={headingId} className={styles.display}>
       <Heading id={headingId} className={`eyebrow ${styles.heading}`}>

@@ -131,6 +131,14 @@ export function shownTheme(display: Display): "light" | "dark" {
 export const systemReducesMotion = (): boolean =>
   typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/** For useSyncExternalStore: tells a listener when the system's motion preference changes while the page is open. */
+export function subscribeSystemMotion(listener: () => void): () => void {
+  if (typeof matchMedia !== "function") return () => {};
+  const query = matchMedia("(prefers-reduced-motion: reduce)");
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+}
+
 /** The quick toggle in the headers: the other one of light and dark. */
 export const toggleTheme = (): void =>
   displayStore.set({ theme: shownTheme(displayStore.getSnapshot()) === "dark" ? "light" : "dark" });

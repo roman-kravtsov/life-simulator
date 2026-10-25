@@ -3,7 +3,8 @@
 // SYNTHETIC.
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../src/ui/App";
 import { DisplaySettings } from "../../src/ui/DisplaySettings";
 import { createDisplayStore, DEFAULT_DISPLAY, displayStore } from "../../src/ui/display";
@@ -119,6 +120,33 @@ describe("how it looks (UI-009, A11Y-004, A11Y-005)", () => {
     expect(motion).not.toBeChecked();
     // The system asks for nothing (jsdom has no matchMedia), so off is the default again.
     expect(root).not.toHaveAttribute("data-motion");
+  });
+
+  it("follows the system's motion preference while the page is open", () => {
+    let reduces = false;
+    const listeners = new Set<() => void>();
+    vi.stubGlobal("matchMedia", () => ({
+      get matches() {
+        return reduces;
+      },
+      addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+      removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+    }));
+    try {
+      const { store } = detached();
+      const { unmount } = render(<DisplaySettings store={store} />);
+      const motion = screen.getByRole("switch", { name: "Reduce motion" });
+      expect(motion).not.toBeChecked();
+      act(() => {
+        reduces = true;
+        listeners.forEach((listener) => listener());
+      });
+      expect(motion).toBeChecked();
+      unmount();
+      expect(listeners.size).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("shows a choice made elsewhere, such as with the header's quick toggle", () => {
