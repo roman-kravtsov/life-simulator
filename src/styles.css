@@ -32,6 +32,11 @@
   --measure: 38rem;
   /* The fixed bar of tabs on a phone (UI-010): the kit draws it this tall and the page leaves room for it. */
   --tab-bar-height: 3.25rem;
+  /* The life screen (UI-010): its header is this tall in the wide layout, so the side columns can sit exactly below it,
+     and the side columns take a share of the window as well as rems, so large text or a small window leaves the story
+     room. Here, not on the screen, because the header is outside the main (Page). */
+  --life-header-height: 5.5rem;
+  --life-side-width: min(18rem, 28vw);
   --gutter: 1rem;
   --radius: 0.5rem;
   color-scheme: light;
@@ -96,42 +101,67 @@ body {
   line-height: 1.6;
 }
 
-main {
-  max-width: var(--measure);
-  margin: 0 auto;
-  padding: 0 var(--gutter) 3rem;
+/* Larger text (A11Y-005, UI-009): display.ts sets the attribute, on top of the reader's own browser size. Everything is
+   in rem or em, so it all follows; media queries in em do not, as they read the browser's own size. */
+:root[data-text-size="large"] {
+  font-size: 112.5%;
 }
 
-/* The life screen runs the width of the window, in columns (UI-010); App marks it, and no other screen has it. */
-main:has(> #content[data-layout="wide"]) {
-  max-width: none;
-  padding: 0;
+:root[data-text-size="larger"] {
+  font-size: 125%;
+}
+
+/* The page (Page.tsx): the screen's header, then the main, which fills the rest of the window, so a short screen (or
+   the narrow life screen, whose parts grow to the foot of the window) does not leave the page two-toned. */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+main {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+/* Every screen but the life screen keeps the reading measure. */
+main[data-layout="reading"] {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 2rem var(--gutter) 3rem;
+}
+
+/* The life screen runs the width of the window, in columns (UI-010); no other screen has it. */
+main[data-layout="wide"] {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Focus moved into the page is not left under the header at the top, or under what is fixed at the foot: the plan
    tray in the wide layout when the window is big enough to dock it, the bar of tabs on a phone, nothing between.
-   The widths are in em, so they follow the reader's text size; they match NARROW_QUERY (useNarrow.ts) and the tray's
+   The widths are in em, so they follow the browser's own text size (not the game's text-size setting); they match NARROW_QUERY (useNarrow.ts) and the tray's
    query (Ledger.module.css). Docked, the tray is about 12rem tall (the five steppers in one row); --tray-space leaves
    some to spare. */
-html:has(#content[data-layout="wide"]) {
+html:has(main[data-layout="wide"]) {
   --tray-space: 16rem;
   scroll-padding-block: 6rem var(--tray-space);
 }
 
 @media (width <= 81.25em), (height <= 43.75em) {
-  html:has(#content[data-layout="wide"]) {
+  html:has(main[data-layout="wide"]) {
     scroll-padding-block: 6rem 1rem;
   }
 }
 
 @media (width < 56.25em) {
-  html:has(#content[data-layout="wide"]) {
+  html:has(main[data-layout="wide"]) {
     scroll-padding-block: 5rem calc(var(--tab-bar-height) + 1rem);
   }
 }
 
-main:focus,
-#content:focus {
+/* The skip link's target takes focus only to move the reader past the header; it shows no ring. */
+main:focus {
   outline: none;
 }
 
@@ -204,13 +234,26 @@ h1 {
   color: var(--ink-soft);
 }
 
+/* Motion (A11Y-004, UI-009): one rule set for the whole page, so components animate freely and follow it. The player's
+   choice, which display.ts sets on the root, wins; with none, the system's preference counts. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion="full"]),
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
     animation: none !important;
     transition: none !important;
+    scroll-behavior: auto !important;
   }
+}
+
+:root[data-motion="reduced"],
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
 
 /* Text for screen readers only. */

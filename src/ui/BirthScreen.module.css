@@ -1,3 +1,30 @@
 .paragraph {
   margin: 0 0 1rem;
 }
+
+/* The country panel: the same terms as the life screen's Country tab, on a card of its own. */
+.country {
+  margin: 1.75rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  font-family: var(--font-ui);
+}
+
+.countryHeading {
+  margin: 0 0 0.25rem;
+}
+
+.country p {
+  margin: 0 0 0.6rem;
+}
+
+/* A little more air between the facts than the life screen's narrow column can give. */
+.country dl {
+  gap: 0.6rem;
+}
+
+.end p {
+  margin: 0.75rem 0 0;
+}

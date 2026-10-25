@@ -9,7 +9,7 @@ import { browserSeed, createGameStore } from "./ui/store";
 const store = createGameStore(browserSeed, { loadIndex, loadCountry }, browserPersistence());
 store.init();
 
-createRoot(document.getElementById("main")!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App store={store} />
   </StrictMode>,

@@ -1,0 +1,85 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-family: var(--font-ui);
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+/* Side by side while they fit, then one under another. */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin-top: 0.15rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+/* An empty ring; chosen, a ring with a dot in it, so the state is a shape as well as a colour. */
+.mark {
+  position: relative;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--ink-soft);
+  border-radius: 50%;
+  background: var(--paper);
+  transition: border-color 120ms;
+}
+
+.mark::after {
+  content: "";
+  position: absolute;
+  inset: 0.2rem;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: scale(0);
+  transition: transform 120ms;
+}
+
+.radio[data-hovered] .mark {
+  border-color: var(--ink);
+}
+
+.radio[data-selected] .mark {
+  border-color: var(--accent);
+}
+
+.radio[data-selected] .mark::after {
+  transform: scale(1);
+}
+
+.radio[data-pressed] .mark {
+  background: var(--rule);
+}
+
+.radio[data-focus-visible] .mark {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.radio[data-disabled] {
+  opacity: 0.5;
+  cursor: default;
+}

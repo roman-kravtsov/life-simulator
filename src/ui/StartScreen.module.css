@@ -1,3 +1,56 @@
+/* The title: the emblem of growth rings above the name of the game, centred; the reading below stays left-aligned. */
+.title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.5rem 0 2rem;
+  text-align: center;
+}
+
+.emblem {
+  display: block;
+  width: 6.5rem;
+  height: 6.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* A thin line of paper between rings, as in the rings of a life. */
+.ring {
+  stroke: var(--paper);
+  stroke-width: 1.2;
+}
+
+.pith {
+  fill: var(--paper);
+}
+
+.fill-study {
+  fill: var(--ring-study);
+}
+.fill-work {
+  fill: var(--ring-work);
+}
+.fill-love {
+  fill: var(--ring-love);
+}
+.fill-loss {
+  fill: var(--ring-loss);
+}
+.fill-illness {
+  fill: var(--ring-illness);
+}
+.fill-move {
+  fill: var(--ring-move);
+}
+.fill-plain {
+  fill: var(--ring-plain);
+}
+
+.heading {
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
 .resume {
   margin: 0 0 1.5rem;
   padding: 1rem 1.25rem;
@@ -6,7 +59,7 @@
   background: var(--paper-raised);
 }
 
-.heading {
+.resumeHeading {
   margin: 0 0 0.5rem;
 }
 
@@ -27,8 +80,23 @@
   margin: 0 0 0.75rem;
 }
 
+.begin {
+  margin: 0 0 2rem;
+}
+
+.begin p {
+  margin: 0.75rem 0 0;
+}
+
+/* The ways off the title page, quiet, under a rule. */
 .links {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.privacy {
+  margin: 1rem 0 0;
 }

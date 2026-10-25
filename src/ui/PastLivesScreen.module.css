@@ -1,43 +1,74 @@
+/* On a wide window the screen reaches past the reading measure, centred on it, and the cards go two across. The width
+   is capped by the window less its gutters, so it never makes the page scroll sideways. */
+@media (width >= 56.25em) {
+  .screen {
+    --screen-width: min(56rem, calc(100vw - 4 * var(--gutter)));
+    width: var(--screen-width);
+    margin-inline: calc((100% - var(--screen-width)) / 2);
+  }
+
+  .list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* One card a life, one under another on a phone. */
 .list {
+  display: grid;
+  gap: 1rem;
   margin: 0 0 1.5rem;
   padding: 0;
   list-style: none;
 }
 
 .life {
-  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
   padding: 1rem 1.25rem;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--paper-raised);
 }
 
-.name {
-  margin: 0 0 0.25rem;
-  font-size: 1.35rem;
-  font-weight: 400;
-}
-
 .life p {
   margin: 0 0 0.5rem;
 }
 
+/* The rings beside the name and the line about the life. */
+.top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Two classes, so it wins over the thumbnail's own size. */
+.top .rings {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.about {
+  min-width: 0;
+}
+
+.name {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
 .epitaph {
-  margin: 0 0 0.75rem;
   font-style: italic;
   overflow-wrap: anywhere;
 }
 
+/* Open and Delete at the foot of the card, so cards side by side line up. */
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-}
-
-.all {
-  margin: 1.5rem 0;
-}
-
-.all p {
-  margin: 0 0 0.75rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
 }

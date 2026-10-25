@@ -7,6 +7,7 @@ import {
   Button,
   ConfirmDialog,
   Dialog,
+  RadioGroup,
   Slider,
   Stepper,
   Switch,
@@ -218,6 +219,81 @@ describe("kit", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
+  describe("RadioGroup", () => {
+    const sizes = [
+      { value: "default", label: "Default" },
+      { value: "large", label: "Larger", description: "One step up." },
+      { value: "larger", label: "Largest" },
+    ] as const;
+    type Size = (typeof sizes)[number]["value"];
+
+    function Sizes({ onChange }: { onChange?: (value: Size) => void }) {
+      const [value, setValue] = useState<Size>("default");
+      return (
+        <RadioGroup
+          label="Text size"
+          description="On top of your browser's own size."
+          options={sizes}
+          value={value}
+          onChange={(next) => {
+            setValue(next);
+            onChange?.(next);
+          }}
+        />
+      );
+    }
+
+    it("is a labelled group with a description, one radio an option, and an option's own description", () => {
+      render(<Sizes />);
+      const group = screen.getByRole("radiogroup", { name: "Text size" });
+      expect(group).toHaveAccessibleDescription("On top of your browser's own size.");
+      expect(screen.getAllByRole("radio")).toHaveLength(3);
+      expect(screen.getByRole("radio", { name: "Default" })).toBeChecked();
+      // React Aria ties the group's description to each radio as well, after the option's own.
+      expect(screen.getByRole("radio", { name: "Larger" })).toHaveAccessibleDescription(
+        "One step up. On top of your browser's own size.",
+      );
+      expect(screen.getByRole("radio", { name: "Larger" }).closest("[data-selected]")).toBeNull();
+      expect(screen.getByRole("radio", { name: "Default" }).closest("label")).toHaveAttribute("data-selected", "true");
+    });
+
+    it("is one tab stop, and the arrow keys move and choose", async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      render(
+        <>
+          <Sizes onChange={onChange} />
+          <Button>After</Button>
+        </>,
+      );
+      await user.tab();
+      const first = screen.getByRole("radio", { name: "Default" });
+      expect(first).toHaveFocus();
+      expect(first.closest("label")).toHaveAttribute("data-focus-visible", "true");
+      await user.keyboard("{ArrowDown}");
+      expect(screen.getByRole("radio", { name: "Larger" })).toHaveFocus();
+      expect(screen.getByRole("radio", { name: "Larger" })).toBeChecked();
+      expect(onChange).toHaveBeenLastCalledWith("large");
+      await user.keyboard("{ArrowRight}");
+      expect(onChange).toHaveBeenLastCalledWith("larger");
+      await user.keyboard("{ArrowUp}");
+      expect(onChange).toHaveBeenLastCalledWith("large");
+      await user.tab();
+      expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+      await user.tab({ shift: true });
+      expect(screen.getByRole("radio", { name: "Larger" })).toHaveFocus();
+    });
+
+    it("chooses by pointer too", async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      render(<Sizes onChange={onChange} />);
+      await user.click(screen.getByText("Largest"));
+      expect(onChange).toHaveBeenCalledWith("larger");
+      expect(screen.getByRole("radio", { name: "Largest" })).toBeChecked();
+    });
+  });
+
   describe("Tabs", () => {
     const tabs = [
       { id: "family", label: "Family" },

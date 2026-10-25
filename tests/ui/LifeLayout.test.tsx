@@ -121,7 +121,7 @@ describe("the header (UI-004, UI-012)", () => {
     expect(next).not.toHaveAccessibleDescription();
   });
 
-  it("opens the settings in a dialog: the two choices, light or dark, and the way back to the start", async () => {
+  it("opens the settings in a dialog: the two choices, how it looks, and the way back to the start", async () => {
     const { props, user } = renderLife();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Settings" }));
@@ -129,7 +129,11 @@ describe("the header (UI-004, UI-012)", () => {
     await user.click(dialog.getByRole("switch", { name: "Softer telling" }));
     expect(props.onSettings).toHaveBeenCalledWith({ softening: true });
     expect(dialog.getByRole("switch", { name: "Skip quiet years" })).toBeChecked();
-    expect(dialog.getByRole("button", { name: "Switch light or dark" })).toBeInTheDocument();
+    const looks = within(dialog.getByRole("region", { name: "How it looks" }));
+    expect(looks.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+    expect(looks.getByRole("radiogroup", { name: "Text size" })).toBeInTheDocument();
+    expect(looks.getByRole("switch", { name: "Reduce motion" })).toBeInTheDocument();
+    expect(dialog.queryByRole("button", { name: "Switch light or dark" })).not.toBeInTheDocument();
     await user.click(dialog.getByRole("button", { name: "Back to start" }));
     expect(props.onBack).toHaveBeenCalledTimes(1);
   });

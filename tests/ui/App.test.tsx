@@ -67,7 +67,7 @@ describe("App", () => {
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading).toHaveTextContent(/You are born in /);
     expect(heading).toHaveFocus();
-    expect(screen.getByText(/Your household is among the .* tenth of households/)).toBeInTheDocument();
+    expect(screen.getByText(/Of all the households in .*, yours is in the .*tenth/)).toBeInTheDocument();
     expect(screen.getByText(/Your mother, .*, is \d+\. Your father, .*, is \d+\./)).toBeInTheDocument();
     expect(screen.getByText(/You are .*, a (girl|boy)\./)).toBeInTheDocument();
     expect(screen.getByText(/^Life test-seed$/)).toBeInTheDocument();
@@ -176,13 +176,14 @@ describe("App", () => {
   it("lets the life screen use the whole window and every other screen keep the reading width (UI-010)", async () => {
     const { user } = setup();
     const content = () => document.getElementById("content")!;
-    expect(content()).not.toHaveAttribute("data-layout");
+    expect(content()).toHaveAttribute("data-layout", "reading");
     await begin(user);
-    expect(content()).not.toHaveAttribute("data-layout");
+    expect(content()).toHaveAttribute("data-layout", "reading");
     await user.click(screen.getByRole("button", { name: "Begin this life" }));
     expect(content()).toHaveAttribute("data-layout", "wide");
+    expect(content()).toBe(screen.getByRole("main"));
     await backToStart(user);
-    expect(content()).not.toHaveAttribute("data-layout");
+    expect(content()).toHaveAttribute("data-layout", "reading");
   });
 
   it("offers a skip link to the main content", () => {

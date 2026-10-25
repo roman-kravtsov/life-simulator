@@ -96,6 +96,16 @@ describe("SUM-002: where the rings and their marks go", () => {
     expect(one.marks).toEqual([]);
     expect(layoutRings([])).toEqual({ shapes: [], marks: [] });
   });
+
+  it("lays out the rings in brief that a past life keeps (only thickness and theme) the same way (UI-008)", () => {
+    const full = life(12, []);
+    const brief = full.map(({ thickness, theme }) => ({ thickness, theme }));
+    const { shapes, marks } = layoutRings(brief);
+    expect(marks).toEqual([]);
+    expect(shapes.map(({ inner, outer, theme }) => ({ inner, outer, theme }))).toEqual(
+      layoutRings(full).shapes.map(({ inner, outer, theme }) => ({ inner, outer, theme })),
+    );
+  });
 });
 
 describe("SUM-002: the rings figure", () => {

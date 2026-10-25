@@ -1,0 +1,17 @@
+/* Three parts, each a small heading and its controls, with a rule between them. */
+.part + .part {
+  border-top: 1px solid var(--rule);
+}
+
+.stored {
+  margin-bottom: 1.5rem;
+}
+
+/* Like the headings of the two parts above it (SettingsPanel.module.css, DisplaySettings.module.css). */
+.heading {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.part > p {
+  margin: 0;
+}

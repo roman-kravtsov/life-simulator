@@ -19,6 +19,7 @@ import { TabPanel, Tabs } from "./kit";
 import { Ledger } from "./Ledger";
 import { LifeHeader } from "./LifeHeader";
 import styles from "./LifeScreen.module.css";
+import { Page } from "./Page";
 import { PlanWidget } from "./PlanWidget";
 import {
   countryFacts,
@@ -204,21 +205,24 @@ export function LifeScreen({
     />
   );
 
+  const header = (
+    <LifeHeader
+      name={person.name}
+      age={person.age}
+      where={where}
+      strip={strip}
+      narrow={narrow}
+      waiting={card !== null}
+      settings={life.settings}
+      onSettings={onSettings}
+      onJournal={openJournal}
+      onContinue={sendPlan}
+      onBack={onBack}
+    />
+  );
+
   return (
-    <div className={styles.screen}>
-      <LifeHeader
-        name={person.name}
-        age={person.age}
-        where={where}
-        strip={strip}
-        narrow={narrow}
-        waiting={card !== null}
-        settings={life.settings}
-        onSettings={onSettings}
-        onJournal={openJournal}
-        onContinue={sendPlan}
-        onBack={onBack}
-      />
+    <Page header={header} layout="wide">
       {narrow ? (
         <Tabs
           label={t("life.nav.label")}
@@ -250,6 +254,6 @@ export function LifeScreen({
           {aroundColumn}
         </div>
       )}
-    </div>
+    </Page>
   );
 }

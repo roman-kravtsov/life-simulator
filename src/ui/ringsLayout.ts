@@ -31,10 +31,17 @@ export const patternTile = (count: number): number => {
   return roomy + (tight - roomy) * along;
 };
 
+/**
+ * A ring as the layout needs it: its thickness and theme, with its age and key moment when it has them. The rings in
+ * brief that a past life keeps for its thumbnail (UI-008) have only the first two, and lay out the same way.
+ */
+export type RingInput = Pick<Ring, "thickness" | "theme"> & Partial<Pick<Ring, "age" | "moment">>;
+
 export interface RingShape {
   /** Index in the rings given. */
   ring: number;
-  age: number;
+  /** The age lived in the ring's year, when the ring says. */
+  age?: number;
   theme: Ring["theme"];
   /** The radius the ring ends at, and the one it starts from: the ring is the band between them. */
   inner: number;
@@ -66,7 +73,7 @@ export interface RingLayout {
  * earlier mark. A badge that cannot fit on a very narrow ring near the centre, or has no room round it,
  * moves outward and keeps a line to its ring.
  */
-export function layoutRings(rings: readonly Ring[]): RingLayout {
+export function layoutRings(rings: readonly RingInput[]): RingLayout {
   // Width follows the square root of the thickness: still thicker for a happier year, but the thinnest rings
   // of a long life stay wide enough to see. The thickness data itself is the engine's and is not changed.
   const total = rings.reduce((sum, ring) => sum + Math.sqrt(ring.thickness), 0);
@@ -78,7 +85,7 @@ export function layoutRings(rings: readonly Ring[]): RingLayout {
     edge += Math.sqrt(ring.thickness) * unit;
     return {
       ring: index,
-      age: ring.age,
+      ...(ring.age === undefined ? {} : { age: ring.age }),
       theme: ring.theme,
       inner,
       outer: index === rings.length - 1 ? OUTER_RADIUS : edge,

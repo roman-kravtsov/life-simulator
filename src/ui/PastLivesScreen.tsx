@@ -1,13 +1,17 @@
-// The archive of finished lives (SAVE-003, SAVE-007, UI-008): kept plain here; thumbnails come with UI-008. Each
-// life can be opened or deleted after a confirmation, and everything the game keeps in the browser can be
-// deleted at once.
+// The archive of finished lives (SAVE-003, SAVE-007, UI-008): each life as a card with its growth rings in small, its
+// name, where and how long it was lived, its epitaph and when it ended. Each can be opened or deleted after a
+// confirmation, and everything the game keeps in the browser can be deleted at once. Wide windows set the cards two
+// across; phones one under another.
 import { useState } from "react";
 import type { PastLifeListing } from "../save";
 import { countryName, formatDay } from "../format";
 import { t } from "../i18n";
-import { Header } from "./Header";
+import { DeleteAllData } from "./DeleteAllData";
 import { Button, ConfirmDialog } from "./kit";
+import { Page } from "./Page";
 import styles from "./PastLivesScreen.module.css";
+import { RingsThumb } from "./RingsThumb";
+import { SiteHeader } from "./SiteHeader";
 import type { GameStore } from "./store";
 import { useFocusOn } from "./useFocusOn";
 import { causeWords } from "./words";
@@ -30,15 +34,20 @@ interface Props {
 function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () => void; onDelete: () => void }) {
   return (
     <li className={styles.life}>
-      <h2 className={styles.name}>{life.name}</h2>
-      <p>
-        {t("past.line", {
-          born: life.birthYear,
-          country: countryName(life.country),
-          age: life.age,
-          cause: causeWords(life.cause),
-        })}
-      </p>
+      <div className={styles.top}>
+        <RingsThumb rings={life.rings} className={styles.rings} />
+        <div className={styles.about}>
+          <h2 className={styles.name}>{life.name}</h2>
+          <p>
+            {t("past.line", {
+              born: life.birthYear,
+              country: countryName(life.country),
+              age: life.age,
+              cause: causeWords(life.cause),
+            })}
+          </p>
+        </div>
+      </div>
       {life.epitaph && <p className={styles.epitaph}>{life.epitaph}</p>}
       <p className="small">{t("past.finished", { date: formatDay(life.finishedAt) })}</p>
       <div className={styles.actions}>
@@ -77,46 +86,37 @@ export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete
     if (!(await onDeleteAll())) say(t("past.deleteAll.failed"));
   }
   return (
-    <section onKeyDownCapture={clear} onClickCapture={clear}>
-      <Header />
-      <h1 ref={heading} tabIndex={-1}>
-        {t("past.title")}
-      </h1>
-      <p className="lead">{t("past.intro")}</p>
-      <div role="status">
-        {problem && (
-          <p className="note" role="note">
-            {t("past.problem")}
-          </p>
+    <Page header={<SiteHeader />}>
+      {/* Any key or press in the screen lets the last notice go. */}
+      <div onKeyDownCapture={clear} onClickCapture={clear} className={styles.screen}>
+        <h1 ref={heading} tabIndex={-1}>
+          {t("past.title")}
+        </h1>
+        <p className="lead">{t("past.intro")}</p>
+        <div role="status">
+          {problem && (
+            <p className="note" role="note">
+              {t("past.problem")}
+            </p>
+          )}
+          {lives === null && <p className="small">{t("past.loading")}</p>}
+          {notice && (
+            <p key={notice.n} className="small">
+              {notice.text}
+            </p>
+          )}
+        </div>
+        {lives !== null && lives.length === 0 && <p>{t("past.empty")}</p>}
+        {lives !== null && lives.length > 0 && (
+          <ul role="list" className={styles.list}>
+            {lives.map((life) => (
+              <Life key={life.id} life={life} onOpen={() => onOpen(life.id)} onDelete={() => void remove(life)} />
+            ))}
+          </ul>
         )}
-        {lives === null && <p className="small">{t("past.loading")}</p>}
-        {notice && (
-          <p key={notice.n} className="small">
-            {notice.text}
-          </p>
-        )}
+        <DeleteAllData canDeleteAll={canDeleteAll} onConfirm={() => void removeAll()} />
+        <Button onPress={onBack}>{t("life.backToStart")}</Button>
       </div>
-      {lives !== null && lives.length === 0 && <p>{t("past.empty")}</p>}
-      {lives !== null && lives.length > 0 && (
-        <ul role="list" className={styles.list}>
-          {lives.map((life) => (
-            <Life key={life.id} life={life} onOpen={() => onOpen(life.id)} onDelete={() => void remove(life)} />
-          ))}
-        </ul>
-      )}
-      <div className={styles.all}>
-        <p className="small">{t(canDeleteAll ? "past.deleteAll.about" : "past.deleteAll.nothing")}</p>
-        <ConfirmDialog
-          trigger={<Button isDisabled={!canDeleteAll}>{t("past.deleteAll")}</Button>}
-          title={t("past.deleteAll.title")}
-          confirmLabel={t("past.deleteAll.yes")}
-          cancelLabel={t("past.deleteAll.no")}
-          onConfirm={() => void removeAll()}
-        >
-          <p>{t("past.deleteAll.body")}</p>
-        </ConfirmDialog>
-      </div>
-      <Button onPress={onBack}>{t("life.backToStart")}</Button>
-    </section>
+    </Page>
   );
 }

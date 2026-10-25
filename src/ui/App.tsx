@@ -1,15 +1,20 @@
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../i18n";
 import { BirthScreen } from "./BirthScreen";
+import { DEFAULT_DISPLAY, displayStore, type Display, type DisplayStore } from "./display";
 import { LifeScreen } from "./LifeScreen";
 import { PastLivesScreen } from "./PastLivesScreen";
 import { ScreenBoundary } from "./ScreenBoundary";
+import { SettingsScreen } from "./SettingsScreen";
 import { SourcesScreen } from "./SourcesScreen";
 import { StartScreen } from "./StartScreen";
 import { SummaryScreen } from "./SummaryScreen";
 import type { GameStore } from "./store";
 
-function CurrentScreen({ store }: { store: GameStore }) {
+const isDefaultDisplay = (display: Display) =>
+  (Object.keys(DEFAULT_DISPLAY) as (keyof Display)[]).every((name) => display[name] === DEFAULT_DISPLAY[name]);
+
+function CurrentScreen({ store, display }: { store: GameStore; display: DisplayStore }) {
   const {
     screen,
     life,
@@ -28,6 +33,8 @@ function CurrentScreen({ store }: { store: GameStore }) {
     restored,
     deleted,
   } = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // A display preference the reader chose is kept in this browser too, so it is something "delete all" removes.
+  const preferencesStored = useSyncExternalStore(display.subscribe, () => !isDefaultDisplay(display.getSnapshot()));
   // The screens that show stored lives are guarded, so text a version no longer has cannot blank the app.
   const guarded = (element: ReactNode) => (
     <ScreenBoundary key={screen} onBack={store.backToStart}>
@@ -35,7 +42,7 @@ function CurrentScreen({ store }: { store: GameStore }) {
     </ScreenBoundary>
   );
   if (screen === "birth" && life && country) {
-    return <BirthScreen life={life} country={country} onContinue={store.startLife} />;
+    return <BirthScreen life={life} country={country} sources={sources ?? {}} onContinue={store.startLife} />;
   }
   if (screen === "life" && life && country) {
     // Not keyed by year: the status region must stay mounted for screen readers to announce changes.
@@ -76,7 +83,7 @@ function CurrentScreen({ store }: { store: GameStore }) {
       <PastLivesScreen
         lives={pastLives}
         problem={problem === "archive"}
-        canDeleteAll={(pastLives?.length ?? 0) > 0 || resume !== null}
+        canDeleteAll={(pastLives?.length ?? 0) > 0 || resume !== null || preferencesStored}
         onOpen={store.openPastLife}
         onDelete={store.deletePastLife}
         onDeleteAll={store.deleteAllData}
@@ -86,6 +93,19 @@ function CurrentScreen({ store }: { store: GameStore }) {
   }
   if (screen === "sources") {
     return <SourcesScreen onBack={store.closeSources} />;
+  }
+  if (screen === "settings") {
+    return (
+      <SettingsScreen
+        settings={settings}
+        onSettings={store.setSettings}
+        // The past lives are unknown here until they have been looked at, so there may be some.
+        canDeleteAll={pastLives === null || pastLives.length > 0 || resume !== null || preferencesStored}
+        onDeleteAll={store.deleteAllData}
+        onBack={store.closeSettings}
+        display={display}
+      />
+    );
   }
   return (
     <StartScreen
@@ -98,25 +118,32 @@ function CurrentScreen({ store }: { store: GameStore }) {
       onResume={store.resumeLife}
       onDiscard={store.discardSaved}
       onPast={store.openPast}
+      onOpenSettings={store.openSettings}
       onSources={store.openSources}
     />
   );
 }
 
-export function App({ store }: { store: GameStore }) {
-  // The life screen runs the width of the window, in columns; every other screen keeps the reading measure (UI-010).
-  const wide = useSyncExternalStore(store.subscribe, () => {
-    const { screen, life, country } = store.getSnapshot();
-    return screen === "life" && life !== null && country !== null;
-  });
+interface AppProps {
+  store: GameStore;
+  /** The reader's display preferences (UI-009); the page's own unless a test gives its own. */
+  display?: DisplayStore;
+}
+
+export function App({ store, display = displayStore }: AppProps) {
+  // "Delete all local data" removes the stored preferences with everything else; the page then goes back to the
+  // defaults too. In one place, for every screen that offers it (past lives, settings).
+  const deleted = useSyncExternalStore(store.subscribe, () => store.getSnapshot().deleted);
+  useEffect(() => {
+    if (deleted) display.reset();
+  }, [deleted, display]);
+  // Every screen renders through Page: its header, then <main id="content">, where the skip link leads (UI-010).
   return (
     <>
       <a className="skip-link" href="#content">
         {t("app.skipToContent")}
       </a>
-      <div id="content" tabIndex={-1} data-layout={wide ? "wide" : undefined}>
-        <CurrentScreen store={store} />
-      </div>
+      <CurrentScreen store={store} display={display} />
     </>
   );
 }

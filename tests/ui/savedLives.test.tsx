@@ -223,6 +223,26 @@ describe("SAVE-003, SAVE-007: the past lives", () => {
     expect(items[1]).not.toHaveTextContent("Walked far.");
   });
 
+  it("shows each life's growth rings as a small picture that a screen reader skips (UI-008)", async () => {
+    const [older, newer] = lives();
+    await openPast(fakePersistence({ status: "none" }, [older!, newer!]));
+    const items = await screen.findAllByRole("listitem");
+    for (const [item, life] of [
+      [items[0]!, newer!],
+      [items[1]!, older!],
+    ] as const) {
+      const pictures = item.querySelectorAll("svg");
+      expect(pictures).toHaveLength(1);
+      expect(pictures[0]).toHaveAttribute("aria-hidden", "true");
+      // One circle a ring, the oldest innermost.
+      expect(pictures[0]!.querySelectorAll("circle")).toHaveLength(life.summary.rings.length);
+      expect(life.summary.rings.length).toBeGreaterThan(0);
+      // The picture comes before the name, and the name stays the item's heading.
+      const name = within(item).getByRole("heading", { level: 2 });
+      expect(pictures[0]!.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   it("opens a life as its summary, and Past lives leads back to the list", async () => {
     const [older, newer] = lives();
     const { user } = await openPast(fakePersistence({ status: "none" }, [older!, newer!]));

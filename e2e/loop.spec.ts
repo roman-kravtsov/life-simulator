@@ -91,9 +91,20 @@ test("begins a life, shows the birth screen and plays years without errors or ho
   // CHAR-001, MONEY-001, FAM-001, RNG-003: the new person in words.
   await expect(page.getByRole("heading", { level: 1 })).toContainText("You are born in");
   await expect(page.getByText(/^You are .+, a (girl|boy)\./)).toBeVisible();
-  await expect(page.getByText(/tenth of households in .+ about \$/)).toBeVisible();
-  await expect(page.getByText(/^Your mother, .+, is \d+\. Your father, .+, is \d+\.$/)).toBeVisible();
-  await expect(page.getByText(/^Life .+/)).toBeVisible();
+  await expect(
+    page.getByText(/^Of all the households in .+, yours is in the .*tenth.*\. Each person in it lives on about \$/),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /You have (no older brothers or sisters|one older brother or sister|\d+ older brothers and sisters)\.$/,
+    ),
+  ).toBeVisible();
+  // WORLD-008: the country panel, with a source under each fact.
+  await expect(page.getByRole("region", { name: "Where you were born" })).toContainText(
+    /Life expectancy at birth|no measured figures/,
+  );
+  await expect(page.getByText(/^Your mother, .+, is \d+\. Your father, .+, is \d+\./)).toBeVisible();
+  await expect(page.getByText(/^Life [a-z]+-[a-z]+-\d+$/)).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
 
   await page.getByRole("button", { name: "Begin this life" }).click();
@@ -236,6 +247,68 @@ test("a setting changed in the middle of a life stays changed", async ({ page })
     await page.getByRole("button", { name: "Settings" }).click();
     await expect(softer).toBeChecked();
   }
+});
+
+test("the settings screen, from the start: the theme, the text size and motion apply to the whole page (UI-009, A11Y-004, A11Y-005)", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("./");
+  // Every screen's header is the banner, outside the one main (UI-010).
+  await expect(page.getByRole("banner")).toHaveCount(1);
+  await expect(page.locator("main header")).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeFocused();
+  await expect(page.locator("main header")).toHaveCount(0);
+
+  const root = (property: string) =>
+    page.evaluate((name) => getComputedStyle(document.documentElement).getPropertyValue(name), property);
+  const before = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  // The input is visually hidden inside its label, so the press goes to the label, as a player's would.
+  await page.getByText("Dark", { exact: true }).click();
+  await expect(page.getByRole("radio", { name: "Dark" })).toBeChecked();
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe(before);
+  await page.getByText("Light", { exact: true }).click();
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(before);
+
+  // The text size, by keyboard: 125% of the browser's 16 px.
+  await page.getByRole("radio", { name: "Default" }).focus();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("radio", { name: "Largest" })).toBeChecked();
+  expect(await root("font-size")).toBe("20px");
+  expect(await noHorizontalScroll(page)).toBe(true);
+
+  // Reduce motion: the switch's own movement stops.
+  const motion = page.getByRole("switch", { name: "Reduce motion" });
+  const track = () =>
+    motion.evaluate(
+      (input) =>
+        getComputedStyle(input.closest("label")!.querySelector('span[aria-hidden="true"]')!).transitionDuration,
+    );
+  expect(await track()).not.toBe("0s");
+  await motion.focus();
+  await page.keyboard.press("Space");
+  await expect(motion).toBeChecked();
+  expect(await track()).toBe("0s");
+
+  // Kept after a reload, and still applied.
+  await page.reload();
+  expect(await root("font-size")).toBe("20px");
+  expect(await page.evaluate(() => document.documentElement.dataset.motion)).toBe("reduced");
+
+  // The start screen, the birth screen and the life screen at the largest text, without sideways scroll.
+  await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Begin this life" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 0");
+  expect(await noHorizontalScroll(page)).toBe(true);
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("dialog", { name: "Settings" }).getByRole("button", { name: "Back to start" }).click();
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Birthright");
+  expect(errors).toEqual([]);
 });
 
 test("theme toggle switches between light and dark", async ({ page }) => {

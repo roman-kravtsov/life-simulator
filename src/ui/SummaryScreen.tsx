@@ -10,7 +10,8 @@ import { countryName, formatList, formatNumber, formatPercent, pluralKey } from 
 import { hasString, t } from "../i18n";
 import { Epitaph } from "./Epitaph";
 import { DecisionLine, EventLine } from "./EventLine";
-import { Header } from "./Header";
+import { Page } from "./Page";
+import { SiteHeader } from "./SiteHeader";
 import { HelpNote } from "./HelpNote";
 import { Button } from "./kit";
 import { Rings } from "./Rings";
@@ -152,8 +153,7 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
   const coda = tryT(death.codaKey);
 
   return (
-    <section>
-      <Header />
+    <Page header={<SiteHeader />}>
       <h1 ref={heading} tabIndex={-1}>
         {summary.name}
         <span className="subtitle">
@@ -247,6 +247,6 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
         <Button onPress={onPast}>{t("summary.past")}</Button>
         <Button onPress={onBack}>{t("life.backToStart")}</Button>
       </div>
-    </section>
+    </Page>
   );
 }

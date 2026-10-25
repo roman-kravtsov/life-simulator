@@ -55,6 +55,29 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "settings.pace": "Skip quiet years",
   "settings.pace.about": "Years with nothing to decide or tell pass in one step.",
 
+  // The settings screen and how the page looks (UI-009, UI-011, A11Y-004, A11Y-005).
+  "settingsScreen.title": "Settings",
+  "settingsScreen.play.about":
+    "For the lives you begin from now. A life in progress keeps its own, which you can change from its Settings button.",
+  "settingsScreen.stored": "What is stored on this device",
+  "settingsScreen.stored.about":
+    "Your lives and these settings are kept in this browser only. Nothing is tracked or sent anywhere.",
+  "settingsScreen.back": "Back",
+  "display.heading": "How it looks",
+  "display.theme": "Theme",
+  "display.theme.about": "System follows the light or dark setting of this device.",
+  "display.theme.system": "System",
+  "display.theme.light": "Light",
+  "display.theme.dark": "Dark",
+  "display.textSize": "Text size",
+  "display.textSize.about": "On top of the text size set in your browser.",
+  "display.textSize.default": "Default",
+  "display.textSize.large": "Larger",
+  "display.textSize.larger": "Largest",
+  "display.motion": "Reduce motion",
+  "display.motion.about":
+    "Holds back movement, such as the growth rings drawing themselves. Until you change it, it follows this device.",
+
   // Help (UI-012).
   "help.talk": "Need to talk?",
   "help.newTab": "Free helplines directory. Opens in a new tab.",
@@ -118,7 +141,6 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "life.journal": "Journal",
   "life.settings": "Settings",
   "life.settings.close": "Close",
-  "life.settings.theme": "Light or dark",
   "life.who.line": "Age {age} \u00b7 {where}",
   "life.strip.birth": "Birth",
   "life.strip.end": "about {age}",
