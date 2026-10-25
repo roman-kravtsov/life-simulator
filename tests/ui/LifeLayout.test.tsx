@@ -155,10 +155,10 @@ describe("the life strip (UI-004)", () => {
     expect(header.getByText("about 80")).toBeInTheDocument();
   });
 
-  it("ends at about 100 for someone past 75", () => {
+  it("ends five years past someone older than 75", () => {
     renderLife({ age: 80, stage: "elder" });
-    expect(screen.getByRole("img", { name: /of about 100\./ })).toBeInTheDocument();
-    expect(within(screen.getByRole("banner")).getByText("about 100")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /of about 85\./ })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByText("about 85")).toBeInTheDocument();
   });
 
   it("has a dot for each key moment, and a marker for now", () => {

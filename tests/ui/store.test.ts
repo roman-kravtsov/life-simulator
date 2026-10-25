@@ -1169,10 +1169,21 @@ describe("the life strip", () => {
     decisions: [],
   });
 
-  it("runs to about 80, and to 100 once the person is past 75", () => {
+  it("runs to about 80, and to five years past the person once they are past 75", () => {
     expect(lifeStrip(lifeWith(16, [])).end).toBe(80);
     expect(lifeStrip(lifeWith(75, [])).end).toBe(80);
-    expect(lifeStrip(lifeWith(76, [])).end).toBe(100);
+    expect(lifeStrip(lifeWith(76, [])).end).toBe(81);
+    expect(lifeStrip(lifeWith(99, [])).end).toBe(104);
+  });
+
+  it("never moves the marker back as the person ages", () => {
+    let last = 0;
+    for (let age = 0; age <= 110; age++) {
+      const { end } = lifeStrip(lifeWith(age, []));
+      expect(age / end).toBeGreaterThanOrEqual(last);
+      expect(age).toBeLessThanOrEqual(end);
+      last = age / end;
+    }
   });
 
   it("marks the ages of the key moments, and only years that had something to tell", () => {

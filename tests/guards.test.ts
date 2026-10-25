@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { en } from "../src/content/strings/en";
 
@@ -65,29 +66,32 @@ describe("L10N-001: every string key used in the code exists", () => {
   });
 });
 
-// JSX text between tags, e.g. <p>Hello</p>, must come from t(). Expressions like {t("x")} are fine.
-// Type arguments such as useRef<HTMLElement>() are removed first so they are not mistaken for tags.
-// Arrow functions (`=>`) are removed too, and so is code that follows a closed tag and runs on to the next one (it starts
-// with `)` or `;`, which JSX text never does): `const a = (<A />);\n const b = (<B />)` is not text between tags.
-const hardCodedJsxText = (source: string) =>
-  [
-    ...source
-      .replace(/<[A-Z][\w.]*(\[\])?>/g, "")
-      .replaceAll("=>", "=")
-      .matchAll(/>([^<>{}]*[A-Za-z][^<>{}]*)</g),
-  ]
-    .map((m) => m[1]!.trim())
-    .filter((text) => text && !/^[);]/.test(text));
+// JSX text between tags, e.g. <p>Hello</p>, must come from t(). Expressions like {t("x")} are fine. The source is
+// parsed as TSX, so only real JSX text nodes count, and code between two tags never does.
+const hardCodedJsxText = (source: string) => {
+  const file = ts.createSourceFile("source.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const found: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxText(node) && /[A-Za-z]/.test(node.text)) found.push(node.text.trim());
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return found;
+};
 
 describe("L10N-001: no hard-coded text in the UI", () => {
   it("detects text between JSX tags", () => {
-    expect(hardCodedJsxText("<p>Begin a life</p>")).toEqual(["Begin a life"]);
-    expect(hardCodedJsxText('<p>{t("start.begin")}</p>')).toEqual([]);
+    expect(hardCodedJsxText("const a = <p>Begin a life</p>;")).toEqual(["Begin a life"]);
+    expect(hardCodedJsxText('const a = <p>{t("start.begin")}</p>;')).toEqual([]);
     expect(hardCodedJsxText("const ref = useRef<HTMLElement>();\n  return (<p />);")).toEqual([]);
     expect(hardCodedJsxText("const a = (\n <A />\n );\n const b = (\n <B />\n );")).toEqual([]);
     expect(hardCodedJsxText("const rings = useMemo(() => layout(x), [x]);\n return (<p />);")).toEqual([]);
-    expect(hardCodedJsxText("<p>Some text</p>\n);\nconst b = (<B />)")).toEqual(["Some text"]);
-    expect(hardCodedJsxText("<br />Hello <b>")).toEqual(["Hello"]);
+    expect(hardCodedJsxText("const a = <p><br />Hello <b /></p>;")).toEqual(["Hello"]);
+  });
+
+  it("catches text that starts like code, which a pattern on the source would let through", () => {
+    expect(hardCodedJsxText("const a = <p>); not code</p>;")).toEqual(["); not code"]);
+    expect(hardCodedJsxText("const a = <p>a => b</p>;")).toEqual(["a => b"]);
   });
 
   it.each(sourceFiles("src/ui").filter((f) => f.endsWith(".tsx")))("%s", (file) => {
@@ -96,7 +100,7 @@ describe("L10N-001: no hard-coded text in the UI", () => {
 
   it("index.html has no visible text outside the title", () => {
     const body = readFileSync("index.html", "utf8").split("<body>")[1]!;
-    expect(hardCodedJsxText(body)).toEqual([]);
+    expect(hardCodedJsxText(`const page = <>${body}</>;`)).toEqual([]);
   });
 });
 

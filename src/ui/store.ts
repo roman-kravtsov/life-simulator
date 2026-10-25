@@ -329,20 +329,21 @@ export function lifeOverview(life: LifeState, country: Country): LifeOverview {
 /** The strip under the header: where the person is on the line from birth to about eighty (UI-004). */
 export interface LifeStrip {
   age: number;
-  /** The age the line ends at: about 80, and 100 once the person is past 75, so the marker never runs off it. */
+  /** The age the line ends at: about 80, and five years past the person once they are older than 75, so the marker never runs off it or steps back. */
   end: number;
   /** The ages lived in the years of the key moments (SUM-003), which the strip marks with dots. */
   moments: number[];
 }
 
-/** The line ends at about 80, or at 100 for someone older than this. */
+/** The line ends at about 80, or five years past the person's age once they are older than this. */
 const STRIP_LONG_AGE = 75;
+const STRIP_SPARE_YEARS = 5;
 
 export function lifeStrip(life: LifeState): LifeStrip {
   const { age } = life.person;
   return {
     age,
-    end: age > STRIP_LONG_AGE ? 100 : 80,
+    end: age > STRIP_LONG_AGE ? age + STRIP_SPARE_YEARS : 80,
     moments: keyMoments(life.history).map((moment) => moment.age),
   };
 }

@@ -106,7 +106,8 @@ export function LifeHeader({
   const whyId = useId();
   const line = t("life.who.line", { age, where });
   return (
-    <header className={`${styles.header} ${narrow ? styles.narrow : ""}`}>
+    // Inside <main>, so a header has no banner role of its own; the screen reader still needs the landmark.
+    <header role="banner" className={`${styles.header} ${narrow ? styles.narrow : ""}`}>
       <div className={styles.row}>
         <span className={styles.wordmark}>{t("app.title")}</span>
         {!narrow && (
