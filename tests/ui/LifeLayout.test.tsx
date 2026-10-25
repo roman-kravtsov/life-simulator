@@ -344,27 +344,25 @@ describe("the column around you (UI-004)", () => {
     );
   });
 
-  it("holds a placeholder for the notes until reflection prompts arrive", async () => {
+  it("holds the notes: a field for a line of your own this year (UI-007)", async () => {
     const { user } = renderLife();
     await user.click(screen.getByRole("tab", { name: "Notes" }));
-    expect(screen.getByRole("tabpanel", { name: "Notes" })).toHaveTextContent(
-      "Your notes will gather here when reflection prompts arrive.",
-    );
+    const notes = within(screen.getByRole("tabpanel", { name: "Notes" }));
+    expect(notes.getByRole("textbox", { name: "A line for this year" })).toBeInTheDocument();
+    expect(notes.getByText("Nothing written yet.")).toBeInTheDocument();
   });
 
-  it("opens the notes from the Journal button and moves focus into them", async () => {
+  it("opens the notes from the Journal button and moves focus into their field", async () => {
     const { user } = renderLife();
     await user.click(screen.getByRole("button", { name: "Journal" }));
     expect(screen.getByRole("tab", { name: "Notes" })).toHaveAttribute("aria-selected", "true");
-    expect(
-      within(screen.getByRole("tabpanel", { name: "Notes" })).getByText(/Your notes will gather here/),
-    ).toHaveFocus();
+    const field = () =>
+      within(screen.getByRole("tabpanel", { name: "Notes" })).getByRole("textbox", { name: "A line for this year" });
+    expect(field()).toHaveFocus();
     // Pressed again with the tab already open, focus still goes back in.
     await user.click(screen.getByRole("tab", { name: "Family" }));
     await user.click(screen.getByRole("button", { name: "Journal" }));
-    expect(
-      within(screen.getByRole("tabpanel", { name: "Notes" })).getByText(/Your notes will gather here/),
-    ).toHaveFocus();
+    expect(field()).toHaveFocus();
   });
 });
 

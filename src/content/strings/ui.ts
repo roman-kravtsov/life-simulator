@@ -181,7 +181,37 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "country.income": "Each person in a middle household, a day (international dollars)",
   "country.source": "{source}, {year}",
   "country.none": "The game has no measured figures for this country to show here.",
-  "notes.placeholder": "Your notes will gather here when reflection prompts arrive.",
+
+  // The stats that moved over the step just taken, said to a screen reader in the story's live region (A11Y-002).
+  "life.statChange.rose.one": "{stat} rose by {count}.",
+  "life.statChange.rose.other": "{stat} rose by {count}.",
+  "life.statChange.fell.one": "{stat} fell by {count}.",
+  "life.statChange.fell.other": "{stat} fell by {count}.",
+
+  // A large family in the Family tab: the rest are one press away (UI-004).
+  "family.more.one": "And {count} more",
+  "family.more.other": "And {count} more",
+  "family.all.title": "Everyone in your life",
+  "family.all.close": "Close",
+
+  // Reflection prompts and the journal (UI-007, SUM-005). Always optional: nothing here asks for an answer.
+  "reflection.heading": "A pause",
+  "journal.left.one": "{count} character left",
+  "journal.left.other": "{count} characters left",
+  "journal.limit": "No characters left",
+  "journal.save": "Save",
+  "journal.saved": "Your line is saved.",
+  "journal.removed": "Your line was removed.",
+  "journal.empty": "There is nothing to save.",
+  "journal.age": "At {age}",
+  "notes.own": "A line for this year",
+  "notes.latest": "Latest lines",
+  "notes.none": "Nothing written yet.",
+  "notes.all.one": "Read the line in full",
+  "notes.all.other": "All {count} lines",
+  "notes.dialog.title": "Your journal",
+  "notes.dialog.close": "Close",
+  "summary.notes.heading": "Your notes",
 
   // When a screen cannot be shown (for example a saved life that names text this version no longer has).
   "app.error.title": "Something went wrong",

@@ -5,7 +5,20 @@ import type { CountryIndex } from "../engine/world/types";
 import type { EventRecord, YearRecord } from "../engine/types";
 import { formatNumber, formatPercent, pluralKey } from "../format";
 import { hasString, t } from "../i18n";
-import type { QuietRun } from "./store";
+import type { QuietRun, StatChange } from "./store";
+
+/** The stats that moved, for a screen reader (A11Y-002): "Health rose by 4. Happiness fell by 3." Empty when none did. */
+export function statChangesLine(changes: readonly StatChange[]): string {
+  return changes
+    .map(({ stat, delta }) => {
+      const size = Math.abs(delta);
+      return t(pluralKey(`life.statChange.${delta > 0 ? "rose" : "fell"}`, size), {
+        stat: t(`life.stat.${stat}`),
+        count: formatNumber(size),
+      });
+    })
+    .join(" ");
+}
 
 /** Odds as the lens speaks them (DEC-005): "about 1 in 3", never a decimal or a percentage. */
 export function oddsWords(band: OddsBand): string {

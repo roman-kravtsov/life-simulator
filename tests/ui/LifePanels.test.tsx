@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { conditionDefs } from "../../src/content/healthConditions";
@@ -323,6 +323,61 @@ describe("life panels", () => {
       renderLife({ age: 10, relationships: family });
       expect(within(panel("Family")).getByText("Kwame, your brother, died at 9")).toBeInTheDocument();
       expect(screen.getByText("Kwame, your brother, died at 9").closest("li")!.querySelector("meter")).toBeNull();
+    });
+
+    describe("a large family, which must fit the column without scrolling", () => {
+      // Fourteen people: two parents (one dead), eight brothers and sisters (two dead), four others (one dead).
+      const many = [
+        relative({ id: "m", kind: "mother", name: "Ama", age: 60 }),
+        relative({ id: "f", kind: "father", name: "Kofi", age: 64, alive: false }),
+        ...["Adwoa", "Akua", "Efua", "Esi", "Abla", "Afia"].map((name, index) =>
+          relative({ id: `s${index}`, name, age: 40 - index }),
+        ),
+        relative({ id: "d1", name: "Kwame", sex: "male", age: 20, alive: false }),
+        relative({ id: "d2", name: "Kojo", sex: "male", age: 12, alive: false }),
+        relative({ id: "p", kind: "spouse", name: "Yaa", sex: "female", age: 33 }),
+        relative({ id: "c1", kind: "child", name: "Nana", age: 8 }),
+        relative({ id: "c2", kind: "child", name: "Kwesi", sex: "male", age: 5 }),
+        relative({ id: "o", kind: "friend", name: "Abena", age: 30, alive: false }),
+      ];
+
+      it("shows eight people at most, the living first, and keeps every group's heading and the count of the whole", () => {
+        renderLife({ age: 34, relationships: many });
+        const family = within(panel("Family"));
+        expect(family.getAllByRole("listitem")).toHaveLength(8);
+        expect(family.getByRole("heading", { level: 3, name: "Parents" })).toBeInTheDocument();
+        expect(family.getByRole("heading", { level: 3, name: "You have 6 brothers and sisters" })).toBeInTheDocument();
+        expect(family.getByRole("heading", { level: 3, name: "Others in your life" })).toBeInTheDocument();
+        // Everyone shown is alive while living people are left out.
+        expect(family.queryByText(/died at/)).not.toBeInTheDocument();
+        expect(family.getByText(/^Ama,/)).toBeInTheDocument();
+        expect(family.getByText(/^Yaa,/)).toBeInTheDocument();
+        expect(family.getByRole("button", { name: "And 6 more" })).toBeInTheDocument();
+      });
+
+      it("lists everyone, in the same groups, in a dialog that Escape closes", async () => {
+        const user = renderLife({ age: 34, relationships: many });
+        const more = within(panel("Family")).getByRole("button", { name: "And 6 more" });
+        await user.click(more);
+        const dialog = within(screen.getByRole("dialog", { name: "Everyone in your life" }));
+        expect(dialog.getAllByRole("listitem")).toHaveLength(14);
+        // Under the dialog's own title, the groups are one level down.
+        expect(dialog.getAllByRole("heading", { level: 4 }).map((h) => h.textContent)).toEqual([
+          "Parents",
+          "You have 6 brothers and sisters",
+          "Others in your life",
+        ]);
+        expect(dialog.getByText("Kofi, your father, died at 64")).toBeInTheDocument();
+        expect(dialog.getByText("Kwame, your brother, died at 20")).toBeInTheDocument();
+        await user.keyboard("{Escape}");
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        await waitFor(() => expect(more).toHaveFocus());
+      });
+
+      it("offers no button when everyone fits", () => {
+        renderLife({ age: 10, relationships: family });
+        expect(within(panel("Family")).queryByRole("button", { name: /more$/ })).not.toBeInTheDocument();
+      });
     });
   });
 });

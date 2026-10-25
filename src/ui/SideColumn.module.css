@@ -117,15 +117,3 @@
   overflow-y: auto;
   scroll-behavior: smooth;
 }
-
-.notes {
-  margin: 0;
-  padding: 0.5rem;
-  outline: none;
-}
-
-/* Inside the box: the panel scrolls, so a ring drawn outside the text would be cut off. */
-.notes:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: -3px;
-}

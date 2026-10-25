@@ -4,10 +4,10 @@
 import type { ReactNode } from "react";
 import type { HelpTopic, Relationship, Sex } from "../engine/types";
 import type { Country, CountryIndex } from "../engine/world/types";
-import { capitalise, countryName, formatMoney, formatPercent, pluralKey } from "../format";
+import { capitalise, countryName, formatMoney, formatNumber, formatPercent, pluralKey } from "../format";
 import { t } from "../i18n";
 import { HelpNote } from "./HelpNote";
-import { Switch } from "./kit";
+import { Button, Dialog, Switch } from "./kit";
 import styles from "./LifePanels.module.css";
 import {
   closenessBand,
@@ -199,24 +199,72 @@ function siblingsHeading(siblings: readonly Relationship[]): string {
   return t(siblings.length === 0 ? "family.siblings.none" : "family.siblings.noneLiving");
 }
 
-/** Parents, brothers and sisters, and the others in the life (REL-001, FAM-002). */
-export function FamilyPanel({ family }: { family: FamilySummary }) {
+/** Most people the Family tab lists, so the tab fits a short window however large the family (UI-004). */
+const FAMILY_SHOWN = 8;
+
+/** The people the tab has room for when there are too many: the living first, then in the order of the groups. */
+function shownOf({ parents, siblings, others }: FamilySummary): Set<Relationship> | null {
+  const everyone = [...parents, ...siblings, ...others];
+  if (everyone.length <= FAMILY_SHOWN) return null;
+  const living = everyone.filter((r) => r.alive);
+  const dead = everyone.filter((r) => !r.alive);
+  return new Set([...living, ...dead].slice(0, FAMILY_SHOWN));
+}
+
+interface GroupsProps {
+  family: FamilySummary;
+  /** Only these people, in their groups; everyone when absent. */
+  shown?: Set<Relationship> | null;
+  /** h3 in the tab; h4 under a dialog's own title. */
+  level?: 3 | 4;
+}
+
+/** The groups, each with its heading, even when none of its people has room; the siblings heading counts them all. */
+function FamilyGroups({ family, shown, level = 3 }: GroupsProps) {
   const { parents, siblings, others } = family;
+  const Heading = `h${level}` as const;
+  const only = (people: readonly Relationship[]) => (shown ? people.filter((r) => shown.has(r)) : people);
   return (
     <>
       {parents.length > 0 && (
         <>
-          <h3 className={styles.group}>{t("family.parents")}</h3>
-          <RelativeList relatives={parents} />
+          <Heading className={styles.group}>{t("family.parents")}</Heading>
+          <RelativeList relatives={only(parents)} />
         </>
       )}
-      <h3 className={styles.group}>{siblingsHeading(siblings)}</h3>
-      <RelativeList relatives={siblings} />
+      <Heading className={styles.group}>{siblingsHeading(siblings)}</Heading>
+      <RelativeList relatives={only(siblings)} />
       {others.length > 0 && (
         <>
-          <h3 className={styles.group}>{t("family.others")}</h3>
-          <RelativeList relatives={others} />
+          <Heading className={styles.group}>{t("family.others")}</Heading>
+          <RelativeList relatives={only(others)} />
         </>
+      )}
+    </>
+  );
+}
+
+/**
+ * Parents, brothers and sisters, and the others in the life (REL-001, FAM-002). A large family shows eight people
+ * and a button that opens everyone in a dialog, so the tab never has to scroll.
+ */
+export function FamilyPanel({ family }: { family: FamilySummary }) {
+  const shown = shownOf(family);
+  const total = family.parents.length + family.siblings.length + family.others.length;
+  const hidden = shown ? total - shown.size : 0;
+  return (
+    <>
+      <FamilyGroups family={family} shown={shown} />
+      {hidden > 0 && (
+        <div className={styles.more}>
+          <Dialog
+            title={t("family.all.title")}
+            closeLabel={t("family.all.close")}
+            trigger={<Button>{t(pluralKey("family.more", hidden), { count: formatNumber(hidden) })}</Button>}
+          >
+            <FamilyGroups family={family} level={4} />
+          </Dialog>
+        </div>
       )}
     </>
   );

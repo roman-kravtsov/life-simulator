@@ -135,3 +135,9 @@
   background: var(--accent);
   border-radius: 999px;
 }
+
+/* The panel clips what overflows it, so the button keeps room round it for its focus ring. */
+.more {
+  margin-top: 0.4rem;
+  padding: 0 0.35rem 0.35rem;
+}

@@ -2,7 +2,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Button,
   ConfirmDialog,
@@ -178,6 +178,27 @@ describe("kit", () => {
     expect(field).toHaveValue("abcde");
     expect(field).toHaveAccessibleDescription("0 left");
     expect(onChange).toHaveBeenLastCalledWith("abcde");
+  });
+
+  it("TextField hands its input to a ref, so a control elsewhere can send focus to it, and can take a prose label", async () => {
+    const user = userEvent.setup();
+    function Sent() {
+      const input = useRef<HTMLInputElement>(null);
+      return (
+        <>
+          <Button onPress={() => input.current?.focus()}>Write</Button>
+          <TextField label="What did you notice first?" labelStyle="prose" inputRef={input} />
+        </>
+      );
+    }
+    render(<Sent />);
+    await user.tab();
+    await user.keyboard("{Enter}");
+    const field = screen.getByRole("textbox", { name: "What did you notice first?" });
+    expect(field).toHaveFocus();
+    await user.keyboard("Her laugh");
+    expect(field).toHaveValue("Her laugh");
+    expect(screen.getByText("What did you notice first?").tagName).toBe("LABEL");
   });
 
   it("TextField can be disabled", () => {

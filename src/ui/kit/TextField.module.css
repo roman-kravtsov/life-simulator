@@ -8,6 +8,13 @@
   font-weight: 600;
 }
 
+/* A question the field answers, set as a line of the story. */
+.prose {
+  font-family: var(--font-story);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
 .input {
   min-height: 2.75rem;
   width: 100%;

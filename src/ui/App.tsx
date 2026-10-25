@@ -26,6 +26,8 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
     card,
     plan,
     quietRun,
+    reflection,
+    statChanges,
     summary,
     resume,
     pastLives,
@@ -57,9 +59,12 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
         quietRun={quietRun}
         restored={restored}
         problem={problem}
+        reflection={reflection}
+        statChanges={statChanges}
         onToggleUsPrices={store.toggleUsPrices}
         onContinue={store.continueYear}
         onChoose={store.choose}
+        onJournal={store.writeJournal}
         onSettings={store.setSettings}
         onBack={store.backToStart}
       />,

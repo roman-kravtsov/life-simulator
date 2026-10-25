@@ -9,11 +9,12 @@ import { lifeExpectancy } from "../engine/mortality";
 import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
 import { buildRings, RING_THEMES, type Ring } from "../engine/rings";
 import { isSnapshotOf, readSave, restoreLife, toSave, type SaveFile } from "../engine/save";
-import { journalLine, reflectionPrompt, withJournalEntry } from "../engine/reflection";
+import { JOURNAL_MAX_LENGTH, journalLine, reflectionPrompt, withJournalEntry } from "../engine/reflection";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
 import { keyMoments, summarize, type LifeSummary } from "../engine/summary";
 import { conditionCatalog } from "../content/healthConditions";
+import { reflections } from "../content/reflections";
 import { CONTENT_VERSION } from "../content/version";
 import {
   DEFAULT_SETTINGS,
@@ -37,7 +38,13 @@ import { incomeBand, type IncomeBand } from "../format";
 import { noPersistence, type PastLife, type PastLifeListing, type Persistence } from "../save";
 
 // Screens read these through the store, so they never import the engine for a value.
-export { EPITAPH_MAX_LENGTH, RING_THEMES };
+export { EPITAPH_MAX_LENGTH, JOURNAL_MAX_LENGTH, RING_THEMES };
+
+/**
+ * The string key of a reflection prompt's words, for a journal line that answered it (UI-007, SUM-005); undefined
+ * when this version no longer has that prompt, so the line is shown without it.
+ */
+export const promptTextKey = (id: string): string | undefined => reflections.find((def) => def.id === id)?.text;
 
 export type Screen = "start" | "birth" | "life" | "sources" | "summary" | "past" | "settings";
 

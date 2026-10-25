@@ -569,14 +569,29 @@ test("the side columns fit a short window, in every tab, with a decision waiting
   const next = page.getByRole("button", { name: "Continue to the next year" });
   const decision = page.getByRole("heading", { level: 2, name: "A decision" });
   const heading = page.getByRole("heading", { level: 1 });
+  const pause = page.getByRole("region", { name: "A pause" });
+  // The Notes tab at its fullest: three long lines (the longest the journal keeps), with prompts where one is offered.
+  const long =
+    "The river was high that spring and we walked the long way round, past the school and the market. ".repeat(3);
+  let written = 0;
   let seenDecision = false;
   let checked = 0;
+  let checkedWithNotes = 0;
   for (let step = 0; step < 40; step++) {
     if (!(await next.isVisible())) break;
     await next.click();
     await expect(continueReady(page).or(decision)).toBeVisible();
     const waiting = await decision.isVisible();
     seenDecision ||= waiting;
+    if (!waiting && written < 3) {
+      const field = (await pause.isVisible())
+        ? pause.getByRole("textbox")
+        : (await openSideTab(page, "around", "Notes")).getByRole("textbox", { name: "A line for this year" });
+      await field.fill(long);
+      await field.press("Enter");
+      await expect(page.getByText("Your line is saved.")).toBeVisible();
+      written++;
+    }
     if (step % 3 === 0 || waiting) {
       for (const height of [640, 600]) {
         await page.setViewportSize({ width: 1440, height });
@@ -584,6 +599,7 @@ test("the side columns fit a short window, in every tab, with a decision waiting
       }
       await page.setViewportSize({ width: 1440, height: 900 });
       checked++;
+      if (written >= 3) checkedWithNotes++;
     }
     if (waiting) {
       await openChoice(page).focus();
@@ -593,6 +609,7 @@ test("the side columns fit a short window, in every tab, with a decision waiting
     if (Number(/Age (\d+)/.exec((await heading.textContent()) ?? "")?.[1]) >= 30) break;
   }
   expect(checked).toBeGreaterThan(3);
+  expect(checkedWithNotes, "the Notes tab should be checked with three lines written").toBeGreaterThan(0);
   expect(seenDecision, "this life should meet a decision").toBe(true);
   expect(errors).toEqual([]);
 });

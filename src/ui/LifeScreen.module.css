@@ -68,3 +68,11 @@
 .events li {
   margin-bottom: 0.5rem;
 }
+
+/* The reflection prompt after the year: set apart by a rule, calm, and at the reading measure. */
+.pause {
+  margin: 1rem 0 0.5rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
