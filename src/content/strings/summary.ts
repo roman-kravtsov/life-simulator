@@ -1,4 +1,5 @@
-// Text for the end of a life (SUM-001 to SUM-004): the words for what shaped it and for each ring theme.
+// Text for the end of a life (SUM-001 to SUM-004, DEATH-003, DEATH-004): the words for what shaped it, for each
+// ring theme, for the summary screen and for the epitaph.
 export const summaryStrings: Readonly<Record<string, string>> = {
   "summary.shaped.health.circumstance":
     "Most of your health came from where and when you were born: the food, the care within reach, the years you were handed.",
@@ -42,4 +43,92 @@ export const summaryStrings: Readonly<Record<string, string>> = {
   "ring.theme.illness": "Illness",
   "ring.theme.move": "A move",
   "ring.theme.plain": "An ordinary year",
+
+  "ring.felt.hard": "A hard year",
+  "ring.felt.heavy": "A heavy year",
+  "ring.felt.gentle": "A gentle year",
+  "ring.felt.happy": "A happy year",
+
+  "summary.subtitle": "{country}, {born} to {died}. Died at {age}.",
+
+  "summary.expectancy.heading": "How long you lived",
+  "summary.someone.female": "a woman",
+  "summary.someone.male": "a man",
+  "summary.people.female": "women",
+  "summary.people.male": "men",
+  "summary.years.underOne": "less than a year",
+  "summary.expectancy.intro": "In {country}, {someone} can expect to live about {expected} ({source}, {year}).",
+  "summary.lived.shorter": "You lived {years}, {difference} fewer.",
+  "summary.lived.similar": "You lived {years}, about as long.",
+  "summary.lived.longer": "You lived {years}, {difference} more.",
+  "summary.reached": "About {count} in 100 {people} there live to {age}.",
+  "summary.reached.few": "Fewer than 1 in 100 {people} there live to {age}.",
+
+  "summary.rings.heading": "Your life in rings",
+  "summary.rings.label.one": "The ring of {name}'s life: one year, at age {last}.",
+  "summary.rings.label.other":
+    "The rings of {name}'s life: {count} rings, one for each year, from age {first} to age {last}.",
+  "summary.rings.caption":
+    "Each ring is one year, the first at the centre. Thicker rings were happier years. The colour and the pattern say what the year was mostly about, and the numbers mark the key moments below.",
+  "summary.rings.legend": "What each colour and pattern means",
+  "summary.rings.table": "Year by year",
+  "summary.rings.table.caption": "How each year of the life is drawn",
+  "summary.rings.col.age": "Age",
+  "summary.rings.col.theme": "What the year was about",
+  "summary.rings.col.felt": "How the year felt",
+  "summary.rings.col.moment": "Key moment",
+  "summary.rings.moment": "Moment {number}",
+
+  "summary.moments.heading": "Key moments",
+  "summary.moments.intro": "The years that mattered most, in order. The numbers match the marks on the rings.",
+  "summary.moment": "At {age}: {text}",
+
+  "summary.shaped.heading": "What shaped your life",
+  "summary.shaped.how": "How this is worked out",
+  "summary.shaped.how.one":
+    "Everything that moved your health, happiness, belonging and skills carries a tag in the game: circumstance (where, when and into what you were born), choice (what you decided and where you put your attention) or chance (what happened to you, and the luck of each year).",
+  "summary.shaped.how.two":
+    "The game follows each of these through the years and compares how much each one moved a stat, up or down. These are shares of what moved you, in the game's own model. They are not credit or blame.",
+
+  "summary.facts.heading": "Your life in brief",
+  "summary.facts.education.none": "You did not complete a level of school.",
+  "summary.facts.education.primary": "You finished primary school.",
+  "summary.facts.education.lower-secondary": "You finished lower secondary school.",
+  "summary.facts.education.upper-secondary": "You finished upper secondary school.",
+  "summary.facts.education.tertiary": "You finished higher education.",
+  "summary.facts.literate.yes": "You could read and write.",
+  "summary.facts.literate.no": "You never learned to read well.",
+  "summary.facts.work.none": "You were never in paid work.",
+  "summary.facts.work": "You spent {years} in paid work.",
+  "summary.facts.work.sector": "You spent {years} in paid work, last in {sector}.",
+  "summary.facts.children.none": "You had no children.",
+  "summary.facts.children.one": "You had {count} child.",
+  "summary.facts.children.other": "You had {count} children.",
+  "summary.facts.siblings.none": "You had no brothers or sisters.",
+  "summary.facts.siblings.one": "You had {count} brother or sister.",
+  "summary.facts.siblings.other": "You had {count} brothers and sisters.",
+  "summary.facts.partner.yes": "You had a partner or spouse in your life.",
+  "summary.facts.partner.no": "You did not have a partner or spouse.",
+  "summary.facts.conditions": "You lived with {list}.",
+  "summary.facts.moves.one": "You moved between the countryside and a town or city once.",
+  "summary.facts.moves.other": "You moved between the countryside and a town or city {count} times.",
+
+  "summary.lastYear.heading": "Your last year",
+
+  "summary.epitaph.heading": "A few words",
+  "summary.epitaph.intro":
+    "If you like, leave a few words for {name}. They are kept with this life, in this browser only.",
+  "summary.epitaph.label": "A few words for {name}",
+  "summary.epitaph.left.one": "{count} character left",
+  "summary.epitaph.left.other": "{count} characters left",
+  "summary.epitaph.save": "Save",
+  "summary.epitaph.edit": "Edit",
+  "summary.epitaph.cancel": "Cancel",
+  "summary.epitaph.saved": "Your words for {name} are saved.",
+  "summary.epitaph.removed": "The words for {name} were removed.",
+
+  "summary.seed": "The seed of this life is {seed}. It is what the game used to draw this birth.",
+  "summary.past": "Past lives",
+  "summary.problem":
+    "This life could not be kept in your past lives: this browser's storage would not take it. It may be full, blocked or turned off.",
 };

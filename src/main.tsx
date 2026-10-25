@@ -2,12 +2,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { loadCountry, loadIndex } from "./data";
 import "./styles.css";
+import { browserPersistence } from "./save";
 import { App } from "./ui/App";
 import { browserSeed, createGameStore } from "./ui/store";
 import { applyStoredTheme } from "./ui/theme";
 
 applyStoredTheme();
-const store = createGameStore(browserSeed, { loadIndex, loadCountry });
+const store = createGameStore(browserSeed, { loadIndex, loadCountry }, browserPersistence());
+store.init();
 
 createRoot(document.getElementById("main")!).render(
   <StrictMode>
