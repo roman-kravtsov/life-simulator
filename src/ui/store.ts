@@ -729,13 +729,13 @@ export function createGameStore(
       await refreshPast(mine);
     },
     async deleteAllData() {
+      attempt++;
       try {
         await persistence.deleteAll();
       } catch {
         set({ ...snapshot, problem: "archive" });
         return;
       }
-      attempt++;
       shown = null;
       createdAt = undefined;
       yearsFrom = 0;

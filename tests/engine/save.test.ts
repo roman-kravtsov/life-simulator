@@ -267,3 +267,92 @@ describe("SAVE-005: restoring a life, from the snapshot or by replay", () => {
     expect(next(fromSnapshot)).toEqual(next(fromReplay));
   });
 });
+
+describe("the shape of a saved life", () => {
+  const topLevel = (life: LifeState) => Object.keys(life).sort();
+
+  // A snapshot is trusted over a replay (restoreLife), so a change to the shape of a life in progress strands
+  // every saved one: the first `advance` on it would throw. When this fails, add a migration in `MIGRATIONS`
+  // (or make the new field optional and read it defensively), bump `SCHEMA_VERSION` if a migration was added,
+  // then update the pin.
+  it("is pinned, so that changing it is a decision about saves already made", () => {
+    const born = newLife({ seed: "shape", country, settings: { pace: "every-year" } });
+    const lived = lifeAt(30, "shape");
+    const person = (life: LifeState) => Object.keys(life.person).sort();
+    expect({
+      schema: SCHEMA_VERSION,
+      born: topLevel(born),
+      lived: topLevel(lived),
+      person: person(lived),
+      year: Object.keys(lived.history[lived.history.length - 1]!).sort(),
+      saveFile: Object.keys(saved(lived)).sort(),
+    }).toMatchInlineSnapshot(`
+      {
+        "born": [
+          "decisions",
+          "history",
+          "person",
+          "seed",
+          "settings",
+          "startSettings",
+        ],
+        "lived": [
+          "decisions",
+          "history",
+          "person",
+          "seed",
+          "settings",
+          "startSettings",
+        ],
+        "person": [
+          "age",
+          "alive",
+          "birthYear",
+          "conditions",
+          "countryIso3",
+          "education",
+          "flags",
+          "focus",
+          "location",
+          "marriageDraw",
+          "money",
+          "name",
+          "relationships",
+          "scheduled",
+          "sex",
+          "stage",
+          "stats",
+          "traits",
+          "work",
+        ],
+        "saveFile": [
+          "contentVersion",
+          "countryIso3",
+          "createdAt",
+          "dataVersion",
+          "decisions",
+          "planLog",
+          "schemaVersion",
+          "seed",
+          "settings",
+          "settingsLog",
+          "snapshot",
+          "updatedAt",
+          "waiting",
+          "years",
+        ],
+        "schema": 1,
+        "year": [
+          "age",
+          "drift",
+          "events",
+          "plan",
+          "stage",
+          "stageChanged",
+          "stats",
+          "theme",
+        ],
+      }
+    `);
+  });
+});
