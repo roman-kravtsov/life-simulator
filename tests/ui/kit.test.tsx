@@ -2,7 +2,25 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Button, Dialog, Slider, Switch, Tooltip } from "../../src/ui/kit";
+import { useState } from "react";
+import { Button, Dialog, Slider, Stepper, Switch, Tooltip } from "../../src/ui/kit";
+
+function Counted({ max = 3, onChange }: { max?: number; onChange?: (value: number) => void }) {
+  const [value, setValue] = useState(1);
+  return (
+    <Stepper
+      label="Learn"
+      description="Skills and school."
+      value={value}
+      minValue={0}
+      maxValue={max}
+      onChange={(next) => {
+        setValue(next);
+        onChange?.(next);
+      }}
+    />
+  );
+}
 
 describe("kit", () => {
   it("Button fires onPress by mouse and by keyboard", async () => {
@@ -64,5 +82,41 @@ describe("kit", () => {
     expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("Stepper is a labelled number field with a description, changed by arrow keys and stopped at its limits", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Counted max={2} onChange={onChange} />);
+    const spin = screen.getByRole("textbox", { name: "Learn" });
+    expect(spin).toHaveAccessibleDescription("Skills and school.");
+    expect(spin).toHaveValue("1");
+    await user.tab();
+    expect(spin).toHaveFocus();
+    await user.keyboard("{ArrowUp}");
+    expect(spin).toHaveValue("2");
+    await user.keyboard("{ArrowUp}");
+    expect(spin).toHaveValue("2");
+    await user.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}");
+    expect(spin).toHaveValue("0");
+    expect(onChange).toHaveBeenLastCalledWith(0);
+  });
+
+  it("Stepper has plus and minus buttons for touch, which stop working at the limits", async () => {
+    const user = userEvent.setup();
+    render(<Counted max={2} />);
+    const [minus, plus] = screen.getAllByRole("button");
+    await user.click(plus!);
+    expect(screen.getByRole("textbox", { name: "Learn" })).toHaveValue("2");
+    expect(plus).toBeDisabled();
+    await user.click(minus!);
+    await user.click(minus!);
+    expect(screen.getByRole("textbox", { name: "Learn" })).toHaveValue("0");
+    expect(minus).toBeDisabled();
+  });
+
+  it("Stepper can be disabled", () => {
+    render(<Stepper label="Earn" value={0} minValue={0} maxValue={0} isDisabled />);
+    expect(screen.getByRole("textbox", { name: "Earn" })).toBeDisabled();
   });
 });

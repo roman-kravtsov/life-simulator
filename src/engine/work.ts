@@ -3,9 +3,11 @@
 // their sex is above their attachment. So a country's participation rate holds for its people, an
 // individual's working life has one shape (in, perhaps out for a while, in again, out at the end),
 // and nobody flickers between jobs from one year to the next. The first job, its sector and whether
-// it is formal, is drawn once. Unemployment spells and job changes arrive with CAREER-003 and 005.
+// it is formal, is drawn once. A worker may lose the job and spend a spell unemployed (CAREER-003);
+// job changes arrive with CAREER-005.
 import { clamp } from "./dist";
 import { attainmentShares, inSchoolShare, literacyChance } from "./education";
+import { FOCUS_EFFECT } from "./focus";
 import type { PendingEvent } from "./events";
 import type { Rng } from "./rng";
 import type { EducationLevel, Person, Sector, Sex, WorkStatus } from "./types";
@@ -261,16 +263,53 @@ export interface WorkStep {
 }
 
 /**
+ * The chance an unemployed person finds work within a year. Authored: it makes a spell last about two
+ * years, which is what the yearly turn can show. Points on Earn above the default plan (the job
+ * search) raise it.
+ */
+export const FINDING_RATE = 0.45;
+
+const earnUnits = (person: Person) => person.focus?.earn ?? 0;
+
+export function findingChance(person: Person): number {
+  return clamp(FINDING_RATE * (1 + FOCUS_EFFECT.earn.finding * earnUnits(person)), 0.05, 0.95);
+}
+
+/**
+ * The yearly chance a worker loses the job. With spells ending at FINDING_RATE, a loss rate of
+ * u x finding / (1 - u) holds the share of the labour force out of work at the country's rate u.
+ */
+export function jobLossChance(person: Person, country: Country): number {
+  const u = clamp(country.work.unemployment.value, 0, 0.6);
+  const base = (u * FINDING_RATE) / (1 - u);
+  return clamp(base * Math.max(0.3, 1 - FOCUS_EFFECT.earn.losing * earnUnits(person)), 0, 0.9);
+}
+
+/**
  * One year of work. A first job is drawn the first year the person is in the labour force.
- * Always draws two numbers (sector, formal or informal), whatever the person is doing.
+ * A worker may lose the job, and an unemployed person may find one (CAREER-003): those in the labour
+ * force who are not employed count towards unemployment, and a first-time entrant starts out
+ * unemployed at the country's rate. Always draws three numbers (sector, formal or informal, the spell).
  */
 export function stepWork(person: Person, country: Country, rng: Rng): WorkStep {
   const sectorRoll = rng.next();
   const informalRoll = rng.next();
+  const spellRoll = rng.next();
   const events: PendingEvent[] = [];
   let { work } = person;
   const before = work.status;
   let status = workStatusFor(person, country);
+
+  if (isWorking(status)) {
+    // In the labour force. Whether the person is at work or between jobs this year:
+    if (before === "unemployed") {
+      if (spellRoll >= findingChance(person)) status = "unemployed";
+    } else if (isWorking(before)) {
+      if (spellRoll < jobLossChance(person, country)) status = "unemployed";
+    } else if (work.yearsWorked === 0 && work.sector === undefined) {
+      if (spellRoll < clamp(country.work.unemployment.value, 0, 0.6)) status = "unemployed";
+    }
+  }
 
   if (isWorking(status) && work.sector === undefined) {
     const odds = sectorOdds(person, country);
@@ -285,7 +324,28 @@ export function stepWork(person: Person, country: Country, rng: Rng): WorkStep {
       cause: "circumstance",
       effects: [{ stat: "happiness", add: 1 }],
     });
+  } else if (status === "unemployed" && before !== "unemployed") {
+    events.push({
+      id: "work.job_lost",
+      textKey: isWorking(before) ? "event.work.job_lost" : "event.work.no_work_yet",
+      cause: "chance",
+      effects: [{ stat: "happiness", add: isWorking(before) ? -3 : -1 }],
+    });
+  } else if (isWorking(status) && before === "unemployed") {
+    events.push({
+      id: "work.job_found",
+      textKey: "event.work.job_found",
+      cause: "chance",
+      effects: [{ stat: "happiness", add: 3 }],
+    });
   } else if (isWorking(before) && !isWorking(status)) {
+    events.push(
+      status === "retired"
+        ? { id: "work.retires", textKey: "event.work.retires", cause: "circumstance", effects: [] }
+        : { id: "work.stops", textKey: "event.work.stops", cause: "circumstance", effects: [] },
+    );
+  }
+  if (before === "unemployed" && !isWorking(status) && status !== "unemployed") {
     events.push(
       status === "retired"
         ? { id: "work.retires", textKey: "event.work.retires", cause: "circumstance", effects: [] }

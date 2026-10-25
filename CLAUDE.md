@@ -2,9 +2,9 @@
 
 ## The game
 
-Birthright is a browser game in which the player lives one person's life from birth to death. The birthplace, family and household wealth are drawn by the real odds of birth today, using public statistics from the UN, World Bank, WHO and others. Each year the player spends a few focus points (Learn, Earn, Health, Bond, Rest) and faces events and decisions, and the outcomes are shaped by real data on schooling, work, income, marriage, illness and death in that country. Choices shift the odds but never escape them, and an "odds lens" shows by how much. The tone is reflective and literary, hard topics are handled honestly but never graphically, and at the end the life is shown as tree rings with a summary of what came from chance, choice and circumstance. It is free, non-commercial, runs entirely in the browser and saves locally.
+Birthright is a browser game in which the player lives one person's life from birth to death. The birthplace, family and household wealth are drawn by the real odds of birth today, using public statistics from the UN, World Bank, WHO and others. Each year the player spends a few focus points (Learn, Earn, Health, Belonging, Rest) and faces events and decisions, and the outcomes are shaped by real data on schooling, work, income, marriage, illness and death in that country. Choices shift the odds but never escape them, and an "odds lens" shows by how much. The tone is reflective and literary, hard topics are handled honestly but never graphically, and at the end the life is shown as tree rings with a summary of what came from chance, choice and circumstance. It is free, non-commercial, runs entirely in the browser and saves locally.
 
-The visible stats are Health, Happiness, Belonging and Skills (ids `health`, `happiness`, `belonging`, `skills`). They are not the same as the yearly focus areas; Bond is a focus area that raises Belonging. Use these names everywhere.
+The visible stats are Health, Happiness, Belonging and Skills (ids `health`, `happiness`, `belonging`, `skills`). The yearly focus areas are Learn, Earn, Health, Belonging and Rest (ids `learn`, `earn`, `health`, `belonging`, `rest`, Roman 2026-10-24). Belonging is both a stat and a focus area: the Belonging focus raises the Belonging stat, and the context says which is meant. Never call the focus area "Bond" (nor stat or focus "bonds"): Belonging is the domain name. Use these names everywhere.
 
 ## Keeping these conventions
 
@@ -21,28 +21,35 @@ scripts/data/       data pipeline: lib/ (cache, csv), extract/ (one file per pub
                     Downloads go to the git-ignored .cache/data; the exclusion report is docs/data-report.md
 src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   rng.ts            seeded PRNG and independent streams per subsystem and period
-  life.ts           public API: newLife({seed, country}), advance(state, input, country) -> new state
-                    (the yearly turn, design 3.2); the caller loads the country, the engine does no I/O
+  life.ts           public API: newLife({seed, country, settings?}), advance(state, input, country) -> new state
+                    (the yearly turn, design 3.2: `continue` may stop at `state.turn` for a decision and `choose` answers it),
+                    advanceAuto (default course at every decision), decisionCard, withSettings; the caller loads the country,
+                    the engine does no I/O
   person.ts, family.ts, money.ts   the newborn, parents and siblings, family ageing and deaths, household and adult percentile, income, savings and debt
   education.ts, work.ts   school levels and literacy, participation, sectors and informal work, retirement (each calibrated per country)
   health.ts, relationships.ts   condition rules (onset, progression, hazard) and relationship closeness; the conditions themselves are content
   drift.ts, mortality.ts, checks.ts   stat drift and health norm, life-table mortality and cause of death, statistical checks
-  conditions.ts, events.ts   the event condition language, event schema, catalog and selection
+  conditions.ts, events.ts   the event condition language, event schema, catalog and selection (pools, pacing, roles, softening)
+  focus.ts          the yearly plan: five focus areas, three points, diminishing returns, points taken by circumstance
+  decisions.ts      choices with outcomes, locks, costs and the odds lens; systemDecisions.ts is the engine's own (school, care, partners)
+  partnership.ts    marriage-age model, courtship, arranged marriage under 18, fertility
+  validate.ts       content validation (ADMIN-001): validateEvents, validateConditions, run over what ships in the tests
   calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
   dist.ts           small distribution helpers (normal, clamp)
   seed.ts           readable seeds ("amber-river-4821")
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
   world/            country schema (types.ts), validator, birth draw, data loader
-src/content/        game content as data: strings (en.ts), events/ (typed event defs), healthConditions.ts, names.ts (name lists by region)
+src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/events/*.ts and strings/ui.ts),
+                    events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region)
 src/data.ts         loads the baked country files in the browser (fetch), outside the engine
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
-  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, toggleUsPrices);
+  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, choose, setSettings, toggleUsPrices);
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
-  kit/              styled wrappers around React Aria Components (Button, Switch, Slider, Tooltip, Dialog)
+  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog)
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
@@ -51,7 +58,7 @@ e2e/                Playwright: full-loop tests at phone and desktop widths
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
-- **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision log. Saves (M6) store those plus a snapshot, so any life can be replayed exactly.
+- **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision, plan and settings logs. Saves (M6) store those plus a snapshot, so any life can be replayed exactly.
 - **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, Vitest, React Testing Library, Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
 
 ## Data pipeline
@@ -82,8 +89,9 @@ Read these docs before starting work:
 
 - **Engine (`src/engine/`) is pure TypeScript:** no React, no DOM, no I/O. The UI talks to it through `src/ui/store.ts`.
 - **No unseeded randomness in the engine.** Never use `Math.random` or `crypto` there; draw from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. Use a separate stream per subsystem so that new content does not shift other rolls. ESLint and a guard test enforce this.
-- **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `siblings`, `siblings:birth`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `mortality`, `cause`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
-- **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
+- **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `siblings`, `siblings:birth`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `care`, `friends`, `romance`, `fertility`, `outcomes`, `mortality`, `cause`, `autoplay`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
+- **Events and decisions are content** (`src/content/events/<stage>.ts`, strings in `src/content/strings/events/`). `tests/engine/validate.test.ts` runs `validateEvents` over everything that ships: text, soft text, note, choice, outcome, lens and lock keys must exist, outcome probabilities must sum to 1, a choice with several outcomes needs a lens phrase for each, severe and difficult events need a `helpTopic` and a `softText`, `world` paths must resolve, and roles, follow-ups and illness ids must exist. A repeatable notable event needs `cooldownYears` of at least 6 unless it is `quiet` or `once` (`tests/engine/content.test.ts`, which also holds the size and pacing targets). Text may only name the event's roles (`{friend}`). One decision a year at most; the odds lens reads the engine's own probabilities, never a separate number.
+- **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, the share out of work, marriage ages, children per woman, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.
 - **Engine state is immutable:** functions return new state and never mutate their inputs.

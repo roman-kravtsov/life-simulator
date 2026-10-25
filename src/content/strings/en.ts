@@ -1,5 +1,26 @@
 // English strings. Keys are grouped by screen.
+import { adolescenceStrings } from "./events/adolescence";
+import { adulthoodStrings } from "./events/adulthood";
+import { earlyStrings } from "./events/early";
+import { elderStrings } from "./events/elder";
+import { lensStrings } from "./events/lens";
+import { midlifeStrings } from "./events/midlife";
+import { shockStrings } from "./events/shocks";
+import { youthStrings } from "./events/youth";
+import { systemStrings } from "./systems";
+import { uiStrings } from "./ui";
+
 export const en: Readonly<Record<string, string>> = {
+  ...systemStrings,
+  ...uiStrings,
+  ...earlyStrings,
+  ...adolescenceStrings,
+  ...youthStrings,
+  ...adulthoodStrings,
+  ...midlifeStrings,
+  ...elderStrings,
+  ...shockStrings,
+  ...lensStrings,
   "app.title": "Birthright",
   "app.subtitle": "a life simulation",
   "app.skipToContent": "Skip to content",
@@ -123,8 +144,6 @@ export const en: Readonly<Record<string, string>> = {
   "event.adolescence.growth_spurt": "You grow out of your clothes and into a body that is yours only by half.",
   "event.youth.restless_year":
     "You are restless. You read what you can find, ask questions nobody has time for, and sleep badly with the window open.",
-  "event.adulthood.unemployed_year":
-    "For a stretch of the year there is no steady work, and the days lose their edges.",
   "event.adulthood.hard_times": "Money is tight everywhere. People lean on each other more than they say.",
   "event.adulthood.quiet_evening":
     "One evening the work is done early. You sit outside while the light goes, and nothing is asked of you.",

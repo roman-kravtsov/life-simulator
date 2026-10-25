@@ -5,6 +5,7 @@
 // own odds are shifted by household, place and aptitude, and the shifts are scaled so that the
 // average over the country's children still hits the published rate (the model below).
 import { clamp } from "./dist";
+import { FOCUS_EFFECT } from "./focus";
 import type { Effect } from "./effects";
 import type { PendingEvent } from "./events";
 import type { Rng } from "./rng";
@@ -64,7 +65,9 @@ export function leavingFactor(person: Person, country: Country): number {
   return (
     householdFactor(strengthOf(country), person.money.householdPercentile) *
     locationFactor(country.demography.urbanShare.value, person.location === "urban") *
-    (1 - APTITUDE_EFFECT * person.traits.aptitude)
+    (1 - APTITUDE_EFFECT * person.traits.aptitude) *
+    // Points on Learn above the default plan keep a child in school; fewer let them slip (DEC-003).
+    Math.max(0.4, 1 - FOCUS_EFFECT.learn.leaving * (person.focus?.learn ?? 0))
   );
 }
 
@@ -227,6 +230,49 @@ export function literacyChance(sex: Sex, country: Country, completedPrimary: boo
 
 const happier = (add: number): Effect => ({ stat: "happiness", add });
 
+/** A child this old or older who is about to leave school for want of money may get a say (EDU-004). */
+export const LEAVE_DECISION_AGE = 12;
+/** Households above this percentile do not lose a child to the pressure to work: the child just stops. */
+export const LEAVE_DECISION_MAX_PERCENTILE = 70;
+
+/**
+ * The chance a child's effort to stay in school works when the household is pulling the other way
+ * (EDU-004): better off, abler and more studious children manage it more often; a working child
+ * less. Authored, bounded away from certainty either way.
+ */
+export function stayOdds(person: Person): number {
+  return clamp(
+    0.55 -
+      (person.flags.childLabour === true ? 0.25 : 0) +
+      0.004 * (person.money.householdPercentile - 40) +
+      0.05 * person.traits.aptitude +
+      0.1 * (person.focus?.learn ?? 0),
+    0.1,
+    0.9,
+  );
+}
+
+/** The years a tertiary course runs. */
+const TERTIARY_YEARS = LEVELS[3]!.to - LEVELS[3]!.from + 1;
+
+/** The chance of finishing a tertiary course once enrolled, from the same yearly odds the model rolls (EDU-003). */
+export function tertiaryFinishOdds(person: Person, country: Country): number {
+  const yearly = continuationProbability(
+    { ...person, education: { ...person.education, inSchool: true } },
+    country,
+    "tertiary",
+  );
+  return yearly ** TERTIARY_YEARS;
+}
+
+/** The chance a scholarship comes through (EDU-003): skills and aptitude count, and it is never likely. Authored. */
+export function scholarshipOdds(person: Person): number {
+  return clamp(0.08 + 0.012 * (person.stats.skills - 50) + 0.04 * person.traits.aptitude, 0.03, 0.6);
+}
+
+/** Skills a school leaver needs before a scholarship is within reach. */
+export const SCHOLARSHIP_MIN_SKILLS = 55;
+
 export interface EducationStep {
   person: Person;
   events: PendingEvent[];
@@ -234,9 +280,17 @@ export interface EducationStep {
 
 /**
  * One year of school. A child starts at six; each year they stay or leave by their odds, and at the
- * last year of a level that level is completed. Always draws two numbers (stay or leave, literacy).
+ * last year of a level that level is completed. When `open` (the year has room for a decision), an
+ * older child from a household under pressure who is about to leave is asked (EDU-004), and a
+ * school leaver who has finished upper secondary school is asked about tertiary school (EDU-003).
+ * Always draws two numbers (stay or leave, literacy).
  */
-export function stepEducation(person: Person, country: Country, rng: Rng): EducationStep {
+export function stepEducation(
+  person: Person,
+  country: Country,
+  rng: Rng,
+  { open = false }: { open?: boolean } = {},
+): EducationStep {
   const stay = rng.next();
   const literacy = rng.next();
   const events: PendingEvent[] = [];
@@ -260,16 +314,29 @@ export function stepEducation(person: Person, country: Country, rng: Rng): Educa
       // A level the country gives no chance to finish is not entered: no year counted, nothing to tell.
       education = { ...education, inSchool: false };
     } else if (stay >= chance) {
-      education = { ...education, inSchool: false, years: education.years + 1 };
-      events.push({
-        id: "school.left",
-        textKey: `event.school.left.${level.id}`,
-        cause: "circumstance",
-        effects: [happier(-2)],
-      });
+      if (open && age >= LEAVE_DECISION_AGE && person.money.householdPercentile <= LEAVE_DECISION_MAX_PERCENTILE) {
+        // The child is still at school this year; the choice decides whether they stay.
+        events.push({
+          id: LEAVE_DECISION,
+          textKey: `event.edu.leave_school_for_work.${person.flags.childLabour === true ? "labour" : "pressure"}`,
+          cause: "circumstance",
+          effects: [],
+          ask: { eventId: LEAVE_DECISION, payload: { level: level.id } },
+        });
+      } else {
+        education = { ...education, inSchool: false, years: education.years + 1 };
+        events.push({
+          id: "school.left",
+          textKey: `event.school.left.${level.id}`,
+          cause: "circumstance",
+          effects: [happier(-2)],
+        });
+      }
     } else {
       education = { ...education, years: education.years + 1 };
       if (age === level.to) {
+        const tertiaryOpen =
+          level.id === "upper-secondary" && open && modelFor(country, person.sex).levels[3]!.chance > 0;
         education = { ...education, level: level.id, inSchool: level.id !== "tertiary" };
         events.push({
           id: "school.completed",
@@ -277,8 +344,20 @@ export function stepEducation(person: Person, country: Country, rng: Rng): Educa
           cause: "chance",
           effects: [happier(3)],
         });
+        if (tertiaryOpen) {
+          events.push({
+            id: HIGHER_DECISION,
+            textKey: "event.edu.higher_education",
+            cause: "chance",
+            effects: [],
+            ask: { eventId: HIGHER_DECISION },
+          });
+        }
       }
     }
   }
   return { person: { ...person, education }, events };
 }
+
+export const LEAVE_DECISION = "edu.leave_school_for_work";
+export const HIGHER_DECISION = "edu.higher_education";

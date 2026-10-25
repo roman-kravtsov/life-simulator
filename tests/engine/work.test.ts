@@ -5,6 +5,9 @@ import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { EducationLevel, Person, Sector } from "../../src/engine/types";
 import {
+  FINDING_RATE,
+  findingChance,
+  jobLossChance,
   jobHealthPenalty,
   informalOdds,
   participationRate,
@@ -97,7 +100,7 @@ describe("stepWork", () => {
   const prime = (overrides: Partial<Person> = {}) => worker(25, 0.01, overrides);
   const step = (person: Person, seed = "w") => stepWork(person, country, createRng(seed));
 
-  it("draws exactly two numbers whatever the person is doing", () => {
+  it("draws exactly three numbers whatever the person is doing", () => {
     for (const [age, attachment] of [
       [3, 0.5],
       [30, 0.01],
@@ -107,6 +110,7 @@ describe("stepWork", () => {
       const rng = createRng(`two-${age}`);
       const control = createRng(`two-${age}`);
       stepWork(worker(age, attachment), country, rng);
+      control.next();
       control.next();
       control.next();
       expect(rng.next()).toBe(control.next());
@@ -245,5 +249,111 @@ describe("sector and informality (CAREER-002, WORLD-009)", () => {
         at(70, { work: { status: "retired", sector: "industry", formal: true, yearsWorked: 40, attachment: 0.1 } }),
       ),
     ).toBe(0);
+  });
+});
+
+describe("unemployment spells (CAREER-003)", () => {
+  const employed = (overrides: Partial<Person> = {}) =>
+    at(35, {
+      work: { status: "employed", sector: "services", formal: true, yearsWorked: 10, attachment: 0.01 },
+      ...overrides,
+    });
+  const jobless = () =>
+    employed({ work: { status: "unemployed", sector: "services", formal: true, yearsWorked: 10, attachment: 0.01 } });
+
+  it("holds the loss and finding rates to the country's unemployment (loss x 1 / (loss + finding))", () => {
+    for (const u of [0.02, 0.06, 0.15, 0.33]) {
+      const c = makeCountry({ work: { ...country.work, unemployment: { ...country.work.unemployment, value: u } } });
+      const loss = jobLossChance(employed(), c);
+      expect(loss / (loss + FINDING_RATE)).toBeCloseTo(u, 6);
+    }
+  });
+  it("lets a worker lose the job and an unemployed person find one, each with its own event", () => {
+    const hard = makeCountry({ work: { ...country.work, unemployment: { ...country.work.unemployment, value: 0.5 } } });
+    let lost = 0;
+    let found = 0;
+    for (let i = 0; i < 400; i++) {
+      const out = stepWork(employed(), hard, createRng(`lose${i}`));
+      if (out.person.work.status === "unemployed") {
+        lost++;
+        expect(out.events.map((e) => e.id)).toEqual(["work.job_lost"]);
+        expect(out.person.work.yearsWorked).toBe(10);
+      }
+      const back = stepWork(jobless(), hard, createRng(`find${i}`));
+      if (back.person.work.status !== "unemployed") {
+        found++;
+        expect(back.events.map((e) => e.id)).toEqual(["work.job_found"]);
+        expect(back.person.work.yearsWorked).toBe(11);
+      }
+    }
+    expect(lost).toBeGreaterThan(0);
+    expect(found / 400).toBeGreaterThan(0.35);
+    expect(found / 400).toBeLessThan(0.55);
+  });
+  it("makes unemployment cost happiness when it begins and give it back when work returns", () => {
+    const hard = makeCountry({ work: { ...country.work, unemployment: { ...country.work.unemployment, value: 0.5 } } });
+    for (let i = 0; i < 400; i++) {
+      const out = stepWork(employed(), hard, createRng(`h${i}`));
+      if (out.events[0]?.id === "work.job_lost") {
+        expect(out.events[0].effects).toEqual([{ stat: "happiness", add: -3 }]);
+        return;
+      }
+    }
+    throw new Error("no job was lost in 400 tries");
+  });
+  it("takes the job search into account: points on Earn find work sooner and keep it longer", () => {
+    const searching = jobless();
+    const keen = { ...searching, focus: { earn: 1 } };
+    const idle = { ...searching, focus: { earn: -1 } };
+    expect(findingChance(keen)).toBeGreaterThan(findingChance(searching));
+    expect(findingChance(idle)).toBeLessThan(findingChance(searching));
+    expect(jobLossChance({ ...employed(), focus: { earn: 1 } }, country)).toBeLessThan(
+      jobLossChance(employed(), country),
+    );
+  });
+  it("leaves the unemployed out of work when they leave the labour force", () => {
+    const old = employed({
+      age: 70,
+      work: { status: "unemployed", sector: "services", formal: true, yearsWorked: 30, attachment: 0.99 },
+    });
+    const out = stepWork(old, country, createRng("old"));
+    expect(out.person.work.status).toBe("retired");
+    expect(out.events.map((e) => e.id)).toEqual(["work.retires"]);
+  });
+  it("starts a first-time entrant out of work at the country's rate", () => {
+    const hard = makeCountry({ work: { ...country.work, unemployment: { ...country.work.unemployment, value: 0.3 } } });
+    let out = 0;
+    const n = 1000;
+    for (let i = 0; i < n; i++) {
+      const entrant = worker(25, 0.01);
+      if (stepWork(entrant, hard, createRng(`e${i}`)).person.work.status === "unemployed") out++;
+    }
+    expect(out / n).toBeGreaterThan(0.25);
+    expect(out / n).toBeLessThan(0.35);
+  });
+
+  // The batch: people in the labour force from 30 to 45, stepped year by year, are out of work at the country's rate.
+  it.each([
+    ["JPN", 0.03],
+    ["NGA", 0.03],
+    ["ZAF", 0.03],
+  ])("%s: the share of the labour force out of work matches the source within %f", (iso3, tolerance) => {
+    const c = real(iso3);
+    const target = c.work.unemployment.value;
+    let jobless = 0;
+    let force = 0;
+    for (let i = 0; i < 1500; i++) {
+      let p = worker(30, 0, { sex: "male", work: { status: "child", yearsWorked: 0, attachment: 0.0001 } });
+      const rng = createRng(`batch-${iso3}-${i}`);
+      for (let age = 30; age <= 45; age++) {
+        p = { ...p, age, stage: stageForAge(age) };
+        p = stepWork(p, c, rng).person;
+        if (age >= 38) {
+          if (p.work.status === "unemployed") jobless++;
+          if (p.work.status === "unemployed" || p.work.status === "employed" || p.work.status === "informal") force++;
+        }
+      }
+    }
+    expect(Math.abs(jobless / force - target)).toBeLessThan(tolerance);
   });
 });

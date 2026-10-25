@@ -2,6 +2,7 @@
 import { conditionCatalog } from "../content/healthConditions";
 import { healthNorm } from "./drift";
 import { clamp } from "./dist";
+import { FOCUS_EFFECT } from "./focus";
 import { conditionHazard, expectedHazardFactor } from "./health";
 import type { Rng } from "./rng";
 import type { CauseId, HealthCondition, Person, Sex } from "./types";
@@ -45,7 +46,9 @@ export function hazardMultiplier(person: Person, country: Country): number {
   log += person.location === "rural" ? 0.08 * urbanShare : -0.08 * (1 - urbanShare);
   // Conditions decide who among people of one age dies; the life table decides how many, so the
   // average they add at this age and sex is taken out.
-  log += conditionHazard(person.conditions, conditionCatalog);
+  log += conditionHazard(person.conditions, conditionCatalog, person.flags);
+  // Points on Health above the default plan lower the hazard; fewer raise it (DEC-003).
+  log -= FOCUS_EFFECT.health.hazard * (person.focus?.health ?? 0);
   log -= Math.log(expectedHazardFactor(country, person.sex, person.age, conditionCatalog));
   return clamp(Math.exp(log), HAZARD_MIN, HAZARD_MAX);
 }
@@ -58,6 +61,10 @@ export function deathProbability(person: Person, country: Country): number {
 }
 
 export const rollDeath = (person: Person, country: Country, rng: Rng) => rng.chance(deathProbability(person, country));
+
+/** The cause of death that is suicide in the WHO mix, and the age before which it is not drawn (HEALTH-006). */
+export const SELF_HARM_CAUSE = "selfHarm";
+export const SELF_HARM_FROM_AGE = 12;
 
 /** How much each severity point of a condition raises the weight of the cause it points to. */
 const CONDITION_NUDGE = 1.5;
@@ -77,6 +84,8 @@ export function drawCause(
   const causes = Object.keys(shares);
   const weights = causes.map((cause) => {
     const nudge = conditions.reduce((sum, c) => (c.raises === cause ? sum + CONDITION_NUDGE * c.severity : sum), 0);
+    // Suicide is part of the cause mix from adolescence on, never before (HEALTH-006).
+    if (cause === SELF_HARM_CAUSE && age < SELF_HARM_FROM_AGE) return 0;
     return shares[cause]! * (1 + nudge);
   });
   return rng.weighted(causes, weights);

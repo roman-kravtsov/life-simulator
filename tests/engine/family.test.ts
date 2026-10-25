@@ -79,6 +79,23 @@ describe("rollFamilyDeaths (FAM-003)", () => {
     const expected = startAge + lifeExpectancy(country.demography.lifeTable.value.female.slice(startAge), startAge);
     expect(Math.abs(total / n - expected)).toBeLessThan(1);
   });
+  it("makes children's deaths before 5 follow the life table (batch, FAM-004)", () => {
+    const n = 20000;
+    let died = 0;
+    for (let i = 0; i < n; i++) {
+      const rng = createRng(`child-${i}`);
+      let child = rel({ kind: "child", name: "Child", sex: i % 2 === 0 ? "female" : "male", age: 0 });
+      for (let year = 0; year < 5 && child.alive; year++) {
+        [child] = rollFamilyDeaths([child], country, rng) as [Relationship];
+        if (child.alive) [child] = ageRelatives([child]) as [Relationship];
+      }
+      if (!child.alive) died++;
+    }
+    const survive = (sex: "female" | "male") =>
+      country.demography.lifeTable.value[sex].slice(0, 5).reduce((s, qx) => s * (1 - qx), 1);
+    const expected = 1 - (survive("female") + survive("male")) / 2;
+    expect(Math.abs(died / n - expected)).toBeLessThan(0.01);
+  });
 });
 
 describe("childLabourStatus (SIM-005)", () => {

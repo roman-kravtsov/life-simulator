@@ -1,0 +1,37 @@
+.plan {
+  margin: 0 0 1.5rem;
+}
+
+.heading {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.group {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+}
+
+.forced {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+.forced li {
+  margin-bottom: 0.25rem;
+}
+
+.areas {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.areas > * {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}

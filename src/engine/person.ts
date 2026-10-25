@@ -14,7 +14,7 @@ const TRAIT_WEIGHTS = [1, 4, 6, 4, 1];
 
 /**
  * A newborn in `country`, fully determined by the seed. Draws from the "person" stream in a
- * fixed order (sex, place, household, traits, then luck and work attachment); names and family
+ * fixed order (sex, place, household, traits, then luck, work attachment and marriage timing); names and family
  * have their own streams.
  */
 export function generatePerson(seed: string, country: Country): Person {
@@ -27,6 +27,7 @@ export function generatePerson(seed: string, country: Country): Person {
 
   const luck = normal(rng, 0, 1);
   const attachment = rng.next();
+  const marriageDraw = rng.next();
 
   const names = stream(seed, "names", 0);
   const list = namesForRegion(country.region)[sex];
@@ -52,6 +53,8 @@ export function generatePerson(seed: string, country: Country): Person {
     relationships: [...parents, ...siblings],
     conditions: [],
     flags: lost > 0 ? { siblingsLost: lost } : {},
+    marriageDraw,
+    scheduled: [],
   };
   return { ...newborn, stats: { ...newborn.stats, health: healthNorm(newborn, country) } };
 }

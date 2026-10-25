@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { en } from "../../src/content/strings/en";
-import { advance, newLife, type NewLifeOptions } from "../../src/engine/life";
+import { advance, advanceAuto, newLife, type NewLifeOptions } from "../../src/engine/life";
 import { dailyIncome, yearlyIncome } from "../../src/engine/money";
 import { createCatalog, type EventDef } from "../../src/engine/events";
 import type { LifeState } from "../../src/engine/types";
 import { makeCountry } from "../fixtures/country";
 
 const country = makeCountry({ region: "Western Africa" });
-const start = (seed = "life-1", c = country) => newLife({ seed, country: c } satisfies NewLifeOptions);
+const start = (seed = "life-1", c = country) =>
+  newLife({ seed, country: c, settings: { pace: "every-year" } } satisfies NewLifeOptions);
 const input = { kind: "continue" } as const;
 const empty = createCatalog([]);
 
@@ -15,7 +16,7 @@ function run(state: LifeState, catalog = empty, c = country): LifeState {
   let s = state;
   let guard = 0;
   while (s.person.alive) {
-    s = advance(s, input, c, catalog).state;
+    s = advanceAuto(s, c, catalog);
     if (++guard > 200) throw new Error("life did not end");
   }
   return s;
@@ -65,7 +66,7 @@ describe("advance: the yearly turn (SIM-002, TIME-001)", () => {
     let s = start("stages");
     const ages: number[] = [];
     while (s.person.alive && s.person.age < 20) {
-      s = advance(s, input, country, empty).state;
+      s = advanceAuto(s, country, empty);
       if (s.history.at(-1)!.stageChanged) ages.push(s.history.at(-1)!.age);
     }
     expect(ages.slice(0, 3)).toEqual([3, 12, 18].slice(0, ages.length));
@@ -198,7 +199,7 @@ describe("family in the yearly turn (FAM-003)", () => {
     };
     let s = grieving;
     for (let i = 0; i < 12 && s.person.alive; i++) {
-      s = advance(s, input, country, empty).state;
+      s = advanceAuto(s, country, empty);
       const found = s.history.at(-1)!.events.find((e) => e.id === "family.mother_died");
       if (found) {
         expect(found.sensitivity).toBe("difficult");
@@ -227,7 +228,7 @@ describe("child labour in the yearly turn", () => {
       let s = start(`lab${i}`, poor);
       s = { ...s, person: { ...s.person, money: { ...s.person.money, householdPercentile: 1 } } };
       while (s.person.alive && s.person.age < 15) {
-        s = advance(s, input, poor, empty).state;
+        s = advanceAuto(s, poor, empty);
         if (s.history.at(-1)!.events.some((e) => e.id === "check.child_labour_starts")) {
           expect(s.person.flags.childLabour).toBe(true);
           expect(
@@ -250,7 +251,7 @@ describe("child labour in the yearly turn", () => {
     });
     let s = start("lab-end", poor);
     s = { ...s, person: { ...s.person, money: { ...s.person.money, householdPercentile: 1 } } };
-    while (s.person.alive && s.person.age < 16) s = advance(s, input, poor, empty).state;
+    while (s.person.alive && s.person.age < 16) s = advanceAuto(s, poor, empty);
     if (s.person.alive) expect(s.person.flags.childLabour).toBeFalsy();
   });
 });
@@ -274,7 +275,7 @@ describe("event cooldowns count years lived", () => {
     const catalog = createCatalog([event({ cooldownYears })]);
     const ages: number[] = [];
     for (let i = 0; i < 8; i++) {
-      s = advance(s, input, immortal, catalog).state;
+      s = advanceAuto(s, immortal, catalog);
       const record = s.history.at(-1)!;
       if (record.events.some((e) => e.id === "test.event")) ages.push(record.age);
     }
@@ -291,7 +292,7 @@ describe("the life systems in the yearly turn (M4)", () => {
     let s = start(seed, c);
     const states = [s];
     while (!stop(s)) {
-      s = advance(s, input, c).state;
+      s = advanceAuto(s, c);
       states.push(s);
       if (states.length > 200) throw new Error("life did not end");
     }
@@ -400,7 +401,7 @@ describe("every text the engine can write exists (L10N-001)", () => {
       for (let i = 0; i < 60; i++) {
         let s = start(`keys-${i}`, c);
         while (s.person.alive) {
-          s = advance(s, input, c).state;
+          s = advanceAuto(s, c);
           for (const e of s.history.at(-1)!.events) seen.add(e.textKey);
         }
       }

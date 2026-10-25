@@ -2,11 +2,13 @@
 // condition begins by a yearly chance that depends on age, household, place, job and how common its
 // cause is in the country's deaths; once the person has it, each year it may worsen or ease. It lowers
 // the health the person drifts toward, raises the hazard of death, shifts the cause of death, and can
-// take focus points from the yearly plan (used from M5). The conditions are content (src/content/
+// take focus points from the yearly plan. The conditions are content (src/content/
 // healthConditions.ts); this file holds the rules. All onset chances are authored for plausibility,
 // not published statistics, so nothing here is shown to the player as a fact about a country.
 import { clamp } from "./dist";
 import type { Effect } from "./effects";
+import { FOCUS_EFFECT } from "./focus";
+import { dailyIncome, yearlyIncome } from "./money";
 import type { PendingEvent } from "./events";
 import type { Rng } from "./rng";
 import type { CauseId, HealthCondition, HelpTopic, Person, Sector, Sensitivity, Sex } from "./types";
@@ -43,6 +45,12 @@ export interface ConditionDef {
   focusCost: [number, number, number];
   sensitivity?: Sensitivity;
   helpTopic?: HelpTopic;
+  /**
+   * What a course of treatment costs, as a share of a year of the income of someone in the middle of the
+   * country, for the usual care and for the best care, before the country's out-of-pocket share is
+   * applied (HEALTH-005, MONEY-005). Authored. Absent: nothing to be done but wait.
+   */
+  care?: { usual: number; best: number };
 }
 
 export interface ConditionCatalog {
@@ -61,6 +69,48 @@ export function createConditionCatalog(defs: readonly ConditionDef[]): Condition
     byId.set(def.id, def);
   }
   return { all: defs, get: (id) => byId.get(id) };
+}
+
+/** How well a condition is looked after: -1 left alone, 0 the usual care (what the life table already contains), 1 the best. */
+export type CareLevel = -1 | 0 | 1;
+
+export const careLevel = (person: Pick<Person, "flags">, id: string): CareLevel => {
+  const level = person.flags[`care.${id}`];
+  return level === 1 || level === -1 ? level : 0;
+};
+
+/**
+ * What care does to a condition's course. The usual care changes nothing: the calibration (and the life
+ * table behind it) assumes it. Best care halves the chance of getting worse and makes getting better
+ * likelier; doing nothing does the opposite. Authored.
+ */
+const CARE_EFFECT: Record<CareLevel, { worsen: number; recover: number; hazard: number }> = {
+  [-1]: { worsen: 1.5, recover: 0.6, hazard: 1.25 },
+  0: { worsen: 1, recover: 1, hazard: 1 },
+  1: { worsen: 0.5, recover: 1.5, hazard: 0.8 },
+};
+
+/** The yearly chances of a condition at `severity` getting worse and getting better, with this care. The odds lens shows these. */
+export function conditionOdds(
+  def: ConditionDef,
+  severity: number,
+  level: CareLevel,
+): { worsen: number; recover: number } {
+  const worsen = severity < 3 ? clamp(def.worsen * CARE_EFFECT[level].worsen, 0, 1) : 0;
+  return { worsen, recover: Math.min(clamp(def.recover * CARE_EFFECT[level].recover, 0, 1), 1 - worsen) };
+}
+
+/**
+ * A typical out-of-pocket share of health spending (authored reference): a country that pays this much
+ * out of pocket sees the base costs; one that pays more, or less, sees them scaled.
+ */
+export const REFERENCE_OUT_OF_POCKET = 0.3;
+
+/** What a course of care costs the person, in PPP dollars (MONEY-005): scaled by the country's out-of-pocket share. */
+export function careCost(def: ConditionDef, kind: "usual" | "best", country: Country): number {
+  if (!def.care) return 0;
+  const scale = clamp(country.money.healthOutOfPocketShare.value / REFERENCE_OUT_OF_POCKET, 0.2, 2.5);
+  return def.care[kind] * dailyIncome(country, 50) * 365 * scale;
 }
 
 /** Hazard per severity point for a condition the catalog does not know (the M3 value). */
@@ -109,7 +159,9 @@ function riskFactor(def: ConditionDef, person: Person): number {
 
 /** The chance the condition begins this year for a person who does not have it. */
 export function onsetProbability(def: ConditionDef, person: Person, country: Country): number {
-  return Math.min(MAX_ONSET, baseOnset(def, person.age, person.sex, country) * riskFactor(def, person));
+  // Points on Health above the default plan keep illness away; fewer let it in (DEC-003).
+  const care = Math.max(0.4, 1 - FOCUS_EFFECT.health.onset * (person.focus?.health ?? 0));
+  return Math.min(MAX_ONSET, baseOnset(def, person.age, person.sex, country) * riskFactor(def, person) * care);
 }
 
 /** The risk factor averaged over the country's people (jobs left out): poverty over all 100 percentiles and the urban share. */
@@ -181,15 +233,23 @@ function buildFactors(country: Country, sex: Sex, catalog: ConditionCatalog): nu
   return factors;
 }
 
-/** Added to the log hazard of death by all the person's conditions. */
-export const conditionHazard = (conditions: readonly HealthCondition[], catalog: ConditionCatalog): number =>
-  conditions.reduce((sum, c) => sum + (catalog.get(c.id)?.hazard ?? UNKNOWN_HAZARD) * c.severity, 0);
+/** Added to the log hazard of death by all the person's conditions, each as well looked after as the person has seen to. */
+export const conditionHazard = (
+  conditions: readonly HealthCondition[],
+  catalog: ConditionCatalog,
+  flags: Person["flags"] = {},
+): number =>
+  conditions.reduce(
+    (sum, c) =>
+      sum + (catalog.get(c.id)?.hazard ?? UNKNOWN_HAZARD) * c.severity * CARE_EFFECT[careLevel({ flags }, c.id)].hazard,
+    0,
+  );
 
 /** Taken from the health the person drifts toward. */
 export const healthPenalty = (conditions: readonly HealthCondition[], catalog: ConditionCatalog): number =>
   conditions.reduce((sum, c) => sum + (catalog.get(c.id)?.healthPenalty ?? 0) * c.severity, 0);
 
-/** Focus points the person's conditions take from the yearly plan, at most two (the plan arrives in M5). */
+/** Focus points the person's conditions take from the yearly plan, at most two. */
 export const focusPointsLost = (conditions: readonly HealthCondition[], catalog: ConditionCatalog): number =>
   Math.min(
     MAX_FOCUS_LOST,
@@ -203,24 +263,64 @@ export interface ConditionStep {
 
 const asSeverity = (n: number) => clamp(n, 1, 3) as HealthCondition["severity"];
 
+export const CARE_DECISION = "health.seek_care";
+
+/** From this age the person is asked how to see to a serious condition; before it the household does. */
+export const CARE_ASK_AGE = 12;
+
+/** The cost of the usual care as a share of the person's own year of income (a cost effect takes a share). */
+export function careShare(def: ConditionDef, kind: "usual" | "best", person: Person, country: Country): number {
+  return careCost(def, kind, country) / yearlyIncome(person, country);
+}
+
 /**
  * One year of conditions. Each condition in the catalog draws one number from its own stream
  * (`rollFor(id)`), so adding a condition never shifts another's roll: for one the person does not have, the
- * roll is its onset; for one they have, a low roll worsens it and a high roll eases it.
+ * roll is its onset; for one they have, a low roll worsens it and a high roll eases it. When one begins, or
+ * gets serious (severity 2 or more), and the year has room for a decision (`open`), the person is asked how
+ * to see to it (HEALTH-005); otherwise they get the usual care, which costs but changes nothing in the odds.
  */
 export function stepConditions(
   person: Person,
   country: Country,
   rollFor: (id: string) => Rng,
   catalog: ConditionCatalog,
+  { open = false }: { open?: boolean } = {},
 ): ConditionStep {
   const events: PendingEvent[] = [];
   let conditions = person.conditions;
+  // Until this age the household decides on care; the person has no say.
+  let asked = !open || person.age < CARE_ASK_AGE;
   const event = (def: ConditionDef, id: string, textKey: string, effects: Effect[]) => {
     const pending: PendingEvent = { id: `health.${def.id}.${id}`, textKey, cause: "chance", effects };
     if (def.sensitivity) pending.sensitivity = def.sensitivity;
     if (def.helpTopic) pending.helpTopic = def.helpTopic;
     events.push(pending);
+  };
+  /** The care a condition needs: a question when it is serious and the year has room, the usual care otherwise. */
+  const seeToIt = (def: ConditionDef, serious: boolean) => {
+    if (!def.care) return;
+    if (asked || !serious) {
+      const share = careShare(def, "usual", person, country);
+      events.push({
+        id: `health.${def.id}.care`,
+        textKey: "event.health.usual_care",
+        cause: "circumstance",
+        effects: [
+          { care: def.id, level: 0 },
+          { money: "cost", incomeShare: share },
+        ],
+      });
+      return;
+    }
+    asked = true;
+    events.push({
+      id: CARE_DECISION,
+      textKey: "event.health.seek_care",
+      cause: "circumstance",
+      effects: [],
+      ask: { eventId: CARE_DECISION, payload: { condition: def.id } },
+    });
   };
   for (const def of catalog.all) {
     const roll = rollFor(def.id).next();
@@ -237,7 +337,11 @@ export function stepConditions(
         ...conditions,
         { id: def.id, severity: 1, since: person.age, ...(def.raises ? { raises: def.raises } : {}) },
       ];
-    } else if (current.severity < 3 && roll < def.worsen) {
+      seeToIt(def, false);
+      continue;
+    }
+    const odds = conditionOdds(def, current.severity, careLevel(person, def.id));
+    if (roll < odds.worsen) {
       const severity = asSeverity(current.severity + 1);
       event(def, "worsens", `event.condition.${def.id}.worsens`, [
         { condition: "add", id: def.id, severity },
@@ -245,10 +349,13 @@ export function stepConditions(
         { stat: "happiness", add: -1 },
       ]);
       conditions = conditions.map((c) => (c.id === def.id ? { ...c, severity } : c));
-    } else if (roll > 1 - def.recover) {
+      // It is serious now: another look at what can be done.
+      seeToIt(def, severity >= 2);
+    } else if (roll > 1 - odds.recover) {
       if (current.severity === 1) {
         event(def, "ends", `event.condition.${def.id}.ends`, [
           { condition: "remove", id: def.id },
+          { care: def.id, level: 0 },
           { stat: "happiness", add: 1 },
         ]);
         conditions = conditions.filter((c) => c.id !== def.id);

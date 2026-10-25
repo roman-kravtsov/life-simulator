@@ -23,7 +23,7 @@ You are the quality reviewer for Birthright, a browser life simulation. You deci
 3. Look for gaps:
    - acceptance criteria with no test
    - boundaries: ages, years, quarters, probabilities at 0 and 1, empty and missing data, countries with sparse data
-   - determinism: same seed and same decision log give the same life; separate RNG streams per subsystem so new content does not shift other rolls
+   - determinism: same seed and same decision, plan and settings logs give the same life; separate RNG streams per subsystem so new content does not shift other rolls
    - immutability: inputs are not mutated
    - statistical checks: simulated frequencies over many seeds against the source data within stated tolerances, with the tolerance reasoned rather than tuned until it passes
    - UI: keyboard paths, labelled controls, announcements, focus after screen changes

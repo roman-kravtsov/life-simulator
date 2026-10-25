@@ -99,6 +99,29 @@ describe("age and location conditions", () => {
   });
 });
 
+describe("standing, school and sector conditions", () => {
+  it("standing compares the person's place in the country's income spread", () => {
+    expect(holds({ standing: "<", value: 60 }, ctx({ money: moneyAt(50) }))).toBe(true);
+    expect(holds({ standing: ">", value: 60 }, ctx({ money: moneyAt(50) }))).toBe(false);
+    expect(holds({ standing: ">", value: 40 }, ctx({ money: moneyAt(50) }))).toBe(true);
+  });
+  it("school is whether the person is studying", () => {
+    const studying = { education: { level: "none" as const, inSchool: true, years: 1 } };
+    expect(holds({ school: true }, ctx(studying))).toBe(true);
+    expect(holds({ school: false }, ctx(studying))).toBe(false);
+    expect(holds({ school: false }, ctx())).toBe(true);
+  });
+  it("sector needs someone at work in it", () => {
+    const farmer = {
+      work: { status: "informal" as const, yearsWorked: 3, attachment: 0.5, sector: "agriculture" as const },
+    };
+    expect(holds({ sector: "agriculture" }, ctx(farmer))).toBe(true);
+    expect(holds({ sector: "services" }, ctx(farmer))).toBe(false);
+    const retired = { work: { ...farmer.work, status: "retired" as const } };
+    expect(holds({ sector: "agriculture" }, ctx(retired))).toBe(false);
+  });
+});
+
 describe("allHold", () => {
   it("is true for no conditions and needs every condition otherwise", () => {
     expect(allHold(undefined, ctx())).toBe(true);

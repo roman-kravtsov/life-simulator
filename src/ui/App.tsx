@@ -7,7 +7,7 @@ import { StartScreen } from "./StartScreen";
 import type { GameStore } from "./store";
 
 function CurrentScreen({ store }: { store: GameStore }) {
-  const { screen, life, country, sources, status, showUsPrices } = useSyncExternalStore(
+  const { screen, life, country, sources, status, showUsPrices, settings, card, plan, quietRun } = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
   );
@@ -22,8 +22,13 @@ function CurrentScreen({ store }: { store: GameStore }) {
         country={country}
         sources={sources ?? {}}
         showUsPrices={showUsPrices}
+        card={card}
+        plan={plan}
+        quietRun={quietRun}
         onToggleUsPrices={store.toggleUsPrices}
         onContinue={store.continueYear}
+        onChoose={store.choose}
+        onSettings={store.setSettings}
         onAnother={store.begin}
         onBack={store.backToStart}
       />
@@ -32,7 +37,15 @@ function CurrentScreen({ store }: { store: GameStore }) {
   if (screen === "sources") {
     return <SourcesScreen onBack={store.closeSources} />;
   }
-  return <StartScreen status={status} onBegin={store.begin} onSources={store.openSources} />;
+  return (
+    <StartScreen
+      status={status}
+      settings={settings}
+      onSettings={store.setSettings}
+      onBegin={store.begin}
+      onSources={store.openSources}
+    />
+  );
 }
 
 export function App({ store }: { store: GameStore }) {

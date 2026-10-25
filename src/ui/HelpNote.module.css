@@ -1,0 +1,10 @@
+.help {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.help a {
+  color: var(--ink);
+}

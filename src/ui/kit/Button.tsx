@@ -1,7 +1,8 @@
 import { Button as AriaButton, type ButtonProps as AriaButtonProps } from "react-aria-components";
 import styles from "./Button.module.css";
 
-type Variant = "primary" | "ghost";
+/** `choice` is a full-width option the player picks from a list, such as an answer on a decision card. */
+type Variant = "primary" | "ghost" | "choice";
 
 export interface ButtonProps extends Omit<AriaButtonProps, "className"> {
   variant?: Variant;

@@ -2,12 +2,25 @@
 // framework-free; React only reads snapshots and calls these actions. The store also owns the
 // one piece of I/O a life needs: loading the world data, which it receives from outside.
 import { SCHOOL_START_AGE } from "../engine/education";
-import { advance, newLife } from "../engine/life";
+import type { DecisionCard } from "../engine/decisions";
+import { FOCUS_AREAS, PLAN_START_AGE, resolvePlan, type ForcedPoint, type LockReason } from "../engine/focus";
+import { advance, decisionCard, newLife, withSettings } from "../engine/life";
 import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
 import { conditionCatalog } from "../content/healthConditions";
-import type { EducationLevel, HealthCondition, HelpTopic, LifeState, Relationship, Sector } from "../engine/types";
+import {
+  DEFAULT_SETTINGS,
+  type EducationLevel,
+  type FocusArea,
+  type HealthCondition,
+  type HelpTopic,
+  type LifeState,
+  type Plan,
+  type Relationship,
+  type Sector,
+  type Settings,
+} from "../engine/types";
 import { drawBirthCountry } from "../engine/world/birth";
 import type { Country, CountryIndex } from "../engine/world/types";
 import { incomeBand, type IncomeBand } from "../format";
@@ -26,6 +39,71 @@ export interface GameSnapshot {
   status: LoadStatus;
   /** Whether the money panel also says what the amounts buy in the United States (MONEY-007). A setting, kept across lives. */
   showUsPrices: boolean;
+  /** Softer telling and the pace of quiet years (EVENT-006, TIME-002). Kept across lives; a new life starts with them. */
+  settings: Settings;
+  /** The decision the year is waiting on, with its choices and odds lens (DEC-001); null when none is. */
+  card: DecisionCard | null;
+  /** The yearly focus plan; null before age six, while a decision waits and once the life has ended (DEC-003). */
+  plan: PlanOverview | null;
+  /** The years that just passed quietly, or null when the last step was a single year (TIME-002). */
+  quietRun: QuietRun | null;
+}
+
+/** The focus plan as the plan widget needs it (UI-005), derived here so screens stay free of engine code. */
+export interface PlanOverview {
+  /** The five areas, in the order they are shown. */
+  areas: readonly FocusArea[];
+  /** Points the player places themselves: the budget less what circumstance has taken. */
+  free: number;
+  /** The player's own points as the plan stands. */
+  chosen: Plan;
+  /** Points circumstance took first, each with its reason. */
+  forced: ForcedPoint[];
+  /** Areas that take no points, with the reason. */
+  locked: Partial<Record<FocusArea, LockReason>>;
+  /** True once the player has set the plan; until then it follows the situation. */
+  custom: boolean;
+}
+
+/** The years that passed in one step without anything to tell, as the ages reached (TIME-002). */
+export interface QuietRun {
+  from: number;
+  to: number;
+}
+
+/** Null when no plan is asked for: before six, with a decision waiting, or after death. */
+export function planOverview(life: LifeState): PlanOverview | null {
+  const { person } = life;
+  if (!person.alive || life.turn || person.age < PLAN_START_AGE) return null;
+  const { chosen, forced, locked, free } = resolvePlan(person, life.plan);
+  return { areas: FOCUS_AREAS, free, chosen, forced, locked, custom: life.plan?.custom === true };
+}
+
+/**
+ * The plan to send with Continue: nothing while the draft is what the plan already is, otherwise the
+ * draft with any point left unplaced resting, so the plan spends exactly the points available. A value
+ * that is not a whole number (an emptied field) counts as 0, and no more than the free points are kept.
+ */
+export function planToSend(plan: PlanOverview, draft: Plan): Plan | undefined {
+  const full = { ...draft };
+  let placed = 0;
+  for (const area of plan.areas) {
+    const value = Number.isInteger(draft[area]) ? Math.max(0, draft[area]) : 0;
+    full[area] = Math.min(value, Math.max(0, plan.free - placed));
+    placed += full[area];
+  }
+  full.rest += Math.max(0, plan.free - placed);
+  return plan.areas.some((area) => full[area] !== plan.chosen[area]) ? full : undefined;
+}
+
+/** What the years of the last step were like, for the line about years that pass quietly. */
+function quietRunOf(life: LifeState, from: number): QuietRun | null {
+  const records = life.history.slice(from);
+  // With a decision waiting, every new year was quiet; otherwise the last one is told in full.
+  const quiet = life.turn ? records : records.slice(0, -1);
+  const first = quiet[0];
+  const last = quiet.at(-1);
+  return first && last ? { from: first.age, to: last.age } : null;
 }
 
 /** What the birth screen says about the household and parents, derived here so screens stay free of engine code. */
@@ -214,7 +292,12 @@ export interface GameStore {
   begin(): Promise<void>;
   /** From the birth screen into the first year. */
   startLife(): void;
-  continueYear(): void;
+  /** Lives the next year (or a run of quiet ones). `plan` sets the focus points; leave it out to keep the plan as it is. */
+  continueYear(plan?: Plan): void;
+  /** Answers the waiting decision; a locked or unknown choice is ignored. */
+  choose(choiceId: string): void;
+  /** Changes the settings now and for the next year on; new lives start with them. */
+  setSettings(changes: Partial<Settings>): void;
   /** Turns the comparison with United States prices on or off (MONEY-007). */
   toggleUsPrices(): void;
   backToStart(): void;
@@ -229,6 +312,10 @@ const START: GameSnapshot = {
   sources: null,
   status: "idle",
   showUsPrices: false,
+  settings: DEFAULT_SETTINGS,
+  card: null,
+  plan: null,
+  quietRun: null,
 };
 
 export function createGameStore(makeSeed: () => string, world: WorldLoader): GameStore {
@@ -236,6 +323,8 @@ export function createGameStore(makeSeed: () => string, world: WorldLoader): Gam
   /** Bumped whenever the player leaves, so a slow load never lands on the wrong screen. */
   let attempt = 0;
   const listeners = new Set<() => void>();
+  /** How long the history was before the last continue, to tell which years are new. */
+  let yearsFrom = 0;
 
   const set = (next: GameSnapshot) => {
     snapshot = next;
@@ -245,7 +334,17 @@ export function createGameStore(makeSeed: () => string, world: WorldLoader): Gam
   const fresh = (changes: Partial<GameSnapshot> = {}): GameSnapshot => ({
     ...START,
     showUsPrices: snapshot.showUsPrices,
+    settings: snapshot.settings,
     ...changes,
+  });
+  /** The snapshot with a new life state and everything the screens derive from it. */
+  const lived = (life: LifeState, country: Country, changes: Partial<GameSnapshot> = {}): GameSnapshot => ({
+    ...snapshot,
+    ...changes,
+    life,
+    card: decisionCard(life, country) ?? null,
+    plan: planOverview(life),
+    quietRun: quietRunOf(life, yearsFrom),
   });
 
   return {
@@ -264,13 +363,9 @@ export function createGameStore(makeSeed: () => string, world: WorldLoader): Gam
         const entry = drawBirthCountry(index, stream(seed, "birth", 0));
         const country = await world.loadCountry(entry.iso3);
         if (mine !== attempt) return;
-        set({
-          ...fresh(),
-          screen: "birth",
-          life: newLife({ seed, country }),
-          country,
-          sources: index.sources,
-        });
+        yearsFrom = 0;
+        const life = newLife({ seed, country, settings: snapshot.settings });
+        set(lived(life, country, { ...fresh(), screen: "birth", country, sources: index.sources }));
       } catch {
         if (mine === attempt) set(fresh({ status: "error" }));
       }
@@ -279,10 +374,24 @@ export function createGameStore(makeSeed: () => string, world: WorldLoader): Gam
       if (!snapshot.life) return;
       set({ ...snapshot, screen: "life" });
     },
-    continueYear() {
+    continueYear(plan) {
       const { life, country } = snapshot;
-      if (!life || !country || !life.person.alive) return;
-      set({ ...snapshot, screen: "life", life: advance(life, { kind: "continue" }, country).state });
+      if (!life || !country || !life.person.alive || life.turn) return;
+      yearsFrom = life.history.length;
+      const next = advance(life, { kind: "continue", ...(plan ? { plan } : {}) }, country).state;
+      set(lived(next, country, { screen: "life" }));
+    },
+    choose(choiceId) {
+      const { life, country, card } = snapshot;
+      if (!life?.turn || !country) return;
+      const choice = card?.choices.find((c) => c.id === choiceId);
+      if (!choice || choice.lockedReason) return;
+      set(lived(advance(life, { kind: "choose", choiceId }, country).state, country));
+    },
+    setSettings(changes) {
+      const { life, country } = snapshot;
+      const settings = { ...snapshot.settings, ...changes };
+      set(life && country ? lived(withSettings(life, changes), country, { settings }) : { ...snapshot, settings });
     },
     toggleUsPrices() {
       set({ ...snapshot, showUsPrices: !snapshot.showUsPrices });

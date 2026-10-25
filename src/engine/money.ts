@@ -5,6 +5,7 @@
 // follow from income and costs.
 import { clamp, normal, normalCdf, normalQuantile } from "./dist";
 import { attainmentShares } from "./education";
+import { FOCUS_EFFECT } from "./focus";
 import type { PendingEvent } from "./events";
 import type { Rng } from "./rng";
 import type { EducationLevel, Person, Sector } from "./types";
@@ -24,6 +25,21 @@ export const householdBand = (percentile: number) => Math.ceil(percentile / 10);
 
 /** From this age, and out of school, the person's own standing replaces the household's. */
 export const INDEPENDENCE_AGE = 18;
+
+/** Money a person has of their own: independent and out of school. */
+export const ownsMoney = (person: Person) => person.age >= INDEPENDENCE_AGE && !person.education.inSchool;
+
+/**
+ * Tertiary fees for a year, as a share of what a person at the middle of the country lives on in a
+ * year. An authored estimate: fees are not in the source data, so the lens states it as a cost for
+ * the household and does not present it as a statistic (EDU-003).
+ */
+export const TERTIARY_COST_SHARE = 0.4;
+
+export const tertiaryYearlyCost = (country: Country) => TERTIARY_COST_SHARE * dailyIncome(country, 50) * 365;
+
+/** The flag a student carries while paying their own fees: they borrow the year's fees (EDU-003, MONEY-005). */
+export const TUITION_FLAG = "tuition";
 
 const DAYS = 365;
 
@@ -142,15 +158,39 @@ export interface MoneyStep {
  * takes their own percentile, earns the table's income there, spends a share of it, pays down debt
  * first and saves what is left, or draws on savings and then borrows. Always draws two numbers.
  */
-export function stepMoney(person: Person, country: Country, rng: Rng): MoneyStep {
+export function stepMoney(
+  person: Person,
+  country: Country,
+  rng: Rng,
+  /** Whether the person began the year at school: the year they finish is still a year of fees. */
+  wasInSchool: boolean = person.education.inSchool,
+): MoneyStep {
   const noise = normal(rng, 0, SPENDING_NOISE);
   const percentile = currentPercentile(person, country);
+  // A student who took the fees on pays them by borrowing; one with a scholarship or a family to pay does not.
+  const fees =
+    person.age >= INDEPENDENCE_AGE && person.flags[TUITION_FLAG] === true && wasInSchool
+      ? tertiaryYearlyCost(country)
+      : 0;
+  // The fees end with the studies.
+  const settledFlags =
+    person.flags[TUITION_FLAG] && !person.education.inSchool
+      ? { ...person.flags, [TUITION_FLAG]: false }
+      : person.flags;
   if (person.age < INDEPENDENCE_AGE || person.education.inSchool) {
-    return { person: { ...person, money: { ...person.money, percentile } }, events: [] };
+    return {
+      person: {
+        ...person,
+        money: { ...person.money, percentile, debt: person.money.debt * (fees ? 1 + DEBT_INTEREST : 1) + fees },
+      },
+      events: [],
+    };
   }
-  const standing: Person = { ...person, money: { ...person.money, percentile } };
+  const standing: Person = { ...person, flags: settledFlags, money: { ...person.money, percentile } };
   const income = yearlyIncome(standing, country);
-  const net = income * (1 - spendingShare(percentile) - noise);
+  // Points on Earn above the default plan are saved; fewer are spent (DEC-003).
+  const net =
+    income * (1 - spendingShare(percentile) - noise + FOCUS_EFFECT.earn.saving * (person.focus?.earn ?? 0)) - fees;
   let { savings, debt } = person.money;
   debt *= 1 + DEBT_INTEREST;
   if (net >= 0) {

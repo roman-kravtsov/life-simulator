@@ -1,5 +1,5 @@
 // The condition language for events (EVENT-002, design 2.3).
-import type { Location, Person, Sex, StatId, TraitId } from "./types";
+import type { Location, Person, Sector, Sex, StatId, TraitId } from "./types";
 import type { Country } from "./world/types";
 
 export type Condition =
@@ -10,7 +10,12 @@ export type Condition =
   | { world: string; op: "<" | ">"; value: number }
   | { has: "partner" | "child" | "job" | "savings" }
   | { age: [number, number] }
-  | { location: Location };
+  | { location: Location }
+  /** Where the person stands among their countrymen (1 to 100): the household's for a child, their own as an adult. */
+  | { standing: "<" | ">"; value: number }
+  | { school: boolean }
+  /** At work in this sector. */
+  | { sector: Sector };
 
 export interface ConditionContext {
   person: Person;
@@ -84,6 +89,16 @@ export function holds(condition: Condition, { person, country }: ConditionContex
     }
   }
   if ("age" in condition) return person.age >= condition.age[0] && person.age <= condition.age[1];
+  if ("standing" in condition) {
+    return condition.standing === "<"
+      ? person.money.percentile < condition.value
+      : person.money.percentile > condition.value;
+  }
+  if ("school" in condition) return person.education.inSchool === condition.school;
+  if ("sector" in condition) {
+    const working = person.work.status === "employed" || person.work.status === "informal";
+    return working && person.work.sector === condition.sector;
+  }
   return person.location === condition.location;
 }
 

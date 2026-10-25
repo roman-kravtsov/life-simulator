@@ -7,7 +7,7 @@ import {
   expectedLifeExpectancy,
   simulateLife,
 } from "../../src/engine/calibration";
-import { advance, newLife } from "../../src/engine/life";
+import { advanceAuto, newLife } from "../../src/engine/life";
 import { hazardMultiplier } from "../../src/engine/mortality";
 import type { Country } from "../../src/engine/world/types";
 import { makeCountry } from "../fixtures/country";
@@ -69,10 +69,11 @@ describe("calibration harness (SIM-007)", () => {
   });
 });
 
-describe("the life systems against the source data (M4)", () => {
-  // EDU-001, EDU-002, CAREER-001, CAREER-002, MONEY-003, FAM-002: whole lives, compared with each
-  // country's published completion, literacy, participation, sector, informality, fertility and
-  // schooling persistence. Each comparison has its own tolerance, set in calibrateSystems.
+describe("the life systems against the source data (M4, M5)", () => {
+  // EDU-001, EDU-002, CAREER-001, CAREER-002, CAREER-003, MONEY-003, FAM-002, FAM-004, REL-004: whole
+  // lives, compared with each country's published completion, literacy, participation, sector,
+  // informality, unemployment, marriage age, fertility and schooling persistence. Each comparison has
+  // its own tolerance, set in calibrateSystems.
   const countries = ["NGA", "NER", "IND", "BRA", "JPN", "USA"];
   it.each(countries)(
     "%s: school, work, income and family reproduce the source within tolerance",
@@ -105,12 +106,12 @@ describe("the life systems against the source data (M4)", () => {
       const country = load(iso3);
       const byDecade = new Map<number, { n: number; total: number }>();
       for (let i = 0; i < 500; i++) {
-        let state = newLife({ seed: `hazard-${iso3}-${i}`, country });
+        let state = newLife({ seed: `hazard-${iso3}-${i}`, country, settings: { pace: "every-year" } });
         while (state.person.alive) {
           const decade = Math.floor(state.person.age / 10);
           const cell = byDecade.get(decade) ?? { n: 0, total: 0 };
           byDecade.set(decade, { n: cell.n + 1, total: cell.total + hazardMultiplier(state.person, country) });
-          state = advance(state, { kind: "continue" }, country).state;
+          state = advanceAuto(state, country);
         }
       }
       for (const [decade, { n, total }] of byDecade) {

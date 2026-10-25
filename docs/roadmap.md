@@ -31,7 +31,7 @@ EDU-001, EDU-002, CAREER-001, CAREER-002, CAREER-006, MONEY-002, MONEY-003, MONE
 ### M5. Events and decisions
 Event selection, the focus plan, choice cards with the odds lens, romance and children, sensitive content with help resources, and the written MVP event set.
 
-EVENT-003, EVENT-004, EVENT-006, DEC-001, DEC-002, DEC-003, DEC-004, DEC-005, REL-003, REL-004, REL-002, FAM-004, FAM-005, EDU-003, EDU-004, CAREER-003, CAREER-004, HEALTH-005, MONEY-005, MONEY-006, TIME-002, EVENT-005, UI-012, HEALTH-006, ADMIN-001, EVENT-007
+EVENT-003, EVENT-004, EVENT-006, DEC-001, DEC-002, DEC-003, DEC-004, DEC-005, REL-003, REL-004, REL-002, FAM-004, FAM-005, EDU-003, EDU-004, CAREER-003, CAREER-004, HEALTH-005, MONEY-005, MONEY-006, TIME-002, EVENT-005, UI-012, HEALTH-006, ADMIN-001, EVENT-007, UI-005, UI-006
 
 ### M6. Death, summary and saves
 The end of a life, the rings and the summary, autosave, resume, the archive and replay.
@@ -41,7 +41,7 @@ DEATH-001, DEATH-002, DEATH-003, SAVE-001, SAVE-002, SAVE-003, SAVE-004, RNG-004
 ### M7. Playable game (MVP release)
 All screens, responsive layout and accessibility, then deploy and open the MVP pull request.
 
-UI-002, UI-003, UI-004, UI-005, UI-006, UI-007, UI-008, UI-009, UI-010, WORLD-008, SUM-005, A11Y-001, A11Y-002, A11Y-003, A11Y-004, A11Y-005
+UI-002, UI-003, UI-004, UI-007, UI-008, UI-009, UI-010, WORLD-008, SUM-005, A11Y-001, A11Y-002, A11Y-003, A11Y-004, A11Y-005
 
 ---
 

@@ -137,4 +137,54 @@ describe("applyEffects", () => {
       expect(state.person.conditions).toEqual([]);
     });
   });
+  describe("school, work, sector and move effects (SIM-006)", () => {
+    const withPerson = (changes: Partial<ReturnType<typeof life>["person"]>) => {
+      const base = life();
+      return { ...base, person: { ...base.person, ...changes } };
+    };
+    const base = life().person;
+    it("leaves school, counting the year", () => {
+      const state = withPerson({ education: { ...base.education, inSchool: true, years: 4 } });
+      const { person } = applyEffects(state, [{ school: "leave" }], "choice").state;
+      expect(person.education).toMatchObject({ inSchool: false, years: 5 });
+    });
+    it("stays another year, and finishing a level sets it", () => {
+      const state = withPerson({ education: { ...base.education, inSchool: true, years: 5, level: "none" } });
+      const stay = applyEffects(state, [{ school: "stay", level: "primary", completes: false }], "choice").state;
+      expect(stay.person.education).toMatchObject({ inSchool: true, years: 6, level: "none" });
+      const done = applyEffects(state, [{ school: "stay", level: "primary", completes: true }], "choice").state;
+      expect(done.person.education).toMatchObject({ inSchool: true, years: 6, level: "primary" });
+    });
+    it("enrols in tertiary school, and finishing studying stops it", () => {
+      const state = withPerson({ education: { ...base.education, inSchool: false, level: "upper-secondary" } });
+      const enrolled = applyEffects(state, [{ school: "enrol-tertiary" }], "choice").state;
+      expect(enrolled.person.education.inSchool).toBe(true);
+      const finished = applyEffects(enrolled, [{ school: "finish" }], "choice").state;
+      expect(finished.person.education.inSchool).toBe(false);
+    });
+    it("loses a job only when working, and finds one only when out of work", () => {
+      const working = withPerson({ work: { ...base.work, status: "employed", formal: true } });
+      const lost = applyEffects(working, [{ work: "lose-job" }], "chance").state;
+      expect(lost.person.work.status).toBe("unemployed");
+      const found = applyEffects(lost, [{ work: "find-job" }], "chance").state;
+      expect(found.person.work.status).toBe("employed");
+      const informal = withPerson({ work: { ...base.work, status: "unemployed", formal: false } });
+      expect(applyEffects(informal, [{ work: "find-job" }], "chance").state.person.work.status).toBe("informal");
+      const carer = withPerson({ work: { ...base.work, status: "caregiver" } });
+      expect(applyEffects(carer, [{ work: "lose-job" }], "chance").state.person.work.status).toBe("caregiver");
+      expect(applyEffects(carer, [{ work: "find-job" }], "chance").state.person.work.status).toBe("caregiver");
+    });
+    it("changes the job's sector, and the status to match when working", () => {
+      const working = withPerson({ work: { ...base.work, status: "informal", formal: false } });
+      const { person } = applyEffects(working, [{ sector: "services", formal: true }], "choice").state;
+      expect(person.work).toMatchObject({ sector: "services", formal: true, status: "employed" });
+      const carer = withPerson({ work: { ...base.work, status: "caregiver" } });
+      const kept = applyEffects(carer, [{ sector: "industry", formal: false }], "choice").state;
+      expect(kept.person.work).toMatchObject({ sector: "industry", formal: false, status: "caregiver" });
+    });
+    it("moves to another kind of place", () => {
+      const state = withPerson({ location: "rural" });
+      expect(applyEffects(state, [{ move: "urban" }], "choice").state.person.location).toBe("urban");
+    });
+  });
 });

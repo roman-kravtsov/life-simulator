@@ -5,6 +5,7 @@ import { useId, type ReactNode } from "react";
 import type { HelpTopic, Relationship } from "../engine/types";
 import { capitalise, formatMoney, pluralKey } from "../format";
 import { t } from "../i18n";
+import { HelpNote } from "./HelpNote";
 import { Switch } from "./kit";
 import styles from "./LifePanels.module.css";
 import {
@@ -20,7 +21,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className={styles.panel}>
-      <h2 id={headingId} className={styles.heading}>
+      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
         {title}
       </h2>
       {children}
@@ -153,12 +154,7 @@ export function ConditionsPanel({ conditions }: { conditions: LifeOverview["cond
         ))}
       </ul>
       {helpTopics.map((topic) => (
-        <p key={topic} className={styles.help}>
-          {t(`help.${topic}`)}{" "}
-          <a href="https://findahelpline.com" rel="noopener">
-            {t("help.link")}
-          </a>
-        </p>
+        <HelpNote key={topic} topic={topic} />
       ))}
     </Panel>
   );
