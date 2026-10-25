@@ -312,7 +312,7 @@ describe("SUM-001: the summary of a life", () => {
       seed: "summary-1",
       name: life.person.name,
       sex: life.person.sex,
-      countryIso3: life.person.countryIso3,
+      country: { iso3: "AAA", iso2: "AA", name: "Testland" },
       epitaph: "She kept bees.",
     });
     expect(summary.death.age).toBe(life.death!.age);

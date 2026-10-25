@@ -220,7 +220,8 @@ export interface LifeSummary {
   name: string;
   sex: Sex;
   birthYear: number;
-  countryIso3: string;
+  /** Where the life was lived; `iso2` and `name` are what `countryName` needs. */
+  country: Pick<Country, "iso3" | "iso2" | "name">;
   death: DeathRecord;
   facts: LifeFacts;
   rings: Ring[];
@@ -241,7 +242,7 @@ export function summarize(life: LifeState, country: Country): LifeSummary {
     name: person.name,
     sex: person.sex,
     birthYear: person.birthYear,
-    countryIso3: person.countryIso3,
+    country: { iso3: country.iso3, iso2: country.iso2, name: country.name },
     death,
     facts: lifeFacts(life),
     rings: buildRings(

@@ -102,3 +102,19 @@ describe("TIME-001: the game only moves when the player acts", () => {
     expect(timers(readFileSync(file, "utf8"))).toBe(false);
   });
 });
+
+describe("SAVE-007: everything stored in the browser can be found and deleted", () => {
+  const storageKeys = (source: string) =>
+    [...source.matchAll(/\b(?:localStorage|storage)\s*\.\s*(?:getItem|setItem|removeItem)\(\s*"([^"]*)"/g)].map(
+      (m) => m[1]!,
+    );
+
+  it("finds the keys a file uses", () => {
+    expect(storageKeys('localStorage.getItem("birthright:theme")')).toEqual(["birthright:theme"]);
+    expect(storageKeys('localStorage.setItem("theme", x)')).toEqual(["theme"]);
+  });
+
+  it.each(sourceFiles("src"))("%s keeps its localStorage keys under the birthright: prefix", (file) => {
+    for (const key of storageKeys(readFileSync(file, "utf8"))) expect(key.startsWith("birthright:")).toBe(true);
+  });
+});
