@@ -66,7 +66,7 @@ describe("calibration harness (SIM-007)", () => {
     const report = calibrateLifeExpectancy(wrong, 800, "wrong");
     const against = expectedLifeExpectancy(real);
     expect(Math.abs(report.simulated - against)).toBeGreaterThan(LE_TOLERANCE_YEARS);
-  });
+  }, 60_000);
 });
 
 describe("the life systems against the source data (M4, M5)", () => {

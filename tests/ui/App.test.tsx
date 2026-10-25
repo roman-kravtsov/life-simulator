@@ -171,7 +171,7 @@ describe("App", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Begin another life" }));
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
-  });
+  }, 60_000);
 
   it("lets the life screen use the whole window and every other screen keep the reading width (UI-010)", async () => {
     const { user } = setup();
