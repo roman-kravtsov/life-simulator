@@ -7,8 +7,9 @@ export const KEY_PREFIX = "birthright:";
 export type CurrentLife = { status: "none" } | { status: "found"; raw: unknown } | { status: "unreadable" };
 
 /** What is stored for the life in progress. Storage can be missing or full, so every access is guarded. */
-export function loadCurrent(storage: Storage = localStorage): CurrentLife {
+export function loadCurrent(storage?: Storage): CurrentLife {
   try {
+    storage ??= localStorage;
     const text = storage.getItem(CURRENT_KEY);
     if (text === null) return { status: "none" };
     return { status: "found", raw: JSON.parse(text) as unknown };
@@ -18,8 +19,9 @@ export function loadCurrent(storage: Storage = localStorage): CurrentLife {
 }
 
 /** True when the life was written. False when the browser refused (full, blocked, private mode). */
-export function saveCurrent(save: unknown, storage: Storage = localStorage): boolean {
+export function saveCurrent(save: unknown, storage?: Storage): boolean {
   try {
+    storage ??= localStorage;
     storage.setItem(CURRENT_KEY, JSON.stringify(save));
     return true;
   } catch {
@@ -27,8 +29,9 @@ export function saveCurrent(save: unknown, storage: Storage = localStorage): boo
   }
 }
 
-export function clearCurrent(storage: Storage = localStorage): void {
+export function clearCurrent(storage?: Storage): void {
   try {
+    storage ??= localStorage;
     storage.removeItem(CURRENT_KEY);
   } catch {
     // Nothing to remove if storage is not there.
@@ -36,12 +39,13 @@ export function clearCurrent(storage: Storage = localStorage): void {
 }
 
 /** Removes everything the game keeps in localStorage: the life in progress and the preferences. */
-export function clearLocalStorage(storage: Storage = localStorage): void {
+export function clearLocalStorage(storage?: Storage): void {
   try {
-    const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i)).filter(
+    const store = storage ?? localStorage;
+    const keys = Array.from({ length: store.length }, (_, i) => store.key(i)).filter(
       (key): key is string => key !== null && key.startsWith(KEY_PREFIX),
     );
-    for (const key of keys) storage.removeItem(key);
+    for (const key of keys) store.removeItem(key);
   } catch {
     // Nothing to remove if storage is not there.
   }

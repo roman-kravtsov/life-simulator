@@ -237,25 +237,33 @@ Each effect also records **why** it happened: `circumstance` (dealt by birth or 
 
 Two stores, both local to the browser:
 
-- **localStorage** `birthright:current` holds the life in progress (small).
-- **IndexedDB** `birthright` / `pastLives` holds finished lives (the archive can grow).
+- **localStorage** `birthright:current` holds the life in progress (small). Every key the game writes starts with `birthright:`, so "delete all local data" finds them (SAVE-007).
+- **IndexedDB** `birthright` holds finished lives (the archive can grow): `pastLives` holds each life (its summary and its save) and `listings` holds the small records the past-lives list shows. One life per seed.
 
 ```ts
 interface SaveFile {
-  schemaVersion: 1;
-  dataVersion: string;      // world data used
-  contentVersion: string;   // events and text used
+  schemaVersion: number;    // 1 today; readSave migrates older ones (MIGRATIONS) and refuses newer ones
+  dataVersion: string;      // world data used (the country index's dataVersion)
+  contentVersion: string;   // events and text used (CONTENT_VERSION in src/content/version.ts)
   seed: string;             // e.g. "amber-river-4821"
-  settings: { softening: "off" | "on"; pace: "every-year" | "quiet-years"; zoomIn: "on" | "keep-yearly" };
-  decisions: { year: number; quarter?: 1 | 2 | 3 | 4; eventId: string; choiceId: string }[];   // the full player input log
-  settingsLog: { age: number; changes: Partial<Settings> }[];   // settings changed mid-life (softening changes which events can come)
-  planLog: { age: number; plan: Plan }[];                      // every plan the player set; plans carry over until the next
-  snapshot: Person;         // latest state, so loading is instant
+  countryIso3: string;      // the country the birth drew, which the replay and the resume need before the snapshot is read
+  settings: Settings;       // the settings the life began with: { softening, pace }
+  decisions: { year: number; eventId: string; choiceId: string }[];   // the full player input log
+  settingsLog: { age: number; changes: Partial<Settings> }[];         // settings changed mid-life (softening changes which events can come)
+  planLog: { age: number; plan: Plan }[];                             // every plan the player set; plans carry over until the next
+  years: number;            // years recorded: where a replay stops
+  waiting: boolean;         // a decision was waiting: the replay takes one more step, to the decision, and does not answer it
+  epitaph?: string;         // the player's few words, at most 140 characters (DEATH-004)
+  snapshot: LifeState;      // latest state (person, history, plan, a waiting turn, the logs), so loading is instant
   createdAt: string; updatedAt: string;
 }
 ```
 
-The **seed plus the decision, plan and settings logs** are the real save; the snapshot is a cache. `settings` is the initial settings, and `settingsLog` is applied on top of it at the age each entry names. If the snapshot fails to load (or a migration is missing), the engine replays the life from seed and those logs. Saves are written after every resolved turn, so closing the tab never loses more than the current screen. Export and import as a JSON file are cheap to add once this exists.
+The **seed plus the decision, plan and settings logs** are the real save; the snapshot is a cache. `settings` is the initial settings, and `settingsLog` is applied on top of it at the age each entry names. Saves are written after every resolved turn (and when the drawn birth is shown), so closing the tab never loses more than the current screen; a browser that refuses the write (full, blocked, private mode) is told to the player.
+
+**Loading** (`readSave`, `restoreLife` in `src/engine/save.ts`): a save of a newer schema is "unsupported" and one with no seed or logs is "damaged", and neither is deleted unasked. A save that passes goes through the migrations from its version to the current one (SAVE-004). The snapshot is used when it has the shape of a life that matches the logs beside it (the same seed, country, years, waiting and answered decisions). When the data and content versions match, it is also compared with the life replayed from the logs (a few milliseconds), and a snapshot that has drifted is replaced by the replay. When the snapshot is missing or unsound, the engine replays the life from seed and logs (SAVE-005). When the versions differ, the snapshot is kept and the player is told the life may play out a little differently from here, because a replay is exact only for the same data and content. A waiting decision whose event this version no longer has is dropped, and the year starts again when the player continues. A save no replay can rebuild is "damaged". Export and import as a JSON file are cheap to add once this exists.
+
+**The archive** keeps what the summary showed (`LifeSummary`, plain data) beside the save, so a life opens exactly as it was seen even if the engine or the content moves on. Adding an epitaph writes the life again.
 
 ---
 
@@ -387,10 +395,12 @@ This is where the "in-depth game feeling" comes from.
 ### 3.8 End of life and summary
 
 - A closing passage, the cause and age of death, and where that sits against the country's life expectancy.
-- **The cross-section**: the full growth-ring image of the life.
-- **Key moments**: a short timeline of the most significant years.
-- **Chance, choice and circumstance**: a breakdown of what shaped this life, built from the effect tags (2.3). For example: "Most of your health came from where you were born; most of your belonging came from your choices."
-- **Your notes**: the journal entries and the epitaph.
+- **The closing passage** (DEATH-002) is one of 13 cause groups (infection, early life, childbirth, hunger, cancer, heart, lungs, long illness, accident, violence, war, suicide, other; `deathGroup` maps the WHO causes into them), each in a normal and a softened telling (softening on), followed by a line for the stage of life the person dies in. Nothing of the body, the method or the place is shown. A death by suicide is stated plainly and always carries the help line.
+- **Against life expectancy** (DEATH-003): the life expectancy at birth of the person's sex from the country's life table (UN WPP, source and year shown), the years more or fewer (within 5 years counts as "about the same", authored), and the share of people of that sex in the country who live to that age.
+- **The cross-section** (SUM-002): the full growth-ring image of the life, one ring per year lived (a death year included). The thickness runs from 0.2 of the thickest ring (happiness 0) to 1 (happiness 100), a floor so a bleak year still shows. The theme of a year (`yearTheme`, recorded on the year) is, in order: loss (a death in the family), illness (a condition begins or worsens, or one is serious, severity 2 or more), love (a partner, spouse or child comes into the life), move (between countryside and city), study (in school), work (in a job) and otherwise plain. Colour is never the only signal: each theme has its own pattern and label, and a table of the years sits beside the image.
+- **Key moments** (SUM-003): each year is scored by what happened in it (quiet texture counts for nothing; an event 1, a decision 3, a severe event 4 and a difficult one 2.5, a condition 3, a partner or child 3, a wedding 4, a finished school level 2.5, leaving school 2, a job gained or lost 2.5, a move 2, up to 3 for the size of the changes to the stats, 1 for a new stage of life; all authored). The years that score 4 or more make the key moments, the best 12 at most; when fewer than 5 do, the best years with something to tell fill up to 5, and a short life shows every year it has. The year of death is left to the closing passage. The marks on the rings are numbered like the moments.
+- **Chance, choice and circumstance** (SUM-004): each stat's level is carried on from year to year and pulled toward a norm (`src/engine/drift.ts`, SIM-004). The summary follows each source through the same yearly filter: what the person was dealt (the norm for the person against the norm for a neutral person with no traits, a middle household, a city, no job, no debt and no conditions: circumstance), the plan the player lived by (choice), conditions and the year's random swing (chance), and every effect of an event or decision with its own tag. The average size of each source's share of the level over the life gives three shares per stat, summing to 1; a cause behind at least half is "the main one", otherwise the stat is "mixed". The words are one sentence per stat and cause: "Most of your health came from where and when you were born." The records of what moved the stats (`YearRecord.drift`) and of each year's theme are stored with the history.
+- **Your notes**: the journal entries and the epitaph. The epitaph (DEATH-004, at most 140 characters) is written on the summary, saved with the life and can be edited from the archive; the journal comes with UI-007 (M7).
 - Post-MVP ideas, our own take on comparison: **"The other shore"** (the same seed and traits, born in a different country) and **"The road not taken"** (replay from a past decision and change it).
 
 ### 3.9 Randomness and replay
@@ -398,7 +408,7 @@ This is where the "in-depth game feeling" comes from.
 - **Seed:** a readable string (three words or two words plus digits), stored with the life and shown on the summary.
 - **PRNG:** a small, fast, well-tested generator (sfc32 or similar), seeded by hashing the seed string (cyrb128-style hash). No `Math.random()` anywhere in the engine; a lint rule enforces it.
 - **Independent streams:** each subsystem draws from its own stream derived from `hash(seed, stream name, year)`: `birth`, `person`, `names`, `parents`, `siblings`, `siblings:birth`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `mortality`, `cause`, `outcomes` (the roll of a chosen outcome), `care`, `friends`, `romance` and `fertility`. Adding a new event to the content therefore does not change when someone dies, and replays stay stable across small content updates.
-- **Replay guarantee:** the same seed, data version, content version and decision, plan and settings logs always produce the same life. Tested directly (same inputs, identical history, run many times).
+- **Replay guarantee** (RNG-004): the same seed, data version, content version and decision, plan and settings logs always produce the same life. `replay` (`src/engine/replay.ts`) lives the life again from the seed: at each age it applies the settings changes logged at or before it, sets the logged plan, answers each decision from the log, and stops at the recorded years (one step further when a decision was waiting). Tested directly: many lives played by a player who sets plans, changes settings and answers decisions at random, in three real countries and a synthetic one, give identical full histories when replayed, whole or stopped at any year, with or without a decision waiting. Adding or changing content bumps `CONTENT_VERSION`, which a test pins to a fingerprint of the events and conditions.
 - **Auto mode:** an auto-player chooses for the player using a simple policy (weighted by traits), drawing from its own `autoplay` stream, so auto lives are also replayable.
 
 ---
@@ -504,3 +514,16 @@ Built in M5 (2026-10-24), where events, decisions and the yearly plan settled th
 - **Streams.** New: `outcomes`, `care`, `friends`, `romance`, `fertility`. The newborn's marriage draw is drawn at the end of the `person` stream.
 - **Review fixes (M5).** A student at tertiary level who takes the fees on (flag `tuition`) borrows each year's fees, authored at 0.4 of a year's middle-of-the-country income; one with a scholarship does not. Other costs on a decision card (care, a course) fall on the household of a child or a student and are not shown to them. The usual care's odds are shown at the level it sets (0), even for someone who had the best care. Possible partners get an id by age (`partner-<age>`), so one who dies before the wedding does not block the next. A life's replay input is the decision log, the plan log and the settings log (2.4); `planLog` and `settingsLog` are optional on `LifeState`. A settings change made while a decision waits is logged at the next age, because that year's events are already chosen. Fees are borrowed in each year the student starts in school, the last year of the course included, and stop once the studies end; a student's debt counts toward debt stress against the household's income, which weighs on the poorest students (an authored simplification). Content validation also requires that a decision has a choice that is always open, and no effects on the event itself.
 - **Open for Roman:** other-sex partners only; the default pace ("quiet years" on, to confirm); no country-specific help lines; the authored numbers above.
+
+Built in M6 (2026-10-25), where the end of a life, the summary and the saves settled these details. None of the numbers named "authored" is a published statistic and none is shown as one.
+
+- **Death.** The record (`deathRecord`) adds the calendar year, the cause group, the stage of life, the keys of the closing passage and the comparison with life expectancy to the engine's age and cause. Thirteen cause groups; 13 normal and 13 softened passages and 7 stage lines are in `src/content/strings/death.ts`. The cause `maternal` (WHO) had no text and now has one.
+- **The summary** is a pure function of the finished life and its country (`summarize`), plain data that the archive stores. Its rules (ring thickness 0.2 to 1, the order of the themes, the weights of the key moments, the threshold of 4 and the limits of 5 and 12, the 5-year "about the same") are authored and written out in 3.8.
+- **What shaped a life** compares sources through the stat's own yearly filter rather than adding up the sizes of yearly changes, because stats track a norm that circumstances set: summing yearly changes would credit almost everything to chance. The neutral person it measures against (no traits, the middle household, a city, no job, no debt, no conditions, parents of closeness 50, an upper-middle-income country, so no care bonus or penalty) is authored. A player who keeps the default plan has almost nothing credited to choice, because the plan's effects are small by design (3.3); decisions with a choice of outcome carry the `choice` tag.
+- **Year records** now carry `theme` and `drift` (the norm shifts by source and the random swing); `Turn` carries `drift` across a waiting decision. The drift record costs a few extra evaluations of the stat norms a year and draws nothing new from any stream.
+- **Saves** are in 2.4. `LifeState` gained `startSettings` (the settings the life began with, which `settings` is `settingsLog` applied to) and `epitaph`. Version 1 is the first schema, so `MIGRATIONS` is empty; the machinery is tested with an invented older schema, and `tests/engine/save.test.ts` says so. A save of a newer schema is never deleted unasked.
+- **Content version.** `CONTENT_VERSION` ("2026.10.1") is in `src/content/version.ts`. `tests/engine/content.test.ts` pins a fingerprint of the events and conditions as data (not their functions), so a change makes the test fail until the version is bumped and the pin updated.
+- **Browser storage** uses `idb` for the archive; tests use `fake-indexeddb`. Storage that is missing or refuses writes never throws: the player is told when a life could not be saved. "Delete all local data" removes every `birthright:` key and the database.
+- **Soft tellings of conditions.** The beginning and worsening of a sensitive condition (depression, cancer) now have a softer telling, used when softening is on. Chronic back pain, named in the M5 follow-up, is not tagged sensitive and needs none.
+- **Streams.** None new: the drift record reads the `drift` stream a second time, from the same start.
+- **Open for Roman:** the passages and shaping sentences are written in the game's voice but not yet read by you; the 5-year and threshold numbers above; whether a life that was saved and then loaded with other content should say so more loudly; the rings' colours and patterns once seen.

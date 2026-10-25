@@ -33,6 +33,9 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   focus.ts          the yearly plan: five focus areas, three points, diminishing returns, points taken by circumstance
   decisions.ts      choices with outcomes, locks, costs and the odds lens; systemDecisions.ts is the engine's own (school, care, partners)
   partnership.ts    marriage-age model, courtship, arranged marriage under 18, fertility
+  death.ts          the death record, cause groups, closing passage keys and the comparison with life expectancy (DEATH-001 to 003)
+  summary.ts, rings.ts   the finished life as data: facts, growth rings and their themes, key moments, chance/choice/circumstance shares
+  save.ts, replay.ts   the save file, schema migrations, restoring a life (snapshot, or replay from seed and logs), replay (RNG-004)
   validate.ts       content validation (ADMIN-001): validateEvents, validateConditions, run over what ships in the tests
   calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
   dist.ts           small distribution helpers (normal, clamp)
@@ -40,13 +43,17 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
   world/            country schema (types.ts), validator, birth draw, data loader
-src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/events/*.ts and strings/ui.ts),
+src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/death.ts, strings/summary.ts, strings/events/*.ts and strings/ui.ts),
+                    version.ts (CONTENT_VERSION, saved with every life),
                     events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region)
 src/data.ts         loads the baked country files in the browser (fetch), outside the engine
+src/save/           browser storage outside the engine: current.ts (the life in progress, localStorage `birthright:current`), archive.ts (finished lives, IndexedDB via idb),
+                    index.ts (the Persistence interface the store uses, browserPersistence, noPersistence)
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
-  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, choose, setSettings, toggleUsPrices);
+  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, choose, setSettings, toggleUsPrices, plus resume, epitaph and past lives);
+                    autosaves after every turn and archives a life when it ends;
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
   kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog)
@@ -58,8 +65,8 @@ e2e/                Playwright: full-loop tests at phone and desktop widths
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
-- **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision, plan and settings logs. Saves (M6) store those plus a snapshot, so any life can be replayed exactly.
-- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, Vitest, React Testing Library, Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
+- **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision, plan and settings logs. Saves store those plus a snapshot (a cache), so any life can be replayed exactly (`replay`, tested over many random lives). Design 2.4 has the format.
+- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, `idb` (IndexedDB), Vitest, React Testing Library, `fake-indexeddb` (tests), Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
 
 ## Data pipeline
 
@@ -93,6 +100,8 @@ Read these docs before starting work:
 - **Events and decisions are content** (`src/content/events/<stage>.ts`, strings in `src/content/strings/events/`). `tests/engine/validate.test.ts` runs `validateEvents` over everything that ships: text, soft text, note, choice, outcome, lens and lock keys must exist, outcome probabilities must sum to 1, a choice with several outcomes needs a lens phrase for each, severe and difficult events need a `helpTopic` and a `softText`, `world` paths must resolve, and roles, follow-ups and illness ids must exist. A repeatable notable event needs `cooldownYears` of at least 6 unless it is `quiet` or `once` (`tests/engine/content.test.ts`, which also holds the size and pacing targets). Text may only name the event's roles (`{friend}`). One decision a year at most; the odds lens reads the engine's own probabilities, never a separate number.
 - **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, the share out of work, marriage ages, children per woman, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
+- **Bump `CONTENT_VERSION`** (`src/content/version.ts`) when a change to events or conditions could make a logged life play differently; a test pins a fingerprint of the catalog and fails until you do. A new `LifeState` or `SaveFile` field needs `readSave`/`MIGRATIONS` thought: a save of the old shape must still load.
+- **Browser storage:** every localStorage key starts with `birthright:` (a guard test), so "delete all local data" can find it. Storage can be missing or full: never let a read or write throw into the UI.
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.
 - **Engine state is immutable:** functions return new state and never mutate their inputs.
 - **Interactive controls come from `src/ui/kit/`.** Do not import `react-aria-components` in screens, and do not use a raw `<button>`, `<input type="range">` or hand-made dialog for new UI. Style states with React Aria's data attributes (`[data-pressed]`, `[data-focus-visible]`, `[data-selected]`) in CSS Modules, using token variables only. See `docs/design-system.md`.
