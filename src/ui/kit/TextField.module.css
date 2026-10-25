@@ -1,0 +1,44 @@
+.field {
+  display: grid;
+  gap: 0.35rem;
+  font-family: var(--font-ui);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.input {
+  min-height: 2.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ink-soft);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font: inherit;
+}
+
+.input[data-hovered] {
+  border-color: var(--ink);
+}
+
+.input[data-focus-visible] {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.input[data-invalid] {
+  border-style: dashed;
+  border-color: var(--rust);
+}
+
+.input[data-disabled] {
+  opacity: 0.5;
+}
+
+.description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
