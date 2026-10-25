@@ -437,6 +437,7 @@ describe("the one live region of the life screen (A11Y-002)", () => {
     expect(status).toHaveTextContent("You chose: Stand up to them.");
     expect(status).toHaveTextContent("Kofi pays you back");
     expect(status).toHaveTextContent(en["help.grief"]!);
+    expect(status).toHaveTextContent(en["help.link"]!);
     expect(status).toHaveTextContent("Health rose by 5.");
     // The visible story says the same, once, and is not a live region of its own.
     const story = screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!;

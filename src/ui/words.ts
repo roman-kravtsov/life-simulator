@@ -42,7 +42,7 @@ export function eventWords(event: EventRecord, sources: CountryIndex["sources"])
       // A note this version cannot word is left out.
     }
   }
-  if (helpTopic && hasString(`help.${helpTopic}`)) parts.push(t(`help.${helpTopic}`));
+  if (helpTopic && hasString(`help.${helpTopic}`)) parts.push(t(`help.${helpTopic}`), `${t("help.link")}.`);
   return parts.join(" ");
 }
 
