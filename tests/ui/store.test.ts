@@ -2,14 +2,24 @@ import { describe, expect, it, vi } from "vitest";
 import { CONTENT_VERSION } from "../../src/content/version";
 import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
-import { DEFAULT_SETTINGS, type LifeState, type Person, type Relationship } from "../../src/engine/types";
+import {
+  DEFAULT_SETTINGS,
+  type LifeState,
+  type Person,
+  type Relationship,
+  type YearRecord,
+} from "../../src/engine/types";
 import {
   browserSeed,
   closenessBand,
   createGameStore,
   EPITAPH_MAX_LENGTH,
+  countryFacts,
   lifeOverview,
+  lifeRings,
+  lifeStrip,
   planToSend,
+  statBand,
 } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
@@ -1137,5 +1147,96 @@ describe("game store: saving, death and the archive (M6)", () => {
       expect(store.getSnapshot()).toMatchObject({ screen: "past", problem: "archive" });
       expect(store.getSnapshot().pastLives).toHaveLength(2);
     });
+  });
+});
+
+// The life screen's header strip, the stat words and the country tab (UI-004, UI-010).
+describe("the life strip", () => {
+  const person = makePerson({ age: 16 });
+  const year = (age: number, events: YearRecord["events"] = []): YearRecord => ({
+    age,
+    stage: "adolescence",
+    stageChanged: false,
+    stats: person.stats,
+    events,
+  });
+  const told = { id: "e", textKey: "event.midlife.looking_back", effects: [] };
+  const lifeWith = (age: number, history: YearRecord[]): LifeState => ({
+    seed: "t",
+    person: { ...person, age },
+    history,
+    settings: DEFAULT_SETTINGS,
+    decisions: [],
+  });
+
+  it("runs to about 80, and to 100 once the person is past 75", () => {
+    expect(lifeStrip(lifeWith(16, [])).end).toBe(80);
+    expect(lifeStrip(lifeWith(75, [])).end).toBe(80);
+    expect(lifeStrip(lifeWith(76, [])).end).toBe(100);
+  });
+
+  it("marks the ages of the key moments, and only years that had something to tell", () => {
+    const history = [year(5), year(6, [told]), year(7), year(8, [told])];
+    const strip = lifeStrip(lifeWith(8, history));
+    expect(strip.age).toBe(8);
+    // keyMoments names the age lived in the year, which is one less than the age reached at its end.
+    expect(strip.moments).toEqual([5, 7]);
+  });
+
+  it("has no marks for a life with nothing told yet", () => {
+    expect(lifeStrip(lifeWith(0, [])).moments).toEqual([]);
+  });
+
+  it("gives one ring a year", () => {
+    expect(lifeRings([year(1), year(2, [told])])).toHaveLength(2);
+  });
+});
+
+describe("stat bands (UI-004)", () => {
+  it("names a stat's level in five words that a screen reader hears with the number", () => {
+    expect(statBand(0)).toBe("very-low");
+    expect(statBand(19.6)).toBe("very-low");
+    expect(statBand(20)).toBe("low");
+    expect(statBand(45)).toBe("fair");
+    expect(statBand(60)).toBe("good");
+    expect(statBand(80)).toBe("very-good");
+    expect(statBand(100)).toBe("very-good");
+  });
+});
+
+describe("country facts (UI-004)", () => {
+  const country = makeCountry();
+
+  it("takes the life expectancy, school completion and middle income from the country's own data, with source and year", () => {
+    const facts = countryFacts("female", country);
+    expect(facts.lifeExpectancy).toMatchObject({ source: "test", year: 2023 });
+    expect(facts.lifeExpectancy!.years).toBeGreaterThan(40);
+    expect(facts.upperSecondary).toEqual({ share: 0.5, source: "test", year: 2023 });
+    expect(facts.middleIncome).toEqual({ daily: dailyIncome(country, 50), source: "test", year: 2023 });
+  });
+
+  it("uses the person's sex for the life expectancy and school completion", () => {
+    const base = makeCountry();
+    const mixed = makeCountry({
+      education: {
+        ...base.education,
+        upperSecondaryCompletion: { value: { female: 0.3, male: 0.6 }, source: "test", year: 2020 },
+      },
+    });
+    expect(countryFacts("female", mixed).upperSecondary?.share).toBe(0.3);
+    expect(countryFacts("male", mixed).upperSecondary?.share).toBe(0.6);
+  });
+
+  it("leaves out a value that was filled from a regional average, because it is not a fact about this country", () => {
+    const base = makeCountry();
+    const estimated = makeCountry({
+      education: {
+        ...base.education,
+        upperSecondaryCompletion: { ...base.education.upperSecondaryCompletion, estimated: true },
+      },
+      money: { ...base.money, percentiles: { ...base.money.percentiles, estimated: true } },
+      demography: { ...base.demography, lifeTable: { ...base.demography.lifeTable, estimated: true } },
+    });
+    expect(countryFacts("male", estimated)).toEqual({});
   });
 });

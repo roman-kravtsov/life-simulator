@@ -3,7 +3,18 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { useState } from "react";
-import { Button, ConfirmDialog, Dialog, Slider, Stepper, Switch, TextField, Tooltip } from "../../src/ui/kit";
+import {
+  Button,
+  ConfirmDialog,
+  Dialog,
+  Slider,
+  Stepper,
+  Switch,
+  TabPanel,
+  Tabs,
+  TextField,
+  Tooltip,
+} from "../../src/ui/kit";
 
 function Counted({ max = 3, onChange }: { max?: number; onChange?: (value: number) => void }) {
   const [value, setValue] = useState(1);
@@ -102,6 +113,25 @@ describe("kit", () => {
     expect(onChange).toHaveBeenLastCalledWith(0);
   });
 
+  it("Stepper in its compact form keeps the description for assistive technology and shows only the note", () => {
+    render(
+      <Stepper
+        label="Health"
+        description="Health and care."
+        note="1 point already taken."
+        compact
+        value={1}
+        minValue={0}
+        maxValue={2}
+      />,
+    );
+    expect(screen.getByRole("textbox", { name: "Health" })).toHaveAccessibleDescription(
+      "Health and care. 1 point already taken.",
+    );
+    expect(screen.getByText("Health and care.")).toHaveClass("visually-hidden");
+    expect(screen.getByText("1 point already taken.")).not.toHaveClass("visually-hidden");
+  });
+
   it("Stepper has plus and minus buttons for touch, which stop working at the limits", async () => {
     const user = userEvent.setup();
     render(<Counted max={2} />);
@@ -187,5 +217,97 @@ describe("kit", () => {
     await user.keyboard("{Enter}");
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+  describe("Tabs", () => {
+    const tabs = [
+      { id: "family", label: "Family" },
+      { id: "country", label: "Country" },
+      { id: "notes", label: "Notes" },
+    ];
+
+    function Around({ onSelect }: { onSelect?: (key: string) => void }) {
+      const [selected, setSelected] = useState("family");
+      return (
+        <Tabs
+          label="Around you"
+          tabs={tabs}
+          selectedKey={selected}
+          onSelectionChange={(key) => {
+            setSelected(key);
+            onSelect?.(key);
+          }}
+        >
+          <TabPanel id="family">Marta and Paulo</TabPanel>
+          <TabPanel id="country">Life expectancy</TabPanel>
+          <TabPanel id="notes">Nothing yet</TabPanel>
+        </Tabs>
+      );
+    }
+
+    it("is a labelled tab list with the selected tab's panel, named by its tab", () => {
+      render(<Around />);
+      expect(screen.getByRole("tablist", { name: "Around you" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Family" })).toHaveAttribute("aria-selected", "true");
+      expect(screen.getByRole("tab", { name: "Country" })).toHaveAttribute("aria-selected", "false");
+      expect(screen.getByRole("tabpanel", { name: "Family" })).toHaveTextContent("Marta and Paulo");
+      expect(screen.queryByText("Life expectancy")).not.toBeInTheDocument();
+    });
+
+    it("moves between tabs with the arrow keys, Home and End, and shows each panel", async () => {
+      const user = userEvent.setup();
+      const onSelect = vi.fn();
+      render(<Around onSelect={onSelect} />);
+      await user.tab();
+      expect(screen.getByRole("tab", { name: "Family" })).toHaveFocus();
+      await user.keyboard("{ArrowRight}");
+      expect(screen.getByRole("tab", { name: "Country" })).toHaveFocus();
+      expect(screen.getByRole("tab", { name: "Country" })).toHaveAttribute("aria-selected", "true");
+      expect(screen.getByRole("tabpanel", { name: "Country" })).toHaveTextContent("Life expectancy");
+      await user.keyboard("{End}");
+      expect(screen.getByRole("tab", { name: "Notes" })).toHaveFocus();
+      expect(onSelect).toHaveBeenLastCalledWith("notes");
+      await user.keyboard("{ArrowRight}");
+      expect(screen.getByRole("tab", { name: "Family" })).toHaveFocus();
+      await user.keyboard("{ArrowLeft}");
+      expect(screen.getByRole("tab", { name: "Notes" })).toHaveFocus();
+      await user.keyboard("{Home}");
+      expect(screen.getByRole("tab", { name: "Family" })).toHaveFocus();
+    });
+
+    it("is controlled: the selected key comes from the caller", () => {
+      const { rerender } = render(
+        <Tabs label="Parts" tabs={tabs} selectedKey="notes" onSelectionChange={() => {}}>
+          <TabPanel id="family">A</TabPanel>
+          <TabPanel id="notes">B</TabPanel>
+        </Tabs>,
+      );
+      expect(screen.getByRole("tab", { name: "Notes" })).toHaveAttribute("aria-selected", "true");
+      rerender(
+        <Tabs label="Parts" tabs={tabs} selectedKey="family" onSelectionChange={() => {}}>
+          <TabPanel id="family">A</TabPanel>
+          <TabPanel id="notes">B</TabPanel>
+        </Tabs>,
+      );
+      expect(screen.getByRole("tabpanel", { name: "Family" })).toHaveTextContent("A");
+    });
+
+    it("can keep every panel in the page, the ones not selected hidden from everyone", () => {
+      render(
+        <Tabs label="Parts" tabs={tabs} selectedKey="family" onSelectionChange={() => {}} variant="bar">
+          <TabPanel id="family" forceMount>
+            Story
+          </TabPanel>
+          <TabPanel id="country" forceMount>
+            You
+          </TabPanel>
+          <TabPanel id="notes" forceMount>
+            Around
+          </TabPanel>
+        </Tabs>,
+      );
+      expect(screen.getByText("You").closest("[inert]")).not.toBeNull();
+      expect(screen.getByText("Story").closest("[inert]")).toBeNull();
+      expect(screen.getAllByRole("tabpanel")).toHaveLength(1);
+    });
   });
 });

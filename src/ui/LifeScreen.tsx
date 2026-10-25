@@ -1,22 +1,39 @@
-import { useMemo, useState } from "react";
+// The life screen (UI-004, UI-010): a header that stays at the top, and below it, in the wide layout, three columns
+// that scroll as one page: about you on the left, the ledger of years in the middle, around you on the right. The
+// side columns stay in place and fit a short window; the plan sits in a tray under the ledger. Below 900 px it is one
+// column with a bar of tabs, Story, You and Around you, one shown at a time.
+//
+// The story comes first in the page, then the two columns, so a screen reader and the keyboard meet the year before the
+// reference material; the columns are placed side by side with CSS grid. Everything here only displays what the store
+// derives from the life.
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DecisionCard } from "../engine/decisions";
 import type { CountryIndex, Country } from "../engine/world/types";
-import type { LifeState, Plan, Settings, StatId } from "../engine/types";
+import type { LifeState, Plan, Settings } from "../engine/types";
 import { countryName } from "../format";
 import { t } from "../i18n";
+import { AroundColumn } from "./AroundColumn";
 import { DecisionCardView } from "./DecisionCardView";
 import { EventLine } from "./EventLine";
-import { Header } from "./Header";
-import { Button } from "./kit";
-import { ConditionsPanel, FamilyPanel, MoneyPanel, SchoolPanel, WorkPanel } from "./LifePanels";
+import { TabPanel, Tabs } from "./kit";
+import { Ledger } from "./Ledger";
+import { LifeHeader } from "./LifeHeader";
 import styles from "./LifeScreen.module.css";
 import { PlanWidget } from "./PlanWidget";
-import { SettingsPanel } from "./SettingsPanel";
-import { lifeOverview, planToSend, type GameSnapshot, type PlanOverview, type QuietRun } from "./store";
+import {
+  countryFacts,
+  lifeOverview,
+  lifeRings,
+  lifeStrip,
+  planToSend,
+  type GameSnapshot,
+  type PlanOverview,
+  type QuietRun,
+} from "./store";
 import { useFocusOn } from "./useFocusOn";
+import { useNarrow } from "./useNarrow";
 import { quietRunLine } from "./words";
-
-const STATS: readonly StatId[] = ["health", "happiness", "belonging", "skills"];
+import { YouColumn } from "./YouColumn";
 
 export interface LifeScreenProps {
   life: LifeState;
@@ -41,6 +58,8 @@ export interface LifeScreenProps {
   onBack: () => void;
 }
 
+type View = "story" | "you" | "around";
+
 export function LifeScreen({
   life,
   country,
@@ -58,10 +77,22 @@ export function LifeScreen({
   onBack,
 }: LifeScreenProps) {
   const { person } = life;
+  const narrow = useNarrow();
   // While a decision waits its card takes focus instead.
   const heading = useFocusOn<HTMLHeadingElement>(life.history.length, !card);
   // The player's unsent plan, kept only for the age it was made at, so a new year starts from the plan as it stands.
   const [edit, setEdit] = useState<{ age: number; draft: Plan } | null>(null);
+  // Which tab each part is on, and which part the narrow layout shows. Kept here, in the page, and not saved.
+  const [view, setView] = useState<View>("story");
+  const [youTab, setYouTab] = useState("school");
+  const [aroundTab, setAroundTab] = useState("family");
+  // The Journal button counts its presses so focus goes into the notes each time, even when they are already open.
+  const [journalPresses, setJournalPresses] = useState(0);
+  const notes = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (journalPresses > 0) notes.current?.focus();
+  }, [journalPresses]);
+
   const draft = plan && edit?.age === person.age ? edit.draft : plan?.chosen;
   const last = life.history.at(-1);
   const story = !last
@@ -71,27 +102,41 @@ export function LifeScreen({
       : t("life.yearPassed", { age: last.age });
   const events = last?.events ?? [];
   // The panels only change with the life, not with a plan being placed.
-  const { education, literacy, work, money, conditions, family } = useMemo(
-    () => lifeOverview(life, country),
-    [life, country],
-  );
+  const overview = useMemo(() => lifeOverview(life, country), [life, country]);
+  const facts = useMemo(() => countryFacts(person.sex, country), [person.sex, country]);
+  const strip = useMemo(() => lifeStrip(life), [life]);
+  const rings = useMemo(() => lifeRings(life.history), [life.history]);
+  const where = t("life.where", { country: countryName(country), place: t(`life.place.${person.location}`) });
 
-  // The next year, unless a decision is waiting. A life that ends is shown on the summary screen instead.
-  const goOn = !card;
   const sendPlan = () => {
+    // The new year is told in the story, so that is where the narrow layout goes back to.
+    setView("story");
     onContinue(plan && draft ? planToSend(plan, draft) : undefined);
   };
+  const openJournal = () => {
+    setAroundTab("notes");
+    setView("around");
+    setJournalPresses((presses) => presses + 1);
+  };
 
-  return (
-    <section>
-      <Header />
-      <h1 ref={heading} tabIndex={-1}>
+  const storyColumn = (
+    <Ledger
+      age={person.age}
+      earlier={life.history.slice(0, -1)}
+      narrow={narrow}
+      tray={
+        plan && draft && !card ? (
+          <PlanWidget plan={plan} draft={draft} onChange={(next) => setEdit({ age: person.age, draft: next })} />
+        ) : null
+      }
+    >
+      <h1 ref={heading} tabIndex={-1} className={styles.title}>
         {t("life.age", { age: person.age })}
         <span className="subtitle">{t(`life.stage.${person.stage}`)}</span>
       </h1>
-      <p className="small">
-        {t("life.where", { country: countryName(country), place: t(`life.place.${person.location}`) })}
-      </p>
+      {/* The header has no room for the name in the narrow layout, so it is told here. */}
+      {narrow && <p className={`small ${styles.line}`}>{person.name}</p>}
+      <p className={`small ${styles.line}`}>{where}</p>
       {restored && (
         <p className="note" role="note">
           {t(`life.restored.${restored}`)}
@@ -105,23 +150,6 @@ export function LifeScreen({
           </p>
         )}
       </div>
-      <dl className={styles.stats}>
-        {STATS.map((id) => (
-          <div key={id} className={styles.row}>
-            <dt>{t(`life.stat.${id}`)}</dt>
-            <dd>
-              <meter
-                className={styles.meter}
-                min={0}
-                max={100}
-                value={Math.round(person.stats[id])}
-                aria-label={t(`life.stat.${id}`)}
-              />
-              <span className={styles.value}>{Math.round(person.stats[id])}</span>
-            </dd>
-          </div>
-        ))}
-      </dl>
       <div role="status">
         {quietRun && <p className={styles.storyLine}>{quietRunLine(quietRun)}</p>}
         {card ? (
@@ -147,23 +175,80 @@ export function LifeScreen({
         )}
       </div>
       {card && <DecisionCardView key={card.eventId} card={card} sources={sources} onChoose={onChoose} />}
-      {plan && draft && !card && (
-        <PlanWidget plan={plan} draft={draft} onChange={(next) => setEdit({ age: person.age, draft: next })} />
+    </Ledger>
+  );
+  const youColumn = (
+    <YouColumn
+      stats={person.stats}
+      rings={rings}
+      overview={overview}
+      showUsPrices={showUsPrices}
+      onToggleUsPrices={onToggleUsPrices}
+      tab={youTab}
+      onTab={setYouTab}
+      narrow={narrow}
+    />
+  );
+  const aroundColumn = (
+    <AroundColumn
+      family={overview.family}
+      facts={facts}
+      sex={person.sex}
+      country={country}
+      sources={sources}
+      tab={aroundTab}
+      onTab={setAroundTab}
+      notesRef={notes}
+      narrow={narrow}
+    />
+  );
+
+  return (
+    <div className={styles.screen}>
+      <LifeHeader
+        name={person.name}
+        age={person.age}
+        where={where}
+        strip={strip}
+        narrow={narrow}
+        waiting={card !== null}
+        settings={life.settings}
+        onSettings={onSettings}
+        onJournal={openJournal}
+        onContinue={sendPlan}
+        onBack={onBack}
+      />
+      {narrow ? (
+        <Tabs
+          label={t("life.nav.label")}
+          variant="bar"
+          selectedKey={view}
+          onSelectionChange={(key) => setView(key as View)}
+          tabs={[
+            { id: "story", label: t("life.nav.story") },
+            { id: "you", label: t("life.nav.you") },
+            { id: "around", label: t("life.nav.around") },
+          ]}
+          className={styles.narrow}
+        >
+          {/* All three stay in the page, so what is in them keeps its place; the two not shown are out of sight and reach. */}
+          <TabPanel id="story" forceMount>
+            {storyColumn}
+          </TabPanel>
+          <TabPanel id="you" forceMount>
+            {youColumn}
+          </TabPanel>
+          <TabPanel id="around" forceMount>
+            {aroundColumn}
+          </TabPanel>
+        </Tabs>
+      ) : (
+        <div className={styles.columns}>
+          {storyColumn}
+          {youColumn}
+          {aroundColumn}
+        </div>
       )}
-      <div className={styles.actions}>
-        {goOn && (
-          <Button variant="primary" onPress={sendPlan}>
-            {t("life.continue")}
-          </Button>
-        )}
-        <Button onPress={onBack}>{t("life.backToStart")}</Button>
-      </div>
-      <SchoolPanel education={education} literacy={literacy} />
-      {work && <WorkPanel work={work} />}
-      <MoneyPanel money={money} showUsPrices={showUsPrices} onToggleUsPrices={onToggleUsPrices} />
-      {conditions.length > 0 && <ConditionsPanel conditions={conditions} />}
-      <FamilyPanel family={family} />
-      <SettingsPanel settings={life.settings} onChange={onSettings} />
-    </section>
+    </div>
   );
 }

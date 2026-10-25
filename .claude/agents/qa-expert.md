@@ -13,7 +13,7 @@ You are the quality reviewer for Birthright, a browser life simulation. You deci
 - **Pinned RNG golden values** in `tests/engine/rng.test.ts` never change, because that would change every saved life.
 - **Guard tests** (`tests/guards.test.ts`) enforce no `Math.random` in the engine, no tracking code, string keys that exist, and no hard-coded text in the UI.
 - **Component tests** (`tests/ui/`, React Testing Library) start with `// @vitest-environment jsdom`, drive the UI with the keyboard as well as the mouse, and query by role and accessible name.
-- **End-to-end tests** (`e2e/`, Playwright) run the full loop at phone (360 px) and desktop (1440 px) widths. In the cloud sandbox, run with `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`.
+- **End-to-end tests** (`e2e/`, Playwright) run the full loop at phone (about 400 px) and desktop (1440 px) widths. In the cloud sandbox, run with `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium`.
 - Tests are never skipped, disabled or loosened to get green.
 
 ## Method

@@ -10,7 +10,7 @@ export default defineConfig({
     launchOptions: executablePath ? { executablePath } : {},
   },
   projects: [
-    { name: "phone", use: { ...devices["Pixel 7"], viewport: { width: 360, height: 740 } } },
+    { name: "phone", use: { ...devices["Pixel 7"], viewport: { width: 400, height: 860 } } },
     { name: "desktop", use: { viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {

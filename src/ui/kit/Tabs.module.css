@@ -1,0 +1,82 @@
+.list {
+  display: flex;
+  font-family: var(--font-ui);
+}
+
+.tab {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
+  border-bottom: 3px solid transparent;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+}
+
+.tab[data-hovered] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--rule) 40%, transparent);
+}
+
+.tab[data-pressed] {
+  background: var(--rule);
+}
+
+/* The selected tab is darker, bold and underlined, so it never rests on colour alone. */
+.tab[data-selected] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.tab[data-focus-visible] {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.underline {
+  border-bottom: 1px solid var(--rule);
+}
+
+.underline .tab {
+  margin-bottom: -1px;
+}
+
+/* A bar at the foot of the screen, in view while the page scrolls. The page leaves room for it (--tab-bar-height). */
+.bar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 7;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bar .tab {
+  min-height: 3rem;
+  border-bottom: 0;
+  border-top: 3px solid transparent;
+  font-size: 0.95rem;
+}
+
+.bar .tab[data-selected] {
+  border-top-color: var(--accent);
+}
+
+.panel {
+  outline: none;
+}
+
+.panel[data-focus-visible] {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* A panel kept in the page while its tab is not selected is neither seen nor reached. */
+.panel[data-inert] {
+  display: none;
+}

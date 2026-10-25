@@ -1,5 +1,6 @@
 // The yearly focus plan (UI-005, DEC-003, DEC-004): the player places the points circumstance has left
-// them across the five areas. It is controlled: the life screen keeps the draft and decides what
+// them across the five areas. It is a tray at the foot of the story: five steppers in a row, with what is already
+// taken and how many points are left in its head. It is controlled: the life screen keeps the draft and decides what
 // Continue sends, so nothing is sent unless the player changed the plan.
 import { useId } from "react";
 import type { FocusArea, Plan } from "../engine/types";
@@ -25,8 +26,11 @@ export function PlanWidget({ plan, draft, onChange }: Props) {
   const placed = areas.reduce((sum, area) => sum + draft[area], 0);
   const left = free - placed;
 
-  const describe = (area: FocusArea) => {
-    const parts = [t(`plan.what.${area}`)];
+  /** What the area is for, which a screen reader reads with the field and the tray does not repeat to the eye. */
+  const what = (area: FocusArea) => t(`plan.what.${area}`);
+  /** What the eye needs beside the field: why it is locked, or that circumstance has taken points from it. */
+  const note = (area: FocusArea) => {
+    const parts: string[] = [];
     const lock = locked[area];
     if (lock) parts.push(t(`plan.locked.${lock}`));
     const taken = forced.filter((f) => f.area === area).reduce((sum, f) => sum + f.points, 0);
@@ -36,13 +40,19 @@ export function PlanWidget({ plan, draft, onChange }: Props) {
 
   return (
     <section aria-labelledby={headingId} className={styles.plan}>
-      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
-        {t("plan.heading")}
-      </h2>
-      <p className="small">{t("plan.intro", { points: points(free) })}</p>
-      <p className="small">{t(plan.custom ? "plan.carried" : "plan.following")}</p>
+      <div className={styles.head}>
+        <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
+          {t("plan.heading")}
+        </h2>
+        <p className={`small ${styles.left}`} aria-live="polite">
+          {left > 0 ? t(pluralKey("plan.left", left), { count: formatNumber(left) }) : t("plan.left.none")}
+        </p>
+      </div>
+      {/* How many points there are is the head's business to the eye; the words are for a screen reader. */}
+      <p className="visually-hidden">{t("plan.intro", { points: points(free) })}</p>
+      <p className={`small ${styles.carry}`}>{t(plan.custom ? "plan.carried" : "plan.following")}</p>
       {forced.length > 0 && (
-        <>
+        <div className={styles.taken}>
           <h3 id={forcedId} className={styles.group}>
             {t("plan.forced.heading")}
           </h3>
@@ -57,14 +67,16 @@ export function PlanWidget({ plan, draft, onChange }: Props) {
               </li>
             ))}
           </ul>
-        </>
+        </div>
       )}
       <div className={styles.areas}>
         {areas.map((area) => (
           <Stepper
             key={area}
+            compact
             label={t(`plan.area.${area}`)}
-            description={describe(area)}
+            description={what(area)}
+            note={note(area)}
             value={draft[area]}
             minValue={0}
             maxValue={locked[area] ? 0 : draft[area] + left}
@@ -74,9 +86,6 @@ export function PlanWidget({ plan, draft, onChange }: Props) {
           />
         ))}
       </div>
-      <p className="small" aria-live="polite">
-        {left > 0 ? t(pluralKey("plan.left", left), { count: formatNumber(left) }) : t("plan.left.none")}
-      </p>
     </section>
   );
 }

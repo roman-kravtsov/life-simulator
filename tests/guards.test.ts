@@ -67,16 +67,27 @@ describe("L10N-001: every string key used in the code exists", () => {
 
 // JSX text between tags, e.g. <p>Hello</p>, must come from t(). Expressions like {t("x")} are fine.
 // Type arguments such as useRef<HTMLElement>() are removed first so they are not mistaken for tags.
+// Arrow functions (`=>`) are removed too, and so is code that follows a closed tag and runs on to the next one (it starts
+// with `)` or `;`, which JSX text never does): `const a = (<A />);\n const b = (<B />)` is not text between tags.
 const hardCodedJsxText = (source: string) =>
-  [...source.replace(/<[A-Z][\w.]*(\[\])?>/g, "").matchAll(/>([^<>{}]*[A-Za-z][^<>{}]*)</g)]
+  [
+    ...source
+      .replace(/<[A-Z][\w.]*(\[\])?>/g, "")
+      .replaceAll("=>", "=")
+      .matchAll(/>([^<>{}]*[A-Za-z][^<>{}]*)</g),
+  ]
     .map((m) => m[1]!.trim())
-    .filter(Boolean);
+    .filter((text) => text && !/^[);]/.test(text));
 
 describe("L10N-001: no hard-coded text in the UI", () => {
   it("detects text between JSX tags", () => {
     expect(hardCodedJsxText("<p>Begin a life</p>")).toEqual(["Begin a life"]);
     expect(hardCodedJsxText('<p>{t("start.begin")}</p>')).toEqual([]);
     expect(hardCodedJsxText("const ref = useRef<HTMLElement>();\n  return (<p />);")).toEqual([]);
+    expect(hardCodedJsxText("const a = (\n <A />\n );\n const b = (\n <B />\n );")).toEqual([]);
+    expect(hardCodedJsxText("const rings = useMemo(() => layout(x), [x]);\n return (<p />);")).toEqual([]);
+    expect(hardCodedJsxText("<p>Some text</p>\n);\nconst b = (<B />)")).toEqual(["Some text"]);
+    expect(hardCodedJsxText("<br />Hello <b>")).toEqual(["Hello"]);
   });
 
   it.each(sourceFiles("src/ui").filter((f) => f.endsWith(".tsx")))("%s", (file) => {

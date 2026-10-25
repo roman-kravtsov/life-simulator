@@ -5,12 +5,13 @@ import { SCHOOL_START_AGE } from "../engine/education";
 import type { DecisionCard } from "../engine/decisions";
 import { FOCUS_AREAS, PLAN_START_AGE, resolvePlan, type ForcedPoint, type LockReason } from "../engine/focus";
 import { advance, decisionCard, EPITAPH_MAX_LENGTH, newLife, withEpitaph, withSettings } from "../engine/life";
+import { lifeExpectancy } from "../engine/mortality";
 import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
-import { RING_THEMES } from "../engine/rings";
+import { buildRings, RING_THEMES, type Ring } from "../engine/rings";
 import { isSnapshotOf, readSave, restoreLife, toSave, type SaveFile } from "../engine/save";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
-import { summarize, type LifeSummary } from "../engine/summary";
+import { keyMoments, summarize, type LifeSummary } from "../engine/summary";
 import { conditionCatalog } from "../content/healthConditions";
 import { CONTENT_VERSION } from "../content/version";
 import {
@@ -25,6 +26,8 @@ import {
   type Relationship,
   type Sector,
   type Settings,
+  type Sex,
+  type YearRecord,
 } from "../engine/types";
 import { drawBirthCountry } from "../engine/world/birth";
 import type { Country, CountryIndex } from "../engine/world/types";
@@ -321,6 +324,78 @@ export function lifeOverview(life: LifeState, country: Country): LifeOverview {
     }),
     family: familySummary(person.relationships),
   };
+}
+
+/** The strip under the header: where the person is on the line from birth to about eighty (UI-004). */
+export interface LifeStrip {
+  age: number;
+  /** The age the line ends at: about 80, and 100 once the person is past 75, so the marker never runs off it. */
+  end: number;
+  /** The ages lived in the years of the key moments (SUM-003), which the strip marks with dots. */
+  moments: number[];
+}
+
+/** The line ends at about 80, or at 100 for someone older than this. */
+const STRIP_LONG_AGE = 75;
+
+export function lifeStrip(life: LifeState): LifeStrip {
+  const { age } = life.person;
+  return {
+    age,
+    end: age > STRIP_LONG_AGE ? 100 : 80,
+    moments: keyMoments(life.history).map((moment) => moment.age),
+  };
+}
+
+/** One ring for each year lived so far, for the small picture of the rings on the life screen (SUM-002). */
+export const lifeRings = (history: readonly YearRecord[]): Ring[] => buildRings(history, []);
+
+export type StatBand = "very-low" | "low" | "fair" | "good" | "very-good";
+
+/** A stat (0 to 100) in words, for the screen reader that hears the number beside it: under 20, 40, 60 and 80, then the top. */
+export function statBand(value: number): StatBand {
+  if (value < 20) return "very-low";
+  if (value < 40) return "low";
+  if (value < 60) return "fair";
+  if (value < 80) return "good";
+  return "very-good";
+}
+
+export interface CountryFact {
+  source: string;
+  year: number;
+}
+
+/**
+ * A few measured facts about the person's country for the Country tab (UI-004). A value the data pipeline filled in
+ * from a regional average (`estimated`) is not a fact about this country, so it is left out.
+ */
+export interface CountryFacts {
+  /** Life expectancy at birth for the person's sex, in years. */
+  lifeExpectancy?: CountryFact & { years: number };
+  /** The share (0 to 1) of people of the person's sex who finish upper secondary school. */
+  upperSecondary?: CountryFact & { share: number };
+  /** Daily income or consumption per person in the middle household, in international dollars. */
+  middleIncome?: CountryFact & { daily: number };
+}
+
+export function countryFacts(sex: Sex, country: Country): CountryFacts {
+  const facts: CountryFacts = {};
+  const { lifeTable } = country.demography;
+  if (!lifeTable.estimated) {
+    facts.lifeExpectancy = {
+      years: lifeExpectancy(lifeTable.value[sex]),
+      source: lifeTable.source,
+      year: lifeTable.year,
+    };
+  }
+  const school = country.education.upperSecondaryCompletion;
+  if (!school.estimated) facts.upperSecondary = { share: school.value[sex], source: school.source, year: school.year };
+  const { percentiles } = country.money;
+  if (!percentiles.estimated) {
+    facts.middleIncome = { daily: dailyIncome(country, 50), source: percentiles.source, year: percentiles.year };
+  }
+  return facts;
 }
 
 export interface WorldLoader {

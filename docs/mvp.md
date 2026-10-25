@@ -61,7 +61,7 @@ All text is written by us in English, in the voice of design 1.2.
 
 ## 5. Definition of done for the MVP
 
-- The full loop works on a 360 px phone and a 1440 px desktop: start, play to death, see the summary, start again, and resume after reloading the page.
+- The full loop works on a phone about 400 px wide and a 1440 px desktop: start, play to death, see the summary, start again, and resume after reloading the page.
 - The engine tests pass, including the replay test and the calibration test (life expectancy within 2 years for sampled countries).
 - Every number shown in the game has a source on the sources screen.
 - Keyboard and screen-reader play work for the whole loop.

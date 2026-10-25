@@ -1,37 +1,29 @@
-// The reference panels under the story on the life screen: school, work, money, health
-// conditions and family. Each one is a labelled region that reads as plain lists, so a screen
-// reader can jump between them. They only display what `lifeOverview` (store.ts) derives.
-import { useId, type ReactNode } from "react";
-import type { HelpTopic, Relationship } from "../engine/types";
-import { capitalise, formatMoney, pluralKey } from "../format";
+// The panels of the life screen's side columns: school and work, money and health conditions beside the person,
+// family and country around them. Each one is the content of a tab, so the tab's name is its name, and each reads as
+// plain lists and terms for a screen reader. They only display what `lifeOverview` and `countryFacts` (store.ts) derive.
+import type { ReactNode } from "react";
+import type { HelpTopic, Relationship, Sex } from "../engine/types";
+import type { Country, CountryIndex } from "../engine/world/types";
+import { capitalise, countryName, formatMoney, formatPercent, pluralKey } from "../format";
 import { t } from "../i18n";
 import { HelpNote } from "./HelpNote";
 import { Switch } from "./kit";
 import styles from "./LifePanels.module.css";
 import {
   closenessBand,
+  type CountryFacts,
   type EducationSummary,
   type FamilySummary,
   type LifeOverview,
   type MoneySummary,
   type WorkSummary,
 } from "./store";
+import { sourceTitle, yearsWords } from "./words";
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  const headingId = useId();
+/** A term and what it says. `inline` puts them on one line (label left, value right) for short values. */
+function Fact({ label, inline = false, children }: { label: string; inline?: boolean; children: ReactNode }) {
   return (
-    <section aria-labelledby={headingId} className={styles.panel}>
-      <h2 id={headingId} className={`eyebrow ${styles.heading}`}>
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
-
-function Fact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className={styles.fact}>
+    <div className={inline ? `${styles.fact} ${styles.inline}` : styles.fact}>
       <dt>{label}</dt>
       <dd>{children}</dd>
     </div>
@@ -52,25 +44,6 @@ function schoolStatus(education: EducationSummary): string {
   }
 }
 
-export function SchoolPanel({
-  education,
-  literacy,
-}: {
-  education: EducationSummary;
-  literacy: LifeOverview["literacy"];
-}) {
-  const schooled = education.kind !== "too-young" && education.kind !== "never";
-  return (
-    <Panel title={t("school.heading")}>
-      <dl className={styles.facts}>
-        <Fact label={t("school.field.level")}>{schoolStatus(education)}</Fact>
-        {schooled && education.years > 0 && <Fact label={t("school.field.years")}>{years(education.years)}</Fact>}
-        {literacy && <Fact label={t("school.field.reading")}>{t(`school.reading.${literacy}`)}</Fact>}
-      </dl>
-    </Panel>
-  );
-}
-
 function workStatus(work: WorkSummary): string {
   if (work.kind !== "working") return t(`work.status.${work.kind}`);
   const terms = t(work.formal ? "work.terms.formal" : "work.terms.informal");
@@ -79,14 +52,32 @@ function workStatus(work: WorkSummary): string {
     : t("work.status.working.nosector", { terms });
 }
 
-export function WorkPanel({ work }: { work: WorkSummary }) {
+interface SchoolWorkProps {
+  education: EducationSummary;
+  literacy: LifeOverview["literacy"];
+  /** Null under age six: there is nothing to say about work yet. */
+  work: WorkSummary | null;
+}
+
+/** School (EDU-001, EDU-002) and work (CAREER-001, CAREER-002, CAREER-006) together. */
+export function SchoolWorkPanel({ education, literacy, work }: SchoolWorkProps) {
+  const schooled = education.kind !== "too-young" && education.kind !== "never";
   return (
-    <Panel title={t("work.heading")}>
-      <dl className={styles.facts}>
-        <Fact label={t("work.field.status")}>{workStatus(work)}</Fact>
-        {work.yearsWorked > 0 && <Fact label={t("work.field.years")}>{years(work.yearsWorked)}</Fact>}
-      </dl>
-    </Panel>
+    <dl className={styles.facts}>
+      <Fact label={t("school.field.level")}>{schoolStatus(education)}</Fact>
+      {schooled && education.years > 0 && (
+        <Fact label={t("school.field.years")} inline>
+          {years(education.years)}
+        </Fact>
+      )}
+      {literacy && <Fact label={t("school.field.reading")}>{t(`school.reading.${literacy}`)}</Fact>}
+      {work && <Fact label={t("work.field.status")}>{workStatus(work)}</Fact>}
+      {work && work.yearsWorked > 0 && (
+        <Fact label={t("work.field.years")} inline>
+          {years(work.yearsWorked)}
+        </Fact>
+      )}
+    </dl>
   );
 }
 
@@ -99,21 +90,29 @@ interface MoneyPanelProps {
   onToggleUsPrices: () => void;
 }
 
+/** Income, savings and debt (MONEY-002, MONEY-004) and the comparison with US prices (MONEY-007). */
 export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanelProps) {
   const who = money.own ? "own" : "household";
   const { holdings } = money;
   const hasHoldings = holdings !== null && !(isNothing(holdings.savings) && isNothing(holdings.debt));
   return (
-    <Panel title={t("money.heading")}>
-      <p className="small">{t("money.note", { year: money.year })}</p>
+    <>
       <dl className={styles.facts}>
-        <Fact label={t(`money.field.daily.${who}`)}>{formatMoney(money.daily)}</Fact>
-        <Fact label={t(`money.field.yearly.${who}`)}>{formatMoney(money.yearly)}</Fact>
+        <Fact label={t(`money.field.daily.${who}`)} inline>
+          {formatMoney(money.daily)}
+        </Fact>
+        <Fact label={t(`money.field.yearly.${who}`)} inline>
+          {formatMoney(money.yearly)}
+        </Fact>
         <Fact label={t("money.field.band")}>{capitalise(t(`money.band.${money.band}`))}</Fact>
         {holdings && hasHoldings && (
           <>
-            <Fact label={t("money.field.savings")}>{formatMoney(holdings.savings)}</Fact>
-            <Fact label={t("money.field.debt")}>{formatMoney(holdings.debt)}</Fact>
+            <Fact label={t("money.field.savings")} inline>
+              {formatMoney(holdings.savings)}
+            </Fact>
+            <Fact label={t("money.field.debt")} inline>
+              {formatMoney(holdings.debt)}
+            </Fact>
           </>
         )}
         {holdings && !hasHoldings && <Fact label={t("money.field.holdings")}>{t("money.none")}</Fact>}
@@ -122,10 +121,11 @@ export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanel
         {t("money.usSwitch")}
       </Switch>
       {/* Always present, so a screen reader hears the text arrive when the switch is turned on. */}
-      <p className="small" aria-live="polite">
+      <p className={`small ${styles.note}`} aria-live="polite">
         {showUsPrices && t("money.usComparison")}
       </p>
-    </Panel>
+      <p className={`small ${styles.note}`}>{t("money.note", { year: money.year })}</p>
+    </>
   );
 }
 
@@ -136,10 +136,11 @@ function helpTopicsOf(conditions: LifeOverview["conditions"]) {
   return [...topics];
 }
 
-export function ConditionsPanel({ conditions }: { conditions: LifeOverview["conditions"] }) {
-  const helpTopics = helpTopicsOf(conditions);
+/** The lasting conditions (HEALTH-004), with the help that goes with the hard ones for as long as they last. */
+export function HealthPanel({ conditions }: { conditions: LifeOverview["conditions"] }) {
+  if (conditions.length === 0) return <p>{t("conditions.none")}</p>;
   return (
-    <Panel title={t("conditions.heading")}>
+    <div className={styles.health}>
       <ul className={styles.list}>
         {conditions.map(({ id, severity, since }) => (
           <li key={id}>
@@ -153,10 +154,10 @@ export function ConditionsPanel({ conditions }: { conditions: LifeOverview["cond
           </li>
         ))}
       </ul>
-      {helpTopics.map((topic) => (
+      {helpTopicsOf(conditions).map((topic) => (
         <HelpNote key={topic} topic={topic} />
       ))}
-    </Panel>
+    </div>
   );
 }
 
@@ -166,30 +167,29 @@ function relativeLine(relative: Relationship) {
   return t(relative.alive ? "life.relative.alive" : "life.relative.dead", vars);
 }
 
-function RelativeList({ relatives }: { relatives: readonly Relationship[] }) {
-  if (relatives.length === 0) return null;
-  return (
-    <ul className={styles.list}>
-      {relatives.map((relative) => (
-        <li key={relative.id}>
-          <div className={styles.relative}>
-            <span>{relativeLine(relative)}</span>
-            {relative.alive && <Closeness relative={relative} />}
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function Closeness({ relative }: { relative: Relationship }) {
   const word = t(`closeness.${closenessBand(relative.closeness)}`);
   return (
     <span className={styles.closeness}>
       {/* The word says it all to a screen reader; the bar is only a picture of it. */}
       <meter className={styles.meter} min={0} max={100} value={Math.round(relative.closeness)} aria-hidden="true" />
-      <span>{word}</span>
+      <span className={styles.word}>{word}</span>
     </span>
+  );
+}
+
+/** One line a person: who they are to you and how old, then how close, as a word and a small bar. */
+function RelativeList({ relatives }: { relatives: readonly Relationship[] }) {
+  if (relatives.length === 0) return null;
+  return (
+    <ul className={styles.people}>
+      {relatives.map((relative) => (
+        <li key={relative.id} className={styles.person}>
+          <span>{relativeLine(relative)}</span>
+          {relative.alive && <Closeness relative={relative} />}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -199,10 +199,11 @@ function siblingsHeading(siblings: readonly Relationship[]): string {
   return t(siblings.length === 0 ? "family.siblings.none" : "family.siblings.noneLiving");
 }
 
+/** Parents, brothers and sisters, and the others in the life (REL-001, FAM-002). */
 export function FamilyPanel({ family }: { family: FamilySummary }) {
   const { parents, siblings, others } = family;
   return (
-    <Panel title={t("life.family")}>
+    <>
       {parents.length > 0 && (
         <>
           <h3 className={styles.group}>{t("family.parents")}</h3>
@@ -217,6 +218,53 @@ export function FamilyPanel({ family }: { family: FamilySummary }) {
           <RelativeList relatives={others} />
         </>
       )}
-    </Panel>
+    </>
+  );
+}
+
+interface CountryPanelProps {
+  facts: CountryFacts;
+  sex: Sex;
+  country: Pick<Country, "iso2" | "name">;
+  sources: CountryIndex["sources"];
+}
+
+/** A few measured facts about the country, each with its source and year. Estimated values are never here. */
+export function CountryPanel({ facts, sex, country, sources }: CountryPanelProps) {
+  const { lifeExpectancy, upperSecondary, middleIncome } = facts;
+  const source = (fact: { source: string; year: number }) => (
+    <span className={styles.source}>
+      {t("country.source", { source: sourceTitle(fact.source, sources), year: fact.year })}
+    </span>
+  );
+  const none = !lifeExpectancy && !upperSecondary && !middleIncome;
+  return (
+    <>
+      <p className="small">{t("country.intro", { country: countryName(country) })}</p>
+      {none ? (
+        <p>{t("country.none")}</p>
+      ) : (
+        <dl className={styles.facts}>
+          {lifeExpectancy && (
+            <Fact label={t(`country.lifeExpectancy.${sex}`)}>
+              {t("country.lifeExpectancy.value", { years: yearsWords(Math.round(lifeExpectancy.years)) })}
+              {source(lifeExpectancy)}
+            </Fact>
+          )}
+          {upperSecondary && (
+            <Fact label={t(`country.upperSecondary.${sex}`)}>
+              {formatPercent(upperSecondary.share)}
+              {source(upperSecondary)}
+            </Fact>
+          )}
+          {middleIncome && (
+            <Fact label={t("country.income")}>
+              {formatMoney(middleIncome.daily)}
+              {source(middleIncome)}
+            </Fact>
+          )}
+        </dl>
+      )}
+    </>
   );
 }

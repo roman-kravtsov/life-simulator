@@ -21,7 +21,7 @@ You write tests for Birthright, a browser life simulation built with React 19, a
 - `tests/engine/`: unit and batch tests of the engine. Batch tests compare simulated frequencies over many seeds with the baked source data within a tolerance you can justify (state the reasoning in a comment), never one tuned until it passes.
 - `tests/ui/`: component and store tests. Put `// @vitest-environment jsdom` at the top, use React Testing Library and `user-event`, and cover the keyboard as well as the mouse. Kit components are tested in `tests/ui/kit.test.tsx`.
 - `tests/guards.test.ts`: add a guard when a convention can be checked automatically.
-- `e2e/`: Playwright full-loop tests that must pass at 360 px and 1440 px widths. Use role and label locators, no fixed sleeps. In the cloud sandbox run with `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run e2e`.
+- `e2e/`: Playwright full-loop tests that must pass at about 400 px and 1440 px widths. Use role and label locators, no fixed sleeps. In the cloud sandbox run with `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run e2e`.
 
 ## Method
 

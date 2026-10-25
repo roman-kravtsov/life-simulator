@@ -1,0 +1,90 @@
+.centre {
+  min-width: 0;
+  padding: 1.5rem 2rem 0;
+}
+
+.flow {
+  padding: 1rem 0.9rem 1rem;
+}
+
+.ledger {
+  max-width: 40rem;
+  margin-inline: auto;
+  padding-bottom: 2rem;
+}
+
+/* A year in the ledger: its age in a gutter, a thin rule running down to the next year, and the paragraph. */
+.entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr);
+  gap: 0 1rem;
+  padding-bottom: 1.4rem;
+}
+
+.entry::before {
+  content: "";
+  position: absolute;
+  left: 1.6rem;
+  top: 2.4rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule);
+}
+
+.entry:last-child::before {
+  display: none;
+}
+
+.year {
+  padding-top: 0.15rem;
+  text-align: center;
+  font-family: var(--font-story);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.year small {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.body {
+  min-width: 0;
+}
+
+.earlier {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* A long life has a hundred of these: the browser can leave the ones off screen unpainted until they are near. */
+.past {
+  color: var(--ink-soft);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4.5rem;
+}
+
+.past p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tray {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-inline: -2rem;
+}
+
+.flow .tray {
+  position: static;
+  margin-inline: 0;
+}

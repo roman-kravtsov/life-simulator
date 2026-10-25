@@ -32,8 +32,10 @@ describe("decision card from the engine (UI-006, DEC-001, DEC-002, DEC-005)", ()
     expect(heading).toHaveFocus();
     expect(screen.getByRole("status")).toHaveTextContent("A decision is waiting.");
     expect(choiceButtons().map((b) => b.textContent)).toHaveLength(3);
-    // The year is on hold: nothing to continue to until the player answers.
-    expect(screen.queryByRole("button", { name: "Continue to the next year" })).not.toBeInTheDocument();
+    // The year is on hold: Continue stays in view but is not available until the player answers, and says why.
+    const next = screen.getByRole("button", { name: "Continue to the next year" });
+    expect(next).toHaveAttribute("aria-disabled", "true");
+    expect(next).toHaveAccessibleDescription("Answer the decision first.");
     expect(screen.queryByRole("region", { name: "Where your attention goes" })).not.toBeInTheDocument();
   });
 

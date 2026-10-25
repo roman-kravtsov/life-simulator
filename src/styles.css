@@ -98,6 +98,17 @@ main {
   padding: 0 var(--gutter) 3rem;
 }
 
+/* The life screen runs the width of the window, in columns (UI-010); App marks it, and no other screen has it. */
+main:has(> #content[data-layout="wide"]) {
+  max-width: none;
+  padding: 0;
+}
+
+/* Focus moved into the page is not left under the header at the top or the plan tray at the foot. */
+html:has(#content[data-layout="wide"]) {
+  scroll-padding-block: 6rem 9rem;
+}
+
 main:focus,
 #content:focus {
   outline: none;

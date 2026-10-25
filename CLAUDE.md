@@ -56,7 +56,10 @@ src/ui/             React 19 components and the game store
                     autosaves after every turn and archives a life when it ends;
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
-  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField)
+  LifeScreen.tsx    the life screen (UI-004, UI-010): LifeHeader (sticky header, strip, settings dialog, Continue), Ledger (the years, with the PlanWidget tray),
+                    YouColumn and AroundColumn (sticky side columns of tabs; content in LifePanels.tsx, thumbnail in RingsThumb.tsx; SideColumn.module.css),
+                    useNarrow.ts (matchMedia, below 900 px one column and a bar of tabs); the store derives lifeStrip, lifeRings, statBand, countryFacts
+  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs)
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
@@ -111,6 +114,7 @@ Read these docs before starting work:
 - **Sensitive content** (death, suicide, violence) is never graphic, always tagged with a sensitivity level, and followed by help resources where relevant. Suicide is never a player choice.
 - **No tracking, analytics or third-party requests** (fonts included). A guard test checks for common trackers.
 - **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow `.claude/skills/vercel-react-best-practices`, a client-only subset trimmed for this SPA: read its `SKILL.md` index and open only the rule files you need, never the whole `rules/` folder.
+- **The life screen scrolls as one page, and its side columns are sticky and must fit a window 640 px tall** (and 600 px) without scrolling in every tab; `e2e/loop.spec.ts` checks this. Keep panels to short lines. The narrow layout (below 900 px) is one column with a bar of tabs; the smallest phone is about 390 px, so test at about 400 px; 360 px is not supported.
 - **Accessibility is part of done:** keyboard play, visible focus, labelled controls, announcements for new events, colour never the only signal, reduced motion respected.
 - Match the surrounding code: naming, comment density and idiom.
 
@@ -118,7 +122,7 @@ Read these docs before starting work:
 
 - **Write engine tests first** (red, then green). Every engine feature has tests, including batch tests against source data where its acceptance criteria say so.
 - Component tests use React Testing Library with `// @vitest-environment jsdom` at the top of the file.
-- End-to-end tests in `e2e/` run with Playwright at phone (360 px) and desktop (1440 px) widths.
+- End-to-end tests in `e2e/` run with Playwright at phone (about 400 px, the smallest phone is 390 to 430 px) and desktop (1440 px) widths.
 - Never skip, disable or loosen a test to get green.
 
 ## Before pushing

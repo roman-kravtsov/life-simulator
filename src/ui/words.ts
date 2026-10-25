@@ -2,7 +2,7 @@
 // note under a story line, and the quiet-years line. Everything goes through t() and format.ts.
 import type { OddsBand } from "../engine/decisions";
 import type { CountryIndex } from "../engine/world/types";
-import type { EventRecord } from "../engine/types";
+import type { EventRecord, YearRecord } from "../engine/types";
 import { formatNumber, formatPercent, pluralKey } from "../format";
 import { hasString, t } from "../i18n";
 import type { QuietRun } from "./store";
@@ -86,3 +86,25 @@ export function tryT(key: string, vars?: Parameters<typeof t>[1]): string | null
 
 /** The cause of death in words, or "a cause not listed here" when this version has no words for it. */
 export const causeWords = (cause: string): string => t(hasString(`cause.${cause}`) ? `cause.${cause}` : "cause.other");
+
+/**
+ * An earlier year as one paragraph for the ledger (UI-004): the new chapter if one began, then what happened, with what
+ * the player chose and what came of it, and "A quiet year." when there is nothing to tell. A year saved by another
+ * version may name text this one lacks; those lines are left out.
+ */
+export function yearText(record: YearRecord): string {
+  const parts: string[] = [];
+  const stage = record.stageChanged ? tryT(`life.stage.${record.stage}`) : null;
+  if (stage !== null) parts.push(t("life.stageReached", { stage }));
+  for (const event of record.events) {
+    const text = tryT(event.textKey, event.vars);
+    if (text === null) continue;
+    parts.push(text);
+    const { decision } = event;
+    if (!decision) continue;
+    const choice = tryT(decision.choiceTextKey, event.vars);
+    const outcome = tryT(decision.outcomeTextKey, event.vars);
+    if (choice !== null && outcome !== null) parts.push(`${t("decision.chose", { choice })}.`, outcome);
+  }
+  return parts.length === 0 ? t("life.quietYear") : parts.join(" ");
+}

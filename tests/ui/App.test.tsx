@@ -7,6 +7,7 @@ import { App } from "../../src/ui/App";
 import { createGameStore } from "../../src/ui/store";
 import { testWorld } from "../fixtures/country";
 import { deadlyCountry } from "./fakes";
+import { backToStart } from "./helpers";
 
 const setup = (settings?: Partial<Settings>) => {
   const store = createGameStore(() => "test-seed", testWorld());
@@ -101,18 +102,19 @@ describe("App", () => {
     const { user } = setup();
     await startLife(user);
     for (const name of ["Health", "Happiness", "Belonging", "Skills"]) {
-      expect(screen.getByRole("meter", { name })).toBeInTheDocument();
+      expect(screen.getByRole("meter", { name: new RegExp(`^${name} \\d+, `) })).toBeInTheDocument();
     }
-    expect(screen.getByRole("heading", { name: "Family" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Family" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText(/your mother, [23]\d/)).toBeInTheDocument();
   });
 
   it("shows the school, money and family panels and lets the player compare with US prices (MONEY-007)", async () => {
     const { user } = setup();
     await startLife(user);
-    for (const name of ["School", "Money", "Family"]) {
-      expect(screen.getByRole("heading", { level: 2, name })).toBeInTheDocument();
-    }
+    expect(screen.getByRole("tabpanel", { name: "School & work" })).toBeInTheDocument();
+    expect(screen.getByRole("tabpanel", { name: "Family" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Money" }));
+    expect(screen.getByRole("tabpanel", { name: "Money" })).toBeInTheDocument();
     expect(screen.queryByText(/buys what the same amount buys in the United States/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("switch", { name: "Compare with US prices" }));
     expect(screen.getByText(/buys what the same amount buys in the United States/)).toBeInTheDocument();
@@ -171,6 +173,18 @@ describe("App", () => {
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   });
 
+  it("lets the life screen use the whole window and every other screen keep the reading width (UI-010)", async () => {
+    const { user } = setup();
+    const content = () => document.getElementById("content")!;
+    expect(content()).not.toHaveAttribute("data-layout");
+    await begin(user);
+    expect(content()).not.toHaveAttribute("data-layout");
+    await user.click(screen.getByRole("button", { name: "Begin this life" }));
+    expect(content()).toHaveAttribute("data-layout", "wide");
+    await backToStart(user);
+    expect(content()).not.toHaveAttribute("data-layout");
+  });
+
   it("offers a skip link to the main content", () => {
     setup();
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#content");
@@ -191,7 +205,7 @@ describe("App", () => {
   it("goes back to the start screen", async () => {
     const { user } = setup();
     await startLife(user);
-    await user.click(screen.getByRole("button", { name: "Back to start" }));
+    await backToStart(user);
     expect(screen.getByRole("button", { name: "Begin a life" })).toBeInTheDocument();
   });
 
