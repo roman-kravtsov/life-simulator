@@ -17,15 +17,27 @@ Birthright uses **React Aria Components** (Adobe, Apache-2.0) for the behaviour 
 | `Stepper` | `NumberField`            | Placing the yearly focus points (UI-005): arrow keys on the field, minus and plus buttons for touch, an optional description tied to the field |
 | `Slider`  | `Slider`                 | Not used yet; kept for a later single-value setting                                      |
 | `Tooltip` | `TooltipTrigger`         | Odds lens hints, if the lens ever needs them (UI-006)                                    |
-| `Dialog`  | `DialogTrigger`, `Modal` | Confirmations (UI-009)                                                                   |
+| `Dialog`  | `DialogTrigger`, `Modal` | Information in a modal (UI-009)                                                          |
+| `ConfirmDialog` | `DialogTrigger`, `Modal`, `Dialog` (`role="alertdialog"`) | Asks before something that cannot be undone: delete one life, delete all local data (SAVE-007). The cancel button has focus on opening, so Enter alone never confirms; confirming acts, then closes |
+| `TextField` | `TextField`, `Label`, `Input`, `Text` | A labelled single-line field with a hint tied to the input (`description`): the epitaph and its characters left (DEATH-004) |
 
 `Stepper` renders React Aria's number field, which exposes a text input with a "Number field" role description (not `role="spinbutton"`); query it by role `textbox` and its label in tests.
+
+## Tokens worth knowing
+
+- `--ring-study`, `--ring-work`, `--ring-love`, `--ring-loss`, `--ring-illness`, `--ring-move`, `--ring-plain`: the growth-ring colours by theme (SUM-002), each with a light and a dark value. Each is at least 3:1 against `--paper` in its theme, and the patterns are drawn in `--paper`, so they show on every ring colour. Neighbouring rings differ by hue and by pattern, never by colour alone. Use them for the rings and their legend only.
 
 ## Screen patterns
 
 - **Decision card** (UI-006, `src/ui/DecisionCardView.tsx`): a labelled region with an `h2` that takes focus when the card appears, the event text, then one `choice` button per choice. A locked choice keeps `aria-disabled` (still focusable) and its reason, cost and odds lens sit in a block tied to the button with `aria-describedby`. Odds are always words (`oddsWords` in `src/ui/words.ts`), money goes through `formatMoney`.
 - **Plan widget** (UI-005, `src/ui/PlanWidget.tsx`): controlled by the life screen, which sends a plan with Continue only when the player changed it (`planToSend` in the store). Forced points and locked areas are said in words.
 - **Help** (UI-012, `src/ui/HelpNote.tsx`): `HelpNote` follows any event, decision or condition with a help topic; `HelpLink` opens the directory in a new tab with `rel="noopener noreferrer"` and a screen-reader hint. The header carries an always-available "Need to talk?" link.
+- **Summary** (SUM-001, `src/ui/SummaryScreen.tsx`): the h1 is the person's name and takes focus. Then the closing passage, the years against the life expectancy (DEATH-003), the rings, the key moments, what shaped the life, the life in brief, the last year's events, the epitaph and the seed. No score and no rank; lines that do not apply to a short life are left out rather than answered with "none". `EventLine` (`src/ui/EventLine.tsx`) is shared with the life screen.
+- **Rings** (SUM-002, `src/ui/Rings.tsx`, geometry in `src/ui/ringsLayout.ts`): plain SVG in a 100 by 100 view box, one ring a year, the oldest innermost, each as wide as its thickness (happiness). Every theme has its own pattern as well as its colour (dots, diagonals, cross-hatch, horizontal lines, vertical lines, waves, solid), a legend names the themes that occur, and a closed `<details>` "Year by year" holds a real table with the same facts. Numbered marks sit on the years of the key moments, spread round the circle by the golden angle; a badge that has no room on a very narrow ring near the centre moves out with a line back to its ring. The numbers are the numbers of the list of moments. The rings grow in with CSS only and only under `prefers-reduced-motion: no-preference` (timers are banned in `src/`).
+- **Epitaph** (DEATH-004, `src/ui/Epitaph.tsx`): a `TextField` with the characters left as its description and a Save button, then the words as a blockquote with Edit. Saving is announced in a polite paragraph, and focus goes to the Edit button, never to the page.
+- **Resume card** (SAVE-002, `src/ui/StartScreen.tsx`): "Continue your life" with the name, age and place, a primary Continue and a note that a new life replaces it. A save that cannot be opened is a calm `role="note"` with "Discard it".
+- **Past lives** (SAVE-003, SAVE-007, `src/ui/PastLivesScreen.tsx`): a plain list (thumbnails come with UI-008); each life has Open and Delete (a `ConfirmDialog`), and "Delete all local data" has its own `ConfirmDialog` that says what goes. Focus returns to the heading when a life is deleted, because its button is gone.
+- **Notes about storage**: a save that fails mid-life, or an archive that cannot keep a life, is said in a `role="note"` inside an `aria-live="polite"` container that is on the page before the words arrive, so it is announced once; notes about a resumed life are plain `role="note"`.
 - **One live region** (`role="status"`) per life screen holds the story; new status-like text elsewhere uses `aria-live="polite"` on a paragraph instead of a second status region.
 - `.eyebrow` (in `src/styles.css`) is the small uppercase label above a section; a screen's module sets its own margin.
 - `.visually-hidden` (in `src/styles.css`) is for text only screen readers need.
