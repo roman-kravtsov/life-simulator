@@ -11,6 +11,9 @@ const STAGES: readonly [number, LifeStage][] = [
   [0, "infancy"],
 ];
 
+/** The stages in life order. */
+export const LIFE_STAGES: readonly LifeStage[] = [...STAGES].reverse().map(([, stage]) => stage);
+
 export function stageForAge(age: number): LifeStage {
   if (!Number.isInteger(age) || age < 0) throw new Error(`Invalid age: ${age}`);
   return STAGES.find(([min]) => age >= min)![1];

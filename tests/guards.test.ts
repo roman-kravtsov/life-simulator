@@ -102,3 +102,30 @@ describe("TIME-001: the game only moves when the player acts", () => {
     expect(timers(readFileSync(file, "utf8"))).toBe(false);
   });
 });
+
+describe("SAVE-007: everything stored in the browser can be found and deleted", () => {
+  const storageKeys = (source: string) =>
+    [...source.matchAll(/\b(?:localStorage|storage)\s*\.\s*(?:getItem|setItem|removeItem)\(\s*"([^"]*)"/g)].map(
+      (m) => m[1]!,
+    );
+
+  it("finds the keys a file uses", () => {
+    expect(storageKeys('localStorage.getItem("birthright:theme")')).toEqual(["birthright:theme"]);
+    expect(storageKeys('localStorage.setItem("theme", x)')).toEqual(["theme"]);
+  });
+
+  // A key kept in a constant, such as `const KEY = "birthright:theme"`, counts too.
+  const keyConstants = (source: string) =>
+    [...source.matchAll(/\b(?:const|let)\s+\w*KEY\w*\s*=\s*"([^"]*)"/g)].map((m) => m[1]!);
+
+  it("finds the keys kept in constants", () => {
+    expect(keyConstants('const KEY = "birthright:theme";')).toEqual(["birthright:theme"]);
+    expect(keyConstants('const CURRENT_KEY = "current";')).toEqual(["current"]);
+  });
+
+  it.each(sourceFiles("src"))("%s keeps its localStorage keys under the birthright: prefix", (file) => {
+    const source = readFileSync(file, "utf8");
+    for (const key of [...storageKeys(source), ...keyConstants(source)])
+      expect(key.startsWith("birthright:")).toBe(true);
+  });
+});

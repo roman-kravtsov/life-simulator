@@ -1,10 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
+import { CONTENT_VERSION } from "../../src/content/version";
 import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
 import { DEFAULT_SETTINGS, type LifeState, type Person, type Relationship } from "../../src/engine/types";
-import { browserSeed, closenessBand, createGameStore, lifeOverview, planToSend } from "../../src/ui/store";
+import {
+  browserSeed,
+  closenessBand,
+  createGameStore,
+  EPITAPH_MAX_LENGTH,
+  lifeOverview,
+  planToSend,
+} from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
+import { deadlyCountry, fakePersistence, finishedLife } from "./fakes";
 
 const seeds = () => {
   let n = 0;
@@ -505,6 +514,628 @@ describe("planToSend", () => {
       health: 1,
       belonging: 1,
       rest: 1,
+    });
+  });
+});
+
+describe("game store: saving, death and the archive (M6)", () => {
+  const clock = () => {
+    let n = 0;
+    return () => new Date(Date.UTC(2026, 9, 25, 10, 0, n++)).toISOString();
+  };
+  const withFake = (world = testWorld(), fake = fakePersistence()) => ({
+    fake,
+    store: createGameStore(seeds(), world, fake.persistence, clock()),
+  });
+  const playOn = (store: ReturnType<typeof createGameStore>, years: number) => {
+    for (let i = 0; i < years && store.getSnapshot().life?.person.alive; i++) {
+      const { card } = store.getSnapshot();
+      if (card) store.choose(card.choices.find((c) => !c.lockedReason)!.id);
+      else store.continueYear();
+    }
+  };
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const lifeToTheEnd = async (store: ReturnType<typeof createGameStore>) => {
+    await store.begin();
+    store.startLife();
+    playOn(store, 300);
+  };
+
+  describe("autosave (SAVE-001)", () => {
+    it("saves the drawn birth, then the life after every resolved turn, keeping when it was first saved", async () => {
+      const { store, fake } = withFake();
+      store.setSettings({ pace: "every-year" });
+      await store.begin();
+      expect(fake.saved).toHaveLength(1);
+      expect(fake.saved[0]).toMatchObject({
+        seed: "seed-0",
+        countryIso3: "AAA",
+        years: 0,
+        dataVersion: "test",
+        contentVersion: CONTENT_VERSION,
+      });
+      store.startLife();
+      store.continueYear();
+      store.continueYear();
+      const last = fake.saved.at(-1)!;
+      expect(last.years).toBe(store.getSnapshot().life!.history.length);
+      expect(last.years).toBeGreaterThanOrEqual(1);
+      expect(last.snapshot).toEqual(store.getSnapshot().life);
+      expect(new Set(fake.saved.map((s) => s.createdAt)).size).toBe(1);
+      expect(last.updatedAt > last.createdAt).toBe(true);
+    });
+
+    it("saves after a decision is answered and after a setting is changed", async () => {
+      const { store, fake } = withFake();
+      await store.begin();
+      store.startLife();
+      while (store.getSnapshot().life?.person.alive && !store.getSnapshot().card) store.continueYear();
+      const card = store.getSnapshot().card;
+      expect(card).not.toBeNull();
+      expect(fake.saved.at(-1)!.waiting).toBe(true);
+      const before = fake.saved.length;
+      store.choose(card!.choices.find((c) => !c.lockedReason)!.id);
+      expect(fake.saved.length).toBe(before + 1);
+      expect(fake.saved.at(-1)!.waiting).toBe(store.getSnapshot().card !== null);
+      store.setSettings({ softening: true });
+      expect(fake.saved.at(-1)!.settingsLog.at(-1)!.changes).toEqual({ softening: true });
+    });
+
+    it("starts a new createdAt for each life", async () => {
+      const { store, fake } = withFake();
+      await store.begin();
+      const first = fake.saved.at(-1)!;
+      await store.begin();
+      const second = fake.saved.at(-1)!;
+      expect(second.seed).toBe("seed-1");
+      expect(second.createdAt > first.createdAt).toBe(true);
+    });
+
+    it("says so when the browser refuses the save, and stops saying so after a save that works", async () => {
+      const { store, fake } = withFake();
+      fake.refuseCurrent = true;
+      await store.begin();
+      expect(store.getSnapshot().problem).toBe("current");
+      store.startLife();
+      store.continueYear();
+      expect(store.getSnapshot().problem).toBe("current");
+      fake.refuseCurrent = false;
+      store.continueYear();
+      expect(store.getSnapshot().problem).toBeNull();
+    });
+  });
+
+  describe("death (DEATH-001, SUM-001)", () => {
+    it("ends on the summary: summarises the life, archives it and clears the life in progress", async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      // The life in progress is only cleared once the archive has it.
+      expect(fake.current.status).toBe("found");
+      await settle();
+      const snapshot = store.getSnapshot();
+      expect(snapshot.screen).toBe("summary");
+      expect(snapshot.card).toBeNull();
+      expect(snapshot.plan).toBeNull();
+      expect(snapshot.summary).toMatchObject({ archived: false });
+      const { summary, lastYear } = snapshot.summary!;
+      expect(summary.seed).toBe("seed-0");
+      expect(summary.death.age).toBe(0);
+      expect(summary.name).toBe(snapshot.life!.person.name);
+      expect(lastYear).toEqual(snapshot.life!.history.at(-1)!.events);
+      expect(fake.puts).toHaveLength(1);
+      expect(fake.puts[0]).toMatchObject({ id: "seed-0", summary, finishedAt: expect.any(String) });
+      expect(fake.puts[0]!.save.snapshot.death).toBeDefined();
+      expect(fake.cleared).toBe(1);
+      expect(fake.current).toEqual({ status: "none" });
+      expect(snapshot.problem).toBeNull();
+    });
+
+    it("goes to the summary after a decision that ends the life, too", async () => {
+      const { store, fake } = withFake();
+      await lifeToTheEnd(store);
+      expect(store.getSnapshot().screen).toBe("summary");
+      expect(store.getSnapshot().life?.person.alive).toBe(false);
+      expect(fake.puts).toHaveLength(1);
+      // Nothing more is written for a life that is over.
+      const saves = fake.saved.length;
+      store.setSettings({ softening: true });
+      store.continueYear();
+      expect(fake.saved).toHaveLength(saves);
+    });
+
+    it("says so when the archive could not keep the life, and still shows the summary", async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      fake.failArchive = true;
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await settle();
+      expect(store.getSnapshot().screen).toBe("summary");
+      expect(store.getSnapshot().problem).toBe("archive");
+      // The life in progress is kept, so nothing is lost and it can be finished again later.
+      expect(fake.cleared).toBe(0);
+      expect(fake.current.status).toBe("found");
+    });
+
+    it("does not clear a newer life's save when the archive finishes late", async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const put = fake.persistence.archive.put;
+      fake.persistence.archive.put = (life) => gate.then(() => put(life));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await store.begin();
+      expect(fake.saved.at(-1)!.seed).toBe("seed-1");
+      release();
+      await settle();
+      expect(fake.lives.has("seed-0")).toBe(true);
+      expect(fake.current).toMatchObject({ status: "found", raw: { seed: "seed-1" } });
+    });
+
+    it("does not let a late archive write for an earlier life clear the note about this one", async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const put = fake.persistence.archive.put;
+      let calls = 0;
+      fake.persistence.archive.put = (life) =>
+        calls++ === 0 ? gate.then(() => put(life)) : Promise.reject(new Error("full"));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await settle();
+      expect(store.getSnapshot()).toMatchObject({ screen: "summary", problem: "archive" });
+      release();
+      await settle();
+      expect(fake.lives.has("seed-0")).toBe(true);
+      expect(store.getSnapshot().problem).toBe("archive");
+    });
+
+    it("begins another life from the summary, and goes back to the start screen", async () => {
+      const { store } = withFake(testWorld(deadlyCountry()));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await store.begin();
+      expect(store.getSnapshot()).toMatchObject({ screen: "birth", summary: null });
+      expect(store.getSnapshot().life?.seed).toBe("seed-1");
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      store.backToStart();
+      expect(store.getSnapshot()).toMatchObject({ screen: "start", summary: null, life: null });
+    });
+  });
+
+  describe("resume (SAVE-002, SAVE-004, SAVE-005)", () => {
+    const savedMidLife = async (years = 3, world = testWorld()) => {
+      const first = withFake(world);
+      first.store.setSettings({ pace: "every-year" });
+      await first.store.begin();
+      first.store.startLife();
+      playOn(first.store, years);
+      return first;
+    };
+
+    it("offers nothing when there is no saved life", () => {
+      const { store } = withFake();
+      store.init();
+      expect(store.getSnapshot().resume).toBeNull();
+    });
+
+    it("offers the life in progress with its name and age", async () => {
+      const { fake, store } = await savedMidLife();
+      const life = store.getSnapshot().life!;
+      const { store: reopened } = withFake(testWorld(), fake);
+      reopened.init();
+      expect(reopened.getSnapshot().resume).toEqual({
+        kind: "offer",
+        seed: "seed-0",
+        countryIso3: "AAA",
+        name: life.person.name,
+        age: life.person.age,
+      });
+      expect(reopened.getSnapshot().screen).toBe("start");
+    });
+
+    it("names the place of the saved life once the index is read", async () => {
+      const { fake } = await savedMidLife(1);
+      const { store } = withFake(testWorld(), fake);
+      store.init();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(store.getSnapshot().resume).toMatchObject({ kind: "offer", country: { iso2: "AA", name: "Testland" } });
+    });
+
+    it("does not stop for storage that throws: a save the browser refused, a saved life that cannot be read", async () => {
+      const { store, fake } = withFake();
+      fake.persistence.saveCurrent = () => {
+        throw new Error("SecurityError");
+      };
+      fake.persistence.clearCurrent = () => {
+        throw new Error("SecurityError");
+      };
+      await store.begin();
+      expect(store.getSnapshot().problem).toBe("current");
+      store.discardSaved();
+      const blocked = withFake();
+      blocked.fake.persistence.loadCurrent = () => {
+        throw new Error("SecurityError");
+      };
+      blocked.store.init();
+      expect(blocked.store.getSnapshot().resume).toEqual({ kind: "problem", reason: "unreadable" });
+    });
+
+    it("offers a life whose snapshot cannot be trusted without its name and age", async () => {
+      const { fake } = await savedMidLife();
+      const raw = fake.current.status === "found" ? (fake.current.raw as Record<string, unknown>) : {};
+      fake.current = { status: "found", raw: { ...raw, snapshot: { broken: true } } };
+      const { store } = withFake(testWorld(), fake);
+      store.init();
+      expect(store.getSnapshot().resume).toEqual({ kind: "offer", seed: "seed-0", countryIso3: "AAA" });
+    });
+
+    it("says why a saved life cannot be opened and never throws", async () => {
+      const { fake } = await savedMidLife(1);
+      const raw = fake.current.status === "found" ? (fake.current.raw as Record<string, unknown>) : {};
+      const cases: [Parameters<typeof fakePersistence>[0], string][] = [
+        [{ status: "found", raw: { ...raw, schemaVersion: 99 } }, "unsupported"],
+        [{ status: "found", raw: { nothing: "here" } }, "damaged"],
+        [{ status: "found", raw: null }, "damaged"],
+        [{ status: "unreadable" }, "unreadable"],
+      ];
+      for (const [current, reason] of cases) {
+        const { store } = withFake(testWorld(), fakePersistence(current));
+        expect(() => store.init()).not.toThrow();
+        expect(store.getSnapshot().resume).toEqual({ kind: "problem", reason });
+      }
+    });
+
+    it("brings the life back from its snapshot at the same age, with the same decision waiting, and saves nothing itself", async () => {
+      const { fake, store } = await savedMidLife(40);
+      const before = store.getSnapshot();
+      const saves = fake.saved.length;
+      const { store: reopened } = withFake(testWorld(), fake);
+      reopened.init();
+      await reopened.resumeLife();
+      const after = reopened.getSnapshot();
+      expect(after.screen).toBe("life");
+      expect(after.life).toEqual(before.life);
+      expect(after.country?.iso3).toBe("AAA");
+      expect(after.sources).not.toBeNull();
+      expect(after.card?.eventId).toBe(before.card?.eventId);
+      expect(after.plan).toEqual(before.plan);
+      expect(after.settings).toEqual(before.life!.settings);
+      expect(after.restored).toBeNull();
+      expect(after.status).toBe("idle");
+      expect(fake.saved).toHaveLength(saves);
+      // Play goes on from there and is saved again.
+      playOn(reopened, 1);
+      expect(fake.saved.length).toBeGreaterThan(saves);
+      expect(fake.saved.at(-1)!.seed).toBe("seed-0");
+    });
+
+    it("resumes at the birth screen when the life has no years yet", async () => {
+      const { fake } = withFake();
+      const first = createGameStore(seeds(), testWorld(), fake.persistence, clock());
+      await first.begin();
+      const { store } = withFake(testWorld(), fake);
+      store.init();
+      await store.resumeLife();
+      expect(store.getSnapshot().screen).toBe("birth");
+      expect(store.getSnapshot().life?.history).toHaveLength(0);
+    });
+
+    it("rebuilds the life from its seed when the snapshot is damaged, and says so", async () => {
+      const { fake, store } = await savedMidLife(5);
+      const lived = store.getSnapshot().life!;
+      const raw = fake.current.status === "found" ? (fake.current.raw as Record<string, unknown>) : {};
+      fake.current = { status: "found", raw: { ...raw, snapshot: { broken: true } } };
+      const { store: reopened } = withFake(testWorld(), fake);
+      reopened.init();
+      await reopened.resumeLife();
+      expect(reopened.getSnapshot().restored).toBe("replayed");
+      expect(reopened.getSnapshot().life?.person.age).toBe(lived.person.age);
+      expect(reopened.getSnapshot().life?.history).toEqual(lived.history);
+    });
+
+    it("says the game was updated when the data or content of the save is not the current one (RNG-004)", async () => {
+      const { fake } = await savedMidLife(3);
+      const world = testWorld();
+      const loadIndex = async () => ({ ...(await world.loadIndex()), dataVersion: "newer" });
+      const { store } = withFake({ ...world, loadIndex }, fake);
+      store.init();
+      await store.resumeLife();
+      expect(store.getSnapshot().screen).toBe("life");
+      expect(store.getSnapshot().restored).toBe("inexact");
+    });
+
+    it("says both when the snapshot was unusable and the save is from another version", async () => {
+      const { fake } = await savedMidLife(3);
+      const raw = fake.current.status === "found" ? (fake.current.raw as Record<string, unknown>) : {};
+      fake.current = { status: "found", raw: { ...raw, snapshot: { broken: true } } };
+      const world = testWorld();
+      const loadIndex = async () => ({ ...(await world.loadIndex()), dataVersion: "newer" });
+      const { store } = withFake({ ...world, loadIndex }, fake);
+      store.init();
+      await store.resumeLife();
+      expect(store.getSnapshot().restored).toBe("both");
+    });
+
+    it("clears the note after the next turn", async () => {
+      const { fake } = await savedMidLife(3);
+      const world = testWorld();
+      const loadIndex = async () => ({ ...(await world.loadIndex()), dataVersion: "newer" });
+      const { store } = withFake({ ...world, loadIndex }, fake);
+      store.init();
+      await store.resumeLife();
+      playOn(store, 1);
+      expect(store.getSnapshot().restored).toBeNull();
+    });
+
+    it("turns a life that cannot be rebuilt into a damaged-save message and keeps the player on the start screen", async () => {
+      const { fake } = await savedMidLife(3);
+      const raw = fake.current.status === "found" ? (fake.current.raw as Record<string, unknown>) : {};
+      fake.current = {
+        status: "found",
+        raw: { ...raw, snapshot: null, decisions: [{ year: 99, eventId: "x", choiceId: "y" }], waiting: true },
+      };
+      const { store } = withFake(testWorld(), fake);
+      store.init();
+      await store.resumeLife();
+      expect(store.getSnapshot()).toMatchObject({
+        screen: "start",
+        resume: { kind: "problem", reason: "damaged" },
+        life: null,
+      });
+    });
+
+    it("keeps the offer and shows the load error when the world cannot be loaded", async () => {
+      const { fake } = await savedMidLife(2);
+      const world = testWorld();
+      const { store } = withFake({ ...world, loadCountry: () => Promise.reject(new Error("offline")) }, fake);
+      store.init();
+      const offer = store.getSnapshot().resume;
+      await store.resumeLife();
+      expect(store.getSnapshot()).toMatchObject({ screen: "start", status: "error", resume: offer });
+    });
+
+    it("ignores a resume that finishes after the player went back", async () => {
+      const { fake } = await savedMidLife(2);
+      const world = testWorld();
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const { store } = withFake({ ...world, loadIndex: () => gate.then(world.loadIndex) }, fake);
+      store.init();
+      const done = store.resumeLife();
+      store.backToStart();
+      release();
+      await done;
+      expect(store.getSnapshot().screen).toBe("start");
+    });
+
+    it("discards the saved life", async () => {
+      const { fake } = await savedMidLife(2);
+      const { store } = withFake(testWorld(), fake);
+      store.init();
+      store.discardSaved();
+      expect(store.getSnapshot().resume).toBeNull();
+      expect(fake.current).toEqual({ status: "none" });
+    });
+
+    it("offers the life again when the player goes back to the start screen during it", async () => {
+      const { store } = await savedMidLife(2);
+      expect(store.getSnapshot().resume).toBeNull();
+      store.backToStart();
+      expect(store.getSnapshot().resume).toMatchObject({ kind: "offer", seed: "seed-0" });
+    });
+
+    it("does not offer a life that has ended", async () => {
+      const { store } = withFake();
+      await lifeToTheEnd(store);
+      await settle();
+      store.backToStart();
+      expect(store.getSnapshot().resume).toBeNull();
+    });
+  });
+
+  describe("epitaph (DEATH-004)", () => {
+    const endedStore = async () => {
+      const { store, fake } = withFake(testWorld(deadlyCountry()));
+      await store.begin();
+      store.startLife();
+      store.continueYear();
+      await Promise.resolve();
+      return { store, fake };
+    };
+
+    it("is kept with the life: tidied, shown in the summary and written to the archive again", async () => {
+      const { store, fake } = await endedStore();
+      store.writeEpitaph("  Kept   bees.  ");
+      await Promise.resolve();
+      expect(store.getSnapshot().summary!.summary.epitaph).toBe("Kept bees.");
+      const stored = fake.puts.at(-1)!;
+      expect(stored.id).toBe("seed-0");
+      expect(stored.summary.epitaph).toBe("Kept bees.");
+      expect(stored.save.epitaph).toBe("Kept bees.");
+      expect(stored.save.snapshot.epitaph).toBe("Kept bees.");
+      // The save keeps its own versions and the time the life was first saved.
+      const first = fake.puts[0]!;
+      expect(stored.save.createdAt).toBe(first.save.createdAt);
+      expect(stored.save.dataVersion).toBe(first.save.dataVersion);
+      expect(stored.save.updatedAt > first.save.updatedAt).toBe(true);
+      expect(stored.finishedAt).toBe(first.finishedAt);
+    });
+
+    it("is cut to the longest allowed and removed when emptied", async () => {
+      const { store, fake } = await endedStore();
+      store.writeEpitaph("x".repeat(EPITAPH_MAX_LENGTH + 40));
+      expect(store.getSnapshot().summary!.summary.epitaph).toHaveLength(EPITAPH_MAX_LENGTH);
+      store.writeEpitaph("   ");
+      expect(store.getSnapshot().summary!.summary).not.toHaveProperty("epitaph");
+      expect(fake.puts.at(-1)!.save).not.toHaveProperty("epitaph");
+    });
+
+    it("can be written to a life opened from the archive, with that life's own versions", async () => {
+      const country = makeCountry({ region: "Western Africa" });
+      const { past } = finishedLife("old-1", country);
+      const old = { ...past, save: { ...past.save, dataVersion: "older", contentVersion: "older-content" } };
+      const fake = fakePersistence({ status: "none" }, [old]);
+      const store = createGameStore(seeds(), testWorld(country), fake.persistence, clock());
+      await store.openPastLife("old-1");
+      expect(store.getSnapshot()).toMatchObject({ screen: "summary", summary: { archived: true } });
+      store.writeEpitaph("Walked far");
+      await Promise.resolve();
+      expect(store.getSnapshot().summary!.summary.epitaph).toBe("Walked far");
+      expect(fake.puts).toHaveLength(1);
+      expect(fake.puts[0]!.save).toMatchObject({
+        dataVersion: "older",
+        contentVersion: "older-content",
+        epitaph: "Walked far",
+        createdAt: old.save.createdAt,
+      });
+      expect(fake.lives.get("old-1")!.summary.epitaph).toBe("Walked far");
+    });
+
+    it("does nothing when no summary is on screen", () => {
+      const { store, fake } = withFake();
+      store.writeEpitaph("Nobody");
+      expect(fake.puts).toHaveLength(0);
+    });
+
+    it("says so when the archive could not keep it", async () => {
+      const { store, fake } = await endedStore();
+      fake.failArchive = true;
+      store.writeEpitaph("Not kept");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(store.getSnapshot().problem).toBe("archive");
+      expect(store.getSnapshot().summary!.summary.epitaph).toBe("Not kept");
+    });
+  });
+
+  describe("past lives (SAVE-003, SAVE-007)", () => {
+    const country = makeCountry({ region: "Western Africa" });
+    const lives = () => [
+      finishedLife("past-a", country, undefined, "2026-10-20T10:00:00.000Z").past,
+      finishedLife("past-b", country, "Walked far", "2026-10-22T10:00:00.000Z").past,
+    ];
+    const withLives = () => {
+      const fake = fakePersistence({ status: "none" }, lives());
+      return { fake, store: createGameStore(seeds(), testWorld(country), fake.persistence, clock()) };
+    };
+
+    it("lists the lives, newest first, and says nothing until they are loaded", async () => {
+      const { store } = withLives();
+      expect(store.getSnapshot().pastLives).toBeNull();
+      const done = store.openPast();
+      expect(store.getSnapshot()).toMatchObject({ screen: "past", pastLives: null });
+      await done;
+      expect(store.getSnapshot().pastLives!.map((l) => l.id)).toEqual(["past-b", "past-a"]);
+    });
+
+    it("shows an empty list and says so when the archive cannot be read", async () => {
+      const { store, fake } = withLives();
+      fake.failArchive = true;
+      await store.openPast();
+      expect(store.getSnapshot()).toMatchObject({ screen: "past", pastLives: [], problem: "archive" });
+    });
+
+    it("opens a life as an archived summary with the sources for its notes", async () => {
+      const { store } = withLives();
+      await store.openPast();
+      await store.openPastLife("past-b");
+      const snapshot = store.getSnapshot();
+      expect(snapshot.screen).toBe("summary");
+      expect(snapshot.summary).toMatchObject({ archived: true, summary: { seed: "past-b", epitaph: "Walked far" } });
+      expect(snapshot.summary!.lastYear).toEqual(lives()[1]!.save.snapshot.history.at(-1)!.events);
+      expect(snapshot.sources).not.toBeNull();
+    });
+
+    it("stays on the list when the life is gone", async () => {
+      const { store } = withLives();
+      await store.openPast();
+      await store.openPastLife("nobody");
+      expect(store.getSnapshot().screen).toBe("past");
+      expect(store.getSnapshot().problem).toBe("archive");
+    });
+
+    it("deletes one life and refreshes the list", async () => {
+      const { store, fake } = withLives();
+      await store.openPast();
+      expect(await store.deletePastLife("past-b")).toBe(true);
+      expect(store.getSnapshot().pastLives!.map((l) => l.id)).toEqual(["past-a"]);
+      expect(fake.lives.has("past-b")).toBe(false);
+    });
+
+    it("says a delete failed, and keeps the life, when the archive would not remove it", async () => {
+      const { store, fake } = withLives();
+      fake.persistence.archive.remove = () => Promise.reject(new Error("blocked"));
+      await store.openPast();
+      expect(await store.deletePastLife("past-b")).toBe(false);
+      expect(store.getSnapshot().problem).toBe("archive");
+      expect(store.getSnapshot().pastLives).toHaveLength(2);
+    });
+
+    it("ignores a life that opens after the player went back", async () => {
+      const { store, fake } = withLives();
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const get = fake.persistence.archive.get;
+      fake.persistence.archive.get = (id) => gate.then(() => get(id));
+      await store.openPast();
+      const done = store.openPastLife("past-a");
+      store.backToStart();
+      release();
+      await done;
+      expect(store.getSnapshot().screen).toBe("start");
+    });
+
+    it("deletes all data: storage emptied, the store back at its start with default settings", async () => {
+      const { store, fake } = withLives();
+      store.setSettings({ softening: true, pace: "every-year" });
+      store.toggleUsPrices();
+      await store.begin();
+      store.startLife();
+      await store.openPast();
+      expect(await store.deleteAllData()).toBe(true);
+      expect(fake.deleted).toBe(true);
+      expect(fake.lives.size).toBe(0);
+      expect(store.getSnapshot()).toMatchObject({
+        screen: "start",
+        resume: null,
+        pastLives: [],
+        summary: null,
+        life: null,
+        showUsPrices: false,
+        settings: { softening: false, pace: "quiet-years" },
+      });
+      store.backToStart();
+      expect(store.getSnapshot().resume).toBeNull();
+    });
+
+    it("says that everything was deleted, until the player goes anywhere else", async () => {
+      const { store } = withLives();
+      expect(store.getSnapshot().deleted).toBe(false);
+      await store.openPast();
+      await store.deleteAllData();
+      expect(store.getSnapshot().deleted).toBe(true);
+      store.openSources();
+      expect(store.getSnapshot().deleted).toBe(false);
+    });
+
+    it("leaves the store as it was when the data could not be deleted", async () => {
+      const { store, fake } = withLives();
+      fake.persistence.deleteAll = () => Promise.reject(new Error("blocked"));
+      await store.openPast();
+      expect(await store.deleteAllData()).toBe(false);
+      expect(store.getSnapshot()).toMatchObject({ screen: "past", problem: "archive" });
+      expect(store.getSnapshot().pastLives).toHaveLength(2);
     });
   });
 });

@@ -2,6 +2,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { catalog, eventDefs } from "../../src/content/events";
+import { conditionDefs } from "../../src/content/healthConditions";
+import { CONTENT_VERSION } from "../../src/content/version";
 import { isDecision, selectEvents, type EventDef } from "../../src/engine/events";
 import { advanceAuto, newLife } from "../../src/engine/life";
 import { stream } from "../../src/engine/rng";
@@ -115,4 +117,23 @@ describe("a life with the shipped events", () => {
       expect(decisions / years).toBeLessThan(0.22);
     });
   }
+});
+
+/** FNV-1a, enough to notice that something changed. */
+const fingerprint = (text: string) => {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return hash.toString(16);
+};
+
+describe("the content version (SAVE-004, RNG-004)", () => {
+  // A save records the content version, and a replay is exact only for the same one. This pins the version
+  // against a fingerprint of the events and conditions as data (functions are not part of it, so it is a
+  // reminder, not a proof). When this fails: bump CONTENT_VERSION in src/content/version.ts, then update the pin.
+  it("is bumped when the events or conditions change", () => {
+    expect([CONTENT_VERSION, fingerprint(JSON.stringify([eventDefs, conditionDefs]))]).toEqual([
+      "2026.10.1",
+      "6c8fabef",
+    ]);
+  });
 });

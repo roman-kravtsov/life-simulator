@@ -165,8 +165,8 @@ Design references like (3.3) point to sections of `docs/design.md`.
 |---|---|---|---|---|---|---|---|
 | RNG-001 | Seeded PRNG | sfc32 (or similar) seeded by a cyrb128-style hash of the seed string. Done when known-answer tests pass. | P0 | none | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-002 | Independent streams | Separate streams per subsystem from `hash(seed, stream, year)` (3.9). Done when a test shows that adding an event does not change mortality draws. | P0 | RNG-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
-| RNG-003 | Readable seeds | Seeds like "amber-river-4821", shown on the summary. Done when every life has one. | P1 | RNG-001 | S | MVP | done ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)): the seed is shown on the birth screen; the summary display comes with SUM-001 (M6) |
-| RNG-004 | Replay | Same seed, data version, content version and decision, plan and settings logs give the same life. Done when a test replays many lives and compares full histories. | P0 | RNG-002, SAVE-001 | M | MVP | not started |
+| RNG-003 | Readable seeds | Seeds like "amber-river-4821", shown on the summary. Done when every life has one. | P1 | RNG-001 | S | MVP | done ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11), [#16](https://github.com/roman-kravtsov/life-simulator/pull/16)): the seed is shown on the birth screen and on the summary |
+| RNG-004 | Replay | Same seed, data version, content version and decision, plan and settings logs give the same life. Done when a test replays many lives and compares full histories. | P0 | RNG-002, SAVE-001 | M | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
 | RNG-005 | No unseeded randomness | A lint rule forbids `Math.random()` in the engine. Done when CI fails on a violation. | P1 | BE-002 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | RNG-006 | Play a given seed | Enter or open a seed to live that same starting life. | P2 | RNG-003 | S | post-MVP | not started |
 
@@ -184,20 +184,20 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| DEATH-001 | Death resolution | Ends the life with age and cause, and moves to the summary. Done when every death produces a complete record. | P0 | HEALTH-002, HEALTH-003 | S | MVP | not started |
-| DEATH-002 | Death passage | A short, non-graphic closing passage per cause group, in the game's voice. Done when every cause group has a passage and a softened version. | P0 | DEATH-001, L10N-001 | M | MVP | not started |
-| DEATH-003 | Life expectancy comparison | Places the age at death against the country's life expectancy, with source. Done when shown on the summary. | P1 | DEATH-001, WORLD-002 | S | MVP | not started |
-| DEATH-004 | Epitaph | The player may write a few words for the person at the end. Done when it is saved with the life. | P1 | DEATH-001, SAVE-003 | S | MVP | not started |
+| DEATH-001 | Death resolution | Ends the life with age and cause, and moves to the summary. Done when every death produces a complete record. | P0 | HEALTH-002, HEALTH-003 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| DEATH-002 | Death passage | A short, non-graphic closing passage per cause group, in the game's voice. Done when every cause group has a passage and a softened version. | P0 | DEATH-001, L10N-001 | M | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| DEATH-003 | Life expectancy comparison | Places the age at death against the country's life expectancy, with source. Done when shown on the summary. | P1 | DEATH-001, WORLD-002 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| DEATH-004 | Epitaph | The player may write a few words for the person at the end. Done when it is saved with the life. | P1 | DEATH-001, SAVE-003 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
 
 ## Life summary (SUM)
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| SUM-001 | Summary screen | The end-of-life screen: closing passage, age and cause, key facts, start-again button. Done when it works on mobile and desktop. | P0 | DEATH-001, UI-001 | M | MVP | not started |
-| SUM-002 | Growth-ring cross-section | The life drawn as tree rings: thickness from happiness, colour from the year's theme, marks for key events, with patterns and labels for accessibility (1.3). Done when every finished life renders its rings in SVG. | P1 | SUM-001, UI-011 | L | MVP | not started |
-| SUM-003 | Key moments | A short timeline of the most significant years. Done when 5 to 12 moments are chosen by a tested rule. | P0 | SUM-001 | M | MVP | not started |
-| SUM-004 | Chance, choice and circumstance | A breakdown of what shaped the life, built from effect tags. Done when the breakdown is computed and explained in words. | P1 | SUM-001, SIM-006 | M | MVP | not started |
-| SUM-005 | Notes and epitaph | Shows the journal entries and the epitaph. | P1 | SUM-001, UI-007, DEATH-004 | S | MVP | not started |
+| SUM-001 | Summary screen | The end-of-life screen: closing passage, age and cause, key facts, start-again button. Done when it works on mobile and desktop. | P0 | DEATH-001, UI-001 | M | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SUM-002 | Growth-ring cross-section | The life drawn as tree rings: thickness from happiness, colour from the year's theme, marks for key events, with patterns and labels for accessibility (1.3). Done when every finished life renders its rings in SVG. | P1 | SUM-001, UI-011 | L | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SUM-003 | Key moments | A short timeline of the most significant years. Done when 5 to 12 moments (fewer only when the life had fewer years with something to tell) are chosen by a tested rule. | P0 | SUM-001 | M | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SUM-004 | Chance, choice and circumstance | A breakdown of what shaped the life, built from effect tags. Done when the breakdown is computed and explained in words. | P1 | SUM-001, SIM-006 | M | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SUM-005 | Notes and epitaph | Shows the journal entries and the epitaph. | P1 | SUM-001, UI-007, DEATH-004 | S | MVP | in progress ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)): the epitaph is shown on the summary; the journal comes with UI-007 (M7) |
 | SUM-006 | The other shore | The same seed and traits, born in a different country, shown side by side. | P2 | SUM-001, RNG-004 | L | post-MVP | not started |
 | SUM-007 | The road not taken | Replay from a past decision with a different choice. | P2 | SUM-001, RNG-004 | L | post-MVP | not started |
 | SUM-008 | Life charts | Stat curves over the life. | P2 | SUM-001 | S | post-MVP | not started |
@@ -206,26 +206,26 @@ Design references like (3.3) point to sections of `docs/design.md`.
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
-| SAVE-001 | Autosave | Saves the current life to localStorage after every resolved turn (2.4). Done when closing the tab loses at most the current screen. | P0 | SIM-001 | S | MVP | not started |
-| SAVE-002 | Resume | Reloading the page offers to continue the life in progress. Done when tested end to end in a browser. | P0 | SAVE-001, UI-001 | S | MVP | not started |
-| SAVE-003 | Past lives archive | Finished lives stored in IndexedDB, browsable. Done when lives survive reloads and can be reopened. | P1 | SAVE-001 | M | MVP | not started |
-| SAVE-004 | Schema versions | Saves carry schema, data and content versions, with migrations. Done when an old-version save loads in a test. | P0 | SAVE-001 | S | MVP | not started |
-| SAVE-005 | Replay fallback | If a snapshot cannot load, rebuild the life from seed and decisions. Done when a corrupted-snapshot test recovers. | P1 | RNG-004, SAVE-004 | S | MVP | not started |
+| SAVE-001 | Autosave | Saves the current life to localStorage after every resolved turn (2.4). Done when closing the tab loses at most the current screen. | P0 | SIM-001 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SAVE-002 | Resume | Reloading the page offers to continue the life in progress. Done when tested end to end in a browser. | P0 | SAVE-001, UI-001 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SAVE-003 | Past lives archive | Finished lives stored in IndexedDB, browsable. Done when lives survive reloads and can be reopened. | P1 | SAVE-001 | M | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
+| SAVE-004 | Schema versions | Saves carry schema, data and content versions, with migrations. Done when an old-version save loads in a test. | P0 | SAVE-001 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)): schema version 1 is the first, so `MIGRATIONS` is empty; the migration machinery is tested with an invented older schema |
+| SAVE-005 | Replay fallback | If a snapshot cannot load, rebuild the life from seed and decisions. Done when a corrupted-snapshot test recovers. | P1 | RNG-004, SAVE-004 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
 | SAVE-006 | Export and import | Save or load a life as a JSON file. | P2 | SAVE-004 | S | post-MVP | not started |
-| SAVE-007 | Delete data | Delete one life or all local data. Done when nothing remains in storage after "delete all". | P1 | SAVE-003 | S | MVP | not started |
+| SAVE-007 | Delete data | Delete one life or all local data. Done when nothing remains in storage after "delete all". | P1 | SAVE-003 | S | MVP | done ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)) |
 
 ## UI/UX (UI)
 
 | ID | Name | Description | Priority | Dependencies | Complexity | Scope | Status |
 |---|---|---|---|---|---|---|---|
 | UI-001 | App shell | Screens and navigation with no framework: start, birth, life, decision, summary, past lives, settings, sources. Done when every screen is reachable and back navigation behaves. | P0 | none | M | MVP | in progress ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
-| UI-002 | Start screen | Title, a few lines of introduction, the content note, the softening option, and "Begin a life" / "Continue". Done when a first-time player can start in one tap after reading the note. | P0 | UI-001 | S | MVP | in progress ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)): the start screen has the title, intro, content note and Begin a life; the softening and quiet-years switches arrived in [#15](https://github.com/roman-kravtsov/life-simulator/pull/15); Continue (saves, M6) is still to come |
+| UI-002 | Start screen | Title, a few lines of introduction, the content note, the softening option, and "Begin a life" / "Continue". Done when a first-time player can start in one tap after reading the note. | P0 | UI-001 | S | MVP | in progress ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)): the start screen has the title, intro, content note and Begin a life; the softening and quiet-years switches arrived in [#15](https://github.com/roman-kravtsov/life-simulator/pull/15); Continue arrived with the saves in [#16](https://github.com/roman-kravtsov/life-simulator/pull/16); the rest of the screen is left for M7 |
 | UI-003 | Birth screen | Reveals country, sex, name, family and household in prose, with the country panel. Done when it reads well for rich and poor births alike. | P0 | UI-001, CHAR-001 | S | MVP | in progress ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)): country, sex, name, family and household are shown; the country panel arrives with WORLD-008 |
 | UI-004 | Life screen | Header (name, age, country), stats panel, family list and the story log. Done on mobile and desktop. | P0 | UI-001, CHAR-004 | M | MVP | in progress ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)): the life screen has age, country, stats, family and the year's events, and ([#14](https://github.com/roman-kravtsov/life-simulator/pull/14)) panels for school, work, money and health conditions; the name in the header and the story log of past years are left for the UI milestone (M7) |
 | UI-005 | Plan widget | Allocate focus points with clear effects and missing-point reasons. Done when usable by touch and keyboard. | P0 | UI-004, DEC-003 | M | MVP | done ([#15](https://github.com/roman-kravtsov/life-simulator/pull/15)) |
 | UI-006 | Decision card | Shows the situation, options, locked reasons and the odds lens. Done when usable by touch and keyboard. | P0 | UI-004, DEC-001 | M | MVP | done ([#15](https://github.com/roman-kravtsov/life-simulator/pull/15)) |
 | UI-007 | Reflection prompts | Event-driven prompts with an optional journal line (3.7). Done when at least 15 prompts exist and notes are saved. | P1 | UI-004, SAVE-001 | S | MVP | not started |
-| UI-008 | Past lives screen | A list of finished lives with name, country, age at death and rings thumbnail. | P1 | SAVE-003, UI-001 | S | MVP | not started |
+| UI-008 | Past lives screen | A list of finished lives with name, country, age at death and rings thumbnail. | P1 | SAVE-003, UI-001 | S | MVP | in progress ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)): a plain list with open and delete (SAVE-003, SAVE-007); the rings thumbnail and polish are left for M7 |
 | UI-009 | Settings screen | Softening, reduced motion, text size, theme, delete data. | P1 | UI-001 | S | MVP | not started |
 | UI-010 | Responsive layout | One column on phones, two on desktop. Done when the full loop works at 360 px and 1440 px widths. | P0 | UI-001 | M | MVP | not started |
 | UI-011 | Visual identity | Palette, type, light and dark themes as tokens (1.3), plus the React Aria based component kit in `src/ui/kit` (`docs/design-system.md`). Done when all screens use the tokens. | P0 | UI-001 | M | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |

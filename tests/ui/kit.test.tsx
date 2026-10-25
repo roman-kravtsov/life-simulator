@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { useState } from "react";
-import { Button, Dialog, Slider, Stepper, Switch, Tooltip } from "../../src/ui/kit";
+import { Button, ConfirmDialog, Dialog, Slider, Stepper, Switch, TextField, Tooltip } from "../../src/ui/kit";
 
 function Counted({ max = 3, onChange }: { max?: number; onChange?: (value: number) => void }) {
   const [value, setValue] = useState(1);
@@ -118,5 +118,74 @@ describe("kit", () => {
   it("Stepper can be disabled", () => {
     render(<Stepper label="Earn" value={0} minValue={0} maxValue={0} isDisabled />);
     expect(screen.getByRole("textbox", { name: "Earn" })).toBeDisabled();
+  });
+
+  it("TextField is labelled, described by its hint, limited in length and edited by keyboard", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    function Field() {
+      const [value, setValue] = useState("");
+      return (
+        <TextField
+          label="A few words"
+          description={`${5 - value.length} left`}
+          maxLength={5}
+          value={value}
+          onChange={(next) => {
+            setValue(next);
+            onChange(next);
+          }}
+        />
+      );
+    }
+    render(<Field />);
+    const field = screen.getByRole("textbox", { name: "A few words" });
+    expect(field).toHaveAccessibleDescription("5 left");
+    await user.tab();
+    expect(field).toHaveFocus();
+    await user.keyboard("abcdefgh");
+    expect(field).toHaveValue("abcde");
+    expect(field).toHaveAccessibleDescription("0 left");
+    expect(onChange).toHaveBeenLastCalledWith("abcde");
+  });
+
+  it("TextField can be disabled", () => {
+    render(<TextField label="Name" isDisabled />);
+    expect(screen.getByRole("textbox", { name: "Name" })).toBeDisabled();
+  });
+
+  it("ConfirmDialog asks first: Escape and the cancel button change nothing, the confirm button acts and closes", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog
+        trigger={<Button>Delete</Button>}
+        title="Delete this?"
+        confirmLabel="Yes, delete"
+        cancelLabel="Keep it"
+        onConfirm={onConfirm}
+      >
+        <p>It cannot be undone.</p>
+      </ConfirmDialog>,
+    );
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(
+      screen.getByRole("alertdialog", { name: "Delete this?", description: /It cannot be undone\./ }),
+    ).toBeInTheDocument();
+    // The safe answer has focus, so Enter does not delete by accident.
+    expect(screen.getByRole("button", { name: "Keep it" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Delete" })).toHaveFocus());
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Keep it" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(onConfirm).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Yes, delete" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 });

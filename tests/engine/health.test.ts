@@ -60,6 +60,17 @@ describe("the conditions in the game (HEALTH-004)", () => {
       }
     }
   });
+  it("writes a softer telling of the moments of a sensitive condition when it begins and worsens", () => {
+    const sensitive = conditionCatalog.all.filter((d) => d.sensitivity);
+    expect(sensitive.map((d) => d.id)).toEqual(expect.arrayContaining(["depression", "cancer"]));
+    for (const d of sensitive) {
+      for (const moment of ["begins", "worsens"]) {
+        const key = `event.condition.${d.id}.${moment}.soft`;
+        expect(en, key).toHaveProperty([key]);
+        expect(en[key]!.length, key).toBeLessThan(en[`event.condition.${d.id}.${moment}`]!.length);
+      }
+    }
+  });
   it("points each cause it raises at a cause the data has", () => {
     const causes = new Set([
       "infectious",
@@ -195,6 +206,17 @@ describe("stepConditions", () => {
     expect(events[0]!.textKey).toBe("event.condition.a.begins");
     expect(events[0]!.effects).toEqual(expect.arrayContaining([{ condition: "add", id: "a", severity: 1 }]));
     expect(events[0]!.effects.some((e) => "stat" in e && e.stat === "health" && e.add < 0)).toBe(true);
+  });
+  it("offers a softer telling of a sensitive condition's beginning and worsening, and of nothing else", () => {
+    const sensitive = createConditionCatalog([def({ id: "s", sensitivity: "difficult", helpTopic: "illness" })]);
+    const begins = stepConditions(at(30), country, () => roll(0.01), sensitive);
+    expect(begins.events[0]).toMatchObject({ sensitivity: "difficult", softTextKey: "event.condition.s.begins.soft" });
+    const worsens = stepConditions(at(30, { conditions: [has("s")] }), country, () => roll(0.01), sensitive);
+    expect(worsens.events[0]!.softTextKey).toBe("event.condition.s.worsens.soft");
+    const eases = stepConditions(at(30, { conditions: [has("s", 2)] }), country, () => roll(0.999), sensitive);
+    expect(eases.events[0]!.softTextKey).toBeUndefined();
+    expect(begins.events[0]).toHaveProperty("softTextKey");
+    expect(step(at(30), 0.01).events[0]).not.toHaveProperty("softTextKey");
   });
   it("starts nothing when the roll is high", () => {
     const { person, events } = step(at(30), 0.99);

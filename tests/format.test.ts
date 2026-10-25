@@ -4,6 +4,8 @@ import {
   countryName,
   formatCompactNumber,
   formatDate,
+  formatDay,
+  formatList,
   formatMoney,
   formatNumber,
   formatPercent,
@@ -71,6 +73,23 @@ describe("L10N-003: dates", () => {
   it("formats an ISO date in the locale, whatever the time zone", () => {
     expect(formatDate("2026-10-24", "en")).toBe("October 24, 2026");
     expect(formatDate("2026-10-24", "de")).toBe("24. Oktober 2026");
+  });
+});
+
+describe("L10N-003: the day a life ended and lists of words", () => {
+  it("formats a moment as a long date in the locale and the given time zone", () => {
+    expect(formatDay("2026-10-24T23:30:00.000Z", "en", "UTC")).toBe("October 24, 2026");
+    expect(formatDay("2026-10-24T23:30:00.000Z", "en", "Asia/Tokyo")).toBe("October 25, 2026");
+    expect(formatDay("2026-10-24T10:00:00.000Z", "de", "UTC")).toBe("24. Oktober 2026");
+  });
+
+  it("joins words the way the language does", () => {
+    expect(formatList(["malaria"], "en")).toBe("malaria");
+    expect(formatList(["malaria", "depression"], "en")).toBe("malaria and depression");
+    expect(formatList(["malaria", "depression", "a serious injury"], "en")).toBe(
+      "malaria, depression, and a serious injury",
+    );
+    expect(formatList([], "en")).toBe("");
   });
 });
 

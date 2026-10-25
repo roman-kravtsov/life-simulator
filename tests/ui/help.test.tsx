@@ -9,16 +9,16 @@ import { LifeScreen } from "../../src/ui/LifeScreen";
 import { createGameStore } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { makePerson } from "../fixtures/person";
+import { deadlyCountry } from "./fakes";
 import { lifeOf, lifeScreenProps } from "./helpers";
 
 const country = makeCountry({ region: "Western Africa" });
 const topics: HelpTopic[] = ["suicide", "violence", "abuse", "grief", "addiction", "illness"];
 
-const endedLife = (cause: string, events: EventRecord[] = []): LifeState => {
-  const person = makePerson({ age: 34, alive: false, stage: "adulthood" });
+const lastYearOf = (events: EventRecord[]): LifeState => {
+  const person = makePerson({ age: 34, stage: "adulthood" });
   return lifeOf(person, {
-    death: { age: 34, cause },
-    history: [{ age: 34, stage: "adulthood", stageChanged: false, stats: person.stats, events, died: true }],
+    history: [{ age: 34, stage: "adulthood", stageChanged: false, stats: person.stats, events }],
   });
 };
 
@@ -44,11 +44,26 @@ describe("help resources (UI-012)", () => {
       await user.click(screen.getByRole("button", { name: "Where the numbers come from" }));
       await check(); // sources
       await user.click(screen.getByRole("button", { name: "Back" }));
+      await user.click(screen.getByRole("button", { name: "Past lives" }));
+      await screen.findByRole("heading", { level: 1, name: "Past lives" });
+      await check(); // past lives
+      await user.click(screen.getByRole("button", { name: "Back to start" }));
       await user.click(screen.getByRole("button", { name: "Begin a life" }));
       await screen.findByRole("button", { name: "Begin this life" });
       await check(); // birth
       await user.click(screen.getByRole("button", { name: "Begin this life" }));
       await check(); // life
+    });
+
+    it("is on the summary screen of a life that has ended", async () => {
+      const user = userEvent.setup();
+      const store = createGameStore(() => "test-seed", testWorld(deadlyCountry()));
+      render(<App store={store} />);
+      await user.click(screen.getByRole("button", { name: "Begin a life" }));
+      await user.click(await screen.findByRole("button", { name: "Begin this life" }));
+      await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
+      expect(screen.getByRole("button", { name: "Begin another life" })).toBeInTheDocument();
+      expect(talkLink()).toHaveAttribute("href", "https://findahelpline.com");
     });
 
     it("is the first stop after the skip link, before the game", async () => {
@@ -71,42 +86,13 @@ describe("help resources (UI-012)", () => {
         sensitivity: "difficult",
         effects: [],
       };
-      render(<LifeScreen {...lifeScreenProps(country, { life: endedLife("cardiovascular", [event]) })} />);
+      render(<LifeScreen {...lifeScreenProps(country, { life: lastYearOf([event]) })} />);
       const status = screen.getByRole("status");
       expect(status).toHaveTextContent(en[`help.${topic}`]!);
       const link = within(status).getByRole("link", { name: "findahelpline.com" });
       expect(link).toHaveAttribute("href", "https://findahelpline.com");
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    });
-  });
-
-  describe("when a life ends by suicide", () => {
-    it("states the death plainly and always shows the help and the link, with nothing else in the year", () => {
-      render(<LifeScreen {...lifeScreenProps(country, { life: endedLife("selfHarm") })} />);
-      const status = screen.getByRole("status");
-      expect(within(status).getByText("Your life ends at 34, of suicide.")).toBeInTheDocument();
-      expect(status).toHaveTextContent(en["help.suicide"]!);
-      expect(within(status).getByRole("link", { name: "findahelpline.com" })).toHaveAttribute(
-        "href",
-        "https://findahelpline.com",
-      );
-    });
-
-    it("shows the help once when the year's own event already carries it", () => {
-      const event: EventRecord = {
-        id: "test.low",
-        textKey: "event.midlife.looking_back",
-        helpTopic: "suicide",
-        effects: [],
-      };
-      render(<LifeScreen {...lifeScreenProps(country, { life: endedLife("selfHarm", [event]) })} />);
-      expect(screen.getAllByText(en["help.suicide"]!)).toHaveLength(1);
-    });
-
-    it("does not show it for other deaths", () => {
-      render(<LifeScreen {...lifeScreenProps(country, { life: endedLife("cancer") })} />);
-      expect(screen.queryByText(en["help.suicide"]!)).not.toBeInTheDocument();
     });
   });
 });

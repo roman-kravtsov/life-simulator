@@ -1,0 +1,55 @@
+.died {
+  margin: 0 0 1rem;
+  font-family: var(--font-ui);
+}
+
+.passage {
+  margin: 0 0 1.5rem;
+  font-size: 1.2rem;
+}
+
+.passage p {
+  margin: 0 0 0.75rem;
+}
+
+.heading {
+  margin: 1.75rem 0 0.5rem;
+}
+
+.list {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.list li {
+  margin-bottom: 0.5rem;
+}
+
+.moments {
+  margin: 0 0 1rem;
+  padding-left: 1.75rem;
+}
+
+.moments li {
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+.moments li::marker {
+  font-family: var(--font-ui);
+  font-weight: 700;
+}
+
+.how {
+  margin: 0 0 1rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}

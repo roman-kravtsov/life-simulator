@@ -58,4 +58,61 @@ export const uiStrings: Readonly<Record<string, string>> = {
   // Help (UI-012).
   "help.talk": "Need to talk?",
   "help.newTab": "Free helplines directory. Opens in a new tab.",
+
+  // Saved lives (SAVE-001 to SAVE-003, SAVE-007).
+  "start.resume.heading": "Continue your life",
+  "start.resume.line": "{name}, {age}, in {country}",
+  "start.resume.lineNoPlace": "{name}, {age}",
+  "start.resume.unknown": "A life is in progress.",
+  "start.resume.note": "Beginning a new life replaces this one.",
+  "start.resume.continue": "Continue",
+  "start.problem.unsupported": "A saved life could not be opened: it was made by a newer version of the game.",
+  "start.problem.damaged": "A saved life could not be opened: its file is damaged.",
+  "start.problem.unreadable": "A saved life could not be opened: this browser would not let the game read it.",
+  "start.problem.discard": "Discard it",
+  "start.past": "Past lives",
+
+  "past.title": "Past lives",
+  "past.intro": "The lives you have finished are kept here, in this browser only.",
+  "past.loading": "Loading your past lives…",
+  "past.empty": "No lives yet. When a life ends, it is kept here.",
+  "past.line": "Born {born} in {country}. Died at {age}, of {cause}.",
+  "past.finished": "Finished {date}",
+  "past.open": "Open",
+  "past.openLabel": "Open the life of {name}",
+  "past.delete": "Delete",
+  "past.deleteLabel": "Delete the life of {name}",
+  "past.deleteConfirm.title": "Delete the life of {name}?",
+  "past.deleteConfirm.body": "This life will be removed from this browser. It cannot be undone.",
+  "past.deleteConfirm.yes": "Delete this life",
+  "past.deleteConfirm.no": "Keep it",
+  "past.deleteAll": "Delete all local data",
+  "past.deleteAll.about": "Removes everything this game keeps in your browser.",
+  "past.deleteAll.nothing": "There is nothing stored yet.",
+  "past.deleteAll.title": "Delete all local data?",
+  "past.deleteAll.body":
+    "This removes every past life, the life in progress and the choices you made here, such as light or dark, from this browser. Nothing is kept anywhere else, so it cannot be undone.",
+  "past.deleteAll.yes": "Delete everything",
+  "past.deleteAll.no": "Keep everything",
+  "past.problem":
+    "Some lives could not be saved to or read from this browser's storage. It may be full, blocked or turned off.",
+
+  // Notes on the life screen about its saved copy.
+  "life.restored.replayed": "Your life was rebuilt from its seed after the saved copy could not be read.",
+  "life.restored.inexact":
+    "The game has been updated since this life was saved, so it may play out a little differently from here.",
+  "life.problem.current": "This life could not be saved in your browser. If you close this tab, it will be lost.",
+  "life.restored.both":
+    "The saved copy of your life could not be read, so it was rebuilt from its seed. The game has also been updated since the life was saved, so it may play out a little differently from here.",
+
+  "start.deleted": "All local data in this browser was deleted.",
+  "past.deleted": "The life of {name} was deleted.",
+  "past.deleteFailed":
+    "The life of {name} could not be deleted. This browser's storage may be full, blocked or turned off.",
+  "past.deleteAll.failed":
+    "Your local data could not be deleted. This browser's storage may be full, blocked or turned off.",
+
+  // When a screen cannot be shown (for example a saved life that names text this version no longer has).
+  "app.error.title": "Something went wrong",
+  "app.error.body": "This part of the game could not be shown. Your saved lives have not been changed.",
 };

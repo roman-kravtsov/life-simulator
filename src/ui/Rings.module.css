@@ -1,0 +1,185 @@
+.figure {
+  margin: 0 0 1.5rem;
+}
+
+.rings {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+/* Each theme's colour from its token: the base of its pattern, or the whole fill of a plain year. A ring with a
+   pattern gets its fill from the attribute, so it must not also carry one of these classes. */
+.fill-study {
+  fill: var(--ring-study);
+}
+.fill-work {
+  fill: var(--ring-work);
+}
+.fill-love {
+  fill: var(--ring-love);
+}
+.fill-loss {
+  fill: var(--ring-loss);
+}
+.fill-illness {
+  fill: var(--ring-illness);
+}
+.fill-move {
+  fill: var(--ring-move);
+}
+.fill-plain {
+  fill: var(--ring-plain);
+}
+
+/* A thin line of paper between rings, and round the outside, so neighbours never merge. */
+.ring {
+  stroke: var(--paper);
+  /* About 0.6 px where the picture is 328 px wide, which is as narrow as it gets (360 px screens). */
+  stroke-width: 0.18;
+}
+
+.ring:first-of-type {
+  stroke: var(--ink-soft);
+  stroke-width: 0.3;
+}
+
+/* Marks are drawn in paper over every ring colour, which each is at least 3:1 against. */
+.markFill {
+  fill: var(--paper);
+}
+
+/* The stroke width is set on each pattern, from the size of its tile. */
+.markLine {
+  fill: none;
+  stroke: var(--paper);
+}
+
+.mark {
+  pointer-events: none;
+}
+
+/* The line from a moved badge to its ring: ink over a wider line of paper, as the badge disc has its edge. */
+.leaderCasing {
+  stroke: var(--paper);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.leader {
+  stroke: var(--ink);
+  stroke-width: 0.35;
+}
+
+.anchor {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 0.25;
+}
+
+.markDisc {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 0.5;
+}
+
+.markNumber {
+  fill: var(--paper);
+  font-family: var(--font-ui);
+  /* "px" here is a view box unit, not a screen pixel: the figure scales, and this is 4.2% of its width. */
+  font-size: 4.2px;
+  font-weight: 700;
+}
+
+.caption {
+  margin: 0.75rem 0;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.swatch {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.swatchEdge {
+  stroke: var(--ink-soft);
+  stroke-width: 0.6;
+}
+
+.table {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.35rem 0.5rem 0.35rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* The rings grow outward, the first year first, slowly, and only when motion is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  .ring {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: grow 600ms ease-out both;
+    animation-delay: calc(min(var(--i, 0), 90) * 20ms);
+  }
+
+  .mark {
+    animation: appear 400ms ease-out both;
+    animation-delay: 2s;
+  }
+
+  @keyframes grow {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

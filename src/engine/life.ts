@@ -26,18 +26,20 @@ import { stepConditions } from "./health";
 import { stepMoney } from "./money";
 import { driftCloseness, stepCare, stepFriends } from "./relationships";
 import { stepFertility, stepPartnership } from "./partnership";
-import { driftStats } from "./drift";
+import { driftBreakdown, driftStats } from "./drift";
 import { drawCause, rollDeath } from "./mortality";
 import { generatePerson } from "./person";
 import { stream } from "./rng";
 import { stageForAge } from "./stages";
 import { systemDecision } from "./systemDecisions";
+import { yearTheme } from "./rings";
 import { stepWork } from "./work";
 import {
   DEFAULT_SETTINGS,
   type EventRecord,
   type LifeState,
   type Person,
+  type DriftRecord,
   type Plan,
   type Relationship,
   type Settings,
@@ -65,11 +67,13 @@ export interface TurnResult {
 }
 
 export function newLife({ seed, country, settings }: NewLifeOptions): LifeState {
+  const start = { ...DEFAULT_SETTINGS, ...settings };
   return {
     seed,
     person: generatePerson(seed, country),
     history: [],
-    settings: { ...DEFAULT_SETTINGS, ...settings },
+    settings: start,
+    startSettings: start,
     decisions: [],
   };
 }
@@ -88,6 +92,15 @@ export const withSettings = (state: LifeState, changes: Partial<Settings>): Life
   // While a decision waits, the year's events are already chosen, so the change starts with the next year.
   settingsLog: [...(state.settingsLog ?? []), { age: state.turn ? state.person.age + 1 : state.person.age, changes }],
 });
+
+/** Longest epitaph, in characters. */
+export const EPITAPH_MAX_LENGTH = 140;
+
+/** The life with the player's few words for the person (DEATH-004): tidied, cut to length, and removed when empty. */
+export function withEpitaph(state: LifeState, text: string): LifeState {
+  const epitaph = Array.from(text.replace(/\s+/g, " ").trim()).slice(0, EPITAPH_MAX_LENGTH).join("").trim();
+  return epitaph ? { ...state, epitaph } : withoutKeys(state, "epitaph");
+}
 
 /** How much resilience cushions a setback to happiness: each point changes it by this share. */
 const RESILIENCE_CUSHION = 0.15;
@@ -205,7 +218,8 @@ function beginYear(state: LifeState, plan: Plan | undefined, country: Country, c
     person = withoutKeys(person, "focus");
   }
 
-  // 3. Baseline drift.
+  // 3. Baseline drift, and what moved the stats in it for the summary (SUM-004).
+  const drift = driftBreakdown(person, country, stream(seed, "drift", year));
   person = { ...person, stats: driftStats(person, country, stream(seed, "drift", year)) };
 
   // 4. Statistical checks: family deaths and births, child labour, then school, work, money,
@@ -321,12 +335,13 @@ function beginYear(state: LifeState, plan: Plan | undefined, country: Country, c
         ...(rest.dataNote ? { dataNote: rest.dataNote } : {}),
       },
       ...(points ? { plan: points } : {}),
+      drift,
     };
     return { ...state, ...(stored ? { plan: stored } : {}), turn };
   }
   return finishYear(
     { ...state, ...(stored ? { plan: stored } : {}) },
-    { year, person, pending: softened, plan: points },
+    { year, person, pending: softened, plan: points, drift },
     country,
   );
 }
@@ -336,6 +351,7 @@ interface YearInProgress {
   person: Person;
   pending: PendingEvent[];
   plan: Plan | undefined;
+  drift: DriftRecord | undefined;
   /** The decision's own record, once answered. */
   answered?: { pending: PendingEvent };
 }
@@ -343,7 +359,7 @@ interface YearInProgress {
 /** Steps 7 to 9: apply the effects, check mortality, record the year. */
 function finishYear(state: LifeState, progress: YearInProgress, country: Country): LifeState {
   const { seed } = state;
-  const { year, plan } = progress;
+  const { year, plan, drift } = progress;
   let { person } = progress;
   const events: EventRecord[] = [];
   const all = progress.answered ? [...progress.pending, progress.answered.pending] : progress.pending;
@@ -374,6 +390,8 @@ function finishYear(state: LifeState, progress: YearInProgress, country: Country
           ...(plan ? { plan } : {}),
           events,
           died: true,
+          theme: yearTheme(person, events),
+          ...(drift ? { drift } : {}),
         },
       ],
     };
@@ -396,6 +414,8 @@ function finishYear(state: LifeState, progress: YearInProgress, country: Country
         stats: { ...next.stats },
         ...(plan ? { plan } : {}),
         events,
+        theme: yearTheme(person, events),
+        ...(drift ? { drift } : {}),
       },
     ],
   };
@@ -426,7 +446,14 @@ function answer(state: LifeState, choiceId: string, country: Country, catalog: E
   };
   return finishYear(
     logged,
-    { year: turn.year, person: turn.person, pending: turn.pending, plan: turn.plan, answered: { pending } },
+    {
+      year: turn.year,
+      person: turn.person,
+      pending: turn.pending,
+      plan: turn.plan,
+      drift: turn.drift,
+      answered: { pending },
+    },
     country,
   );
 }

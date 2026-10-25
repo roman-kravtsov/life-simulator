@@ -1,22 +1,45 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../i18n";
 import { BirthScreen } from "./BirthScreen";
 import { LifeScreen } from "./LifeScreen";
+import { PastLivesScreen } from "./PastLivesScreen";
+import { ScreenBoundary } from "./ScreenBoundary";
 import { SourcesScreen } from "./SourcesScreen";
 import { StartScreen } from "./StartScreen";
+import { SummaryScreen } from "./SummaryScreen";
 import type { GameStore } from "./store";
 
 function CurrentScreen({ store }: { store: GameStore }) {
-  const { screen, life, country, sources, status, showUsPrices, settings, card, plan, quietRun } = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
+  const {
+    screen,
+    life,
+    country,
+    sources,
+    status,
+    showUsPrices,
+    settings,
+    card,
+    plan,
+    quietRun,
+    summary,
+    resume,
+    pastLives,
+    problem,
+    restored,
+    deleted,
+  } = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  // The screens that show stored lives are guarded, so text a version no longer has cannot blank the app.
+  const guarded = (element: ReactNode) => (
+    <ScreenBoundary key={screen} onBack={store.backToStart}>
+      {element}
+    </ScreenBoundary>
   );
   if (screen === "birth" && life && country) {
     return <BirthScreen life={life} country={country} onContinue={store.startLife} />;
   }
   if (screen === "life" && life && country) {
     // Not keyed by year: the status region must stay mounted for screen readers to announce changes.
-    return (
+    return guarded(
       <LifeScreen
         life={life}
         country={country}
@@ -25,13 +48,40 @@ function CurrentScreen({ store }: { store: GameStore }) {
         card={card}
         plan={plan}
         quietRun={quietRun}
+        restored={restored}
+        problem={problem}
         onToggleUsPrices={store.toggleUsPrices}
         onContinue={store.continueYear}
         onChoose={store.choose}
         onSettings={store.setSettings}
-        onAnother={store.begin}
         onBack={store.backToStart}
-      />
+      />,
+    );
+  }
+  if (screen === "summary" && summary) {
+    return guarded(
+      <SummaryScreen
+        view={summary}
+        sources={sources ?? {}}
+        problem={problem}
+        onEpitaph={store.writeEpitaph}
+        onAnother={store.begin}
+        onPast={store.openPast}
+        onBack={store.backToStart}
+      />,
+    );
+  }
+  if (screen === "past") {
+    return guarded(
+      <PastLivesScreen
+        lives={pastLives}
+        problem={problem === "archive"}
+        canDeleteAll={(pastLives?.length ?? 0) > 0 || resume !== null}
+        onOpen={store.openPastLife}
+        onDelete={store.deletePastLife}
+        onDeleteAll={store.deleteAllData}
+        onBack={store.backToStart}
+      />,
     );
   }
   if (screen === "sources") {
@@ -41,8 +91,13 @@ function CurrentScreen({ store }: { store: GameStore }) {
     <StartScreen
       status={status}
       settings={settings}
+      resume={resume}
+      deleted={deleted}
       onSettings={store.setSettings}
       onBegin={store.begin}
+      onResume={store.resumeLife}
+      onDiscard={store.discardSaved}
+      onPast={store.openPast}
       onSources={store.openSources}
     />
   );

@@ -82,3 +82,11 @@ export function countryName(country: { iso2: string; name: string }, locale = DE
 /** An ISO date (2026-10-24) as a long date in `locale`, independent of the player's time zone. */
 export const formatDate = (isoDate: string, locale = DEFAULT_LOCALE) =>
   new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${isoDate}T00:00:00Z`));
+
+/** The day a moment happened (an ISO timestamp) as a long date, in the player's own time zone unless one is given. */
+export const formatDay = (isoTime: string, locale = DEFAULT_LOCALE, timeZone?: string) =>
+  new Intl.DateTimeFormat(locale, { dateStyle: "long", ...(timeZone ? { timeZone } : {}) }).format(new Date(isoTime));
+
+/** Words joined the way the language does ("a and b", "a, b, and c" in English). */
+export const formatList = (items: readonly string[], locale = DEFAULT_LOCALE) =>
+  new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(items);

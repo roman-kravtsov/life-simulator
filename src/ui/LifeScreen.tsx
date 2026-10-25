@@ -1,20 +1,20 @@
 import { useMemo, useState } from "react";
 import type { DecisionCard } from "../engine/decisions";
 import type { CountryIndex, Country } from "../engine/world/types";
-import type { EventRecord, LifeState, Plan, Settings, StatId } from "../engine/types";
+import type { LifeState, Plan, Settings, StatId } from "../engine/types";
 import { countryName } from "../format";
-import { hasString, t } from "../i18n";
+import { t } from "../i18n";
 import { DecisionCardView } from "./DecisionCardView";
+import { EventLine } from "./EventLine";
 import { Header } from "./Header";
-import { HelpNote } from "./HelpNote";
 import { Button } from "./kit";
 import { ConditionsPanel, FamilyPanel, MoneyPanel, SchoolPanel, WorkPanel } from "./LifePanels";
 import styles from "./LifeScreen.module.css";
 import { PlanWidget } from "./PlanWidget";
 import { SettingsPanel } from "./SettingsPanel";
-import { lifeOverview, planToSend, type PlanOverview, type QuietRun } from "./store";
+import { lifeOverview, planToSend, type GameSnapshot, type PlanOverview, type QuietRun } from "./store";
 import { useFocusOn } from "./useFocusOn";
-import { dataNoteLine, quietRunLine } from "./words";
+import { quietRunLine } from "./words";
 
 const STATS: readonly StatId[] = ["health", "happiness", "belonging", "skills"];
 
@@ -29,30 +29,16 @@ export interface LifeScreenProps {
   plan: PlanOverview | null;
   /** Years that just passed in one step without anything to tell (TIME-002). */
   quietRun: QuietRun | null;
+  /** Set when the life was resumed from something other than its saved copy (SAVE-005, RNG-004). */
+  restored: GameSnapshot["restored"];
+  /** Set when the browser would not keep this life, so it will be lost with the tab (SAVE-001). */
+  problem: GameSnapshot["problem"];
   onToggleUsPrices: () => void;
   /** `plan` is set only when the player changed it; otherwise the plan carries over. */
   onContinue: (plan?: Plan) => void;
   onChoose: (choiceId: string) => void;
   onSettings: (changes: Partial<Settings>) => void;
-  onAnother: () => void;
   onBack: () => void;
-}
-
-function EventLine({ event, sources }: { event: EventRecord; sources: CountryIndex["sources"] }) {
-  const { dataNote, decision } = event;
-  return (
-    <li>
-      {t(event.textKey, event.vars)}
-      {decision && (
-        <>
-          <span className={styles.chose}>{t("decision.chose", { choice: t(decision.choiceTextKey, event.vars) })}</span>
-          {t(decision.outcomeTextKey, event.vars)}
-        </>
-      )}
-      {dataNote && <span className={styles.dataNote}> {dataNoteLine(dataNote, sources)}</span>}
-      {event.helpTopic && <HelpNote topic={event.helpTopic} />}
-    </li>
-  );
 }
 
 export function LifeScreen({
@@ -63,41 +49,35 @@ export function LifeScreen({
   card,
   plan,
   quietRun,
+  restored,
+  problem,
   onToggleUsPrices,
   onContinue,
   onChoose,
   onSettings,
-  onAnother,
   onBack,
 }: LifeScreenProps) {
-  const { person, death } = life;
+  const { person } = life;
   // While a decision waits its card takes focus instead.
   const heading = useFocusOn<HTMLHeadingElement>(life.history.length, !card);
   // The player's unsent plan, kept only for the age it was made at, so a new year starts from the plan as it stands.
   const [edit, setEdit] = useState<{ age: number; draft: Plan } | null>(null);
   const draft = plan && edit?.age === person.age ? edit.draft : plan?.chosen;
   const last = life.history.at(-1);
-  const story = death
-    ? t("life.died", {
-        age: death.age,
-        cause: t(hasString(`cause.${death.cause}`) ? `cause.${death.cause}` : "cause.other"),
-      })
-    : !last
-      ? ""
-      : last.stageChanged
-        ? t("life.stageReached", { stage: t(`life.stage.${last.stage}`) })
-        : t("life.yearPassed", { age: last.age });
+  const story = !last
+    ? ""
+    : last.stageChanged
+      ? t("life.stageReached", { stage: t(`life.stage.${last.stage}`) })
+      : t("life.yearPassed", { age: last.age });
   const events = last?.events ?? [];
-  // A death by suicide is stated plainly, and the help is always there, whatever else the year held.
-  const deathHelp = death?.cause === "selfHarm" && !events.some((e) => e.helpTopic === "suicide");
   // The panels only change with the life, not with a plan being placed.
   const { education, literacy, work, money, conditions, family } = useMemo(
     () => lifeOverview(life, country),
     [life, country],
   );
 
-  // Another life once this one has ended; otherwise the next year, unless a decision is waiting.
-  const goOn = person.alive && !card;
+  // The next year, unless a decision is waiting. A life that ends is shown on the summary screen instead.
+  const goOn = !card;
   const sendPlan = () => {
     onContinue(plan && draft ? planToSend(plan, draft) : undefined);
   };
@@ -107,11 +87,24 @@ export function LifeScreen({
       <Header />
       <h1 ref={heading} tabIndex={-1}>
         {t("life.age", { age: person.age })}
-        <span className="subtitle">{person.alive ? t(`life.stage.${person.stage}`) : t("life.ended")}</span>
+        <span className="subtitle">{t(`life.stage.${person.stage}`)}</span>
       </h1>
       <p className="small">
         {t("life.where", { country: countryName(country), place: t(`life.place.${person.location}`) })}
       </p>
+      {restored && (
+        <p className="note" role="note">
+          {t(`life.restored.${restored}`)}
+        </p>
+      )}
+      {/* A save that fails mid-life is said politely, once; the notes above and below stay as they are. */}
+      <div aria-live="polite">
+        {problem === "current" && (
+          <p className="note" role="note">
+            {t("life.problem.current")}
+          </p>
+        )}
+      </div>
       <dl className={styles.stats}>
         {STATS.map((id) => (
           <div key={id} className={styles.row}>
@@ -136,7 +129,6 @@ export function LifeScreen({
         ) : (
           <>
             <p className={styles.storyLine}>{story}</p>
-            {deathHelp && <HelpNote topic="suicide" />}
             {last && (
               <>
                 <h2 className={`eyebrow ${styles.sectionHeading}`}>{t("life.thisYear")}</h2>
@@ -159,11 +151,6 @@ export function LifeScreen({
         <PlanWidget plan={plan} draft={draft} onChange={(next) => setEdit({ age: person.age, draft: next })} />
       )}
       <div className={styles.actions}>
-        {!person.alive && (
-          <Button variant="primary" onPress={onAnother}>
-            {t("life.another")}
-          </Button>
-        )}
         {goOn && (
           <Button variant="primary" onPress={sendPlan}>
             {t("life.continue")}

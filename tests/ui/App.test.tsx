@@ -2,13 +2,11 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { newLife } from "../../src/engine/life";
-import type { EventRecord, LifeState, Settings } from "../../src/engine/types";
+import type { Settings } from "../../src/engine/types";
 import { App } from "../../src/ui/App";
-import { LifeScreen } from "../../src/ui/LifeScreen";
 import { createGameStore } from "../../src/ui/store";
-import { makeCountry, testWorld } from "../fixtures/country";
-import { lifeScreenProps } from "./helpers";
+import { testWorld } from "../fixtures/country";
+import { deadlyCountry } from "./fakes";
 
 const setup = (settings?: Partial<Settings>) => {
   const store = createGameStore(() => "test-seed", testWorld());
@@ -138,7 +136,7 @@ describe("App", () => {
     const status = screen.getByRole("status");
     await nextYear(user);
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent(/This year|Your life ends/);
+    expect(status).toHaveTextContent(/This year/);
   });
 
   it("tells each year's events or says it was quiet", async () => {
@@ -160,12 +158,15 @@ describe("App", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
   });
 
-  it("ends a life with the cause of death and offers another life", async () => {
+  it("ends a life on the summary screen, which takes focus, and offers another life (DEATH-001, SUM-001)", async () => {
     const { user, store } = setup();
     await startLife(user);
     while (store.getSnapshot().life?.person.alive) await nextYear(user);
-    expect(within(screen.getByRole("status")).getByText(/^Your life ends at \d+, of /)).toBeInTheDocument();
+    const name = store.getSnapshot().life!.person.name;
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(name);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
     expect(screen.queryByRole("button", { name: "Continue to the next year" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Begin another life" }));
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   });
@@ -194,63 +195,17 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Begin a life" })).toBeInTheDocument();
   });
 
-  describe("the final year and its care", () => {
-    const country = makeCountry({ region: "Western Africa" });
-    const renderEnded = (events: EventRecord[], age = 40): LifeState => {
-      const base = newLife({ seed: "end", country });
-      const life: LifeState = {
-        ...base,
-        person: { ...base.person, alive: false, age },
-        death: { age, cause: "cardiovascular" },
-        history: [{ age, stage: "adulthood", stageChanged: false, stats: base.person.stats, events, died: true }],
-      };
-      render(<LifeScreen {...lifeScreenProps(country, { life })} />);
-      return life;
-    };
-
-    it("still tells the events of the year the person died", () => {
-      renderEnded([{ id: "e1", textKey: "event.midlife.looking_back", effects: [] }]);
-      const status = screen.getByRole("status");
-      expect(status).toHaveTextContent(/Your life ends at 40/);
-      expect(within(status).getByRole("heading", { name: "This year" })).toBeInTheDocument();
-      expect(within(status).getByText(/telling a story you have never told/)).toBeInTheDocument();
-    });
-
-    it("follows a grief event with a calm pointer to helplines", () => {
-      renderEnded([
-        { id: "e2", textKey: "event.midlife.looking_back", helpTopic: "grief", sensitivity: "difficult", effects: [] },
-      ]);
-      expect(screen.getByText(/free, confidential helplines/)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "findahelpline.com" })).toHaveAttribute(
-        "href",
-        "https://findahelpline.com",
-      );
-    });
-
-    it("shows no help line for events without a help topic", () => {
-      renderEnded([{ id: "e3", textKey: "event.midlife.looking_back", effects: [] }]);
-      expect(screen.queryByText(/findahelpline/)).not.toBeInTheDocument();
-    });
-
-    it("moves focus to the heading after a death at age 0", async () => {
-      const deadly = makeCountry({
-        region: "Western Africa",
-        demography: {
-          ...country.demography,
-          lifeTable: {
-            ...country.demography.lifeTable,
-            value: { female: new Array<number>(101).fill(1), male: new Array<number>(101).fill(1) },
-          },
-        },
-      });
-      const store = createGameStore(() => "test-seed", testWorld(deadly));
+  describe("a death in the first year", () => {
+    it("moves focus to the summary's heading", async () => {
+      const store = createGameStore(() => "test-seed", testWorld(deadlyCountry()));
       render(<App store={store} />);
       const user = userEvent.setup();
       await startLife(user);
       await nextYear(user);
       expect(store.getSnapshot().life?.person.alive).toBe(false);
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Age 0");
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(store.getSnapshot().life!.person.name);
       expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
+      expect(screen.getByText(/^Died at 0, of /)).toBeInTheDocument();
     });
   });
 });
