@@ -61,7 +61,7 @@ src/ui/             React 19 components and the game store
   Page.tsx          the shell every screen renders through: the header outside `<main id="content">`, `data-layout` reading or wide; SiteHeader.tsx is the header of every screen but the life screen
   SettingsScreen.tsx, DisplaySettings.tsx, DeleteAllData.tsx   the settings screen (UI-009); display.ts keeps theme, text size and reduced motion on `<html>` (`birthright:theme`, `birthright:text-size`, `birthright:motion`), outside any save
   LifeScreen.tsx    the life screen (UI-004, UI-010), composed of LifeHeader.tsx (sticky header, strip, settings dialog, Continue), Ledger.tsx (the years) with PlanWidget.tsx (the plan tray),
-                    YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
+                    Journal.tsx (the reflection prompt, the Notes tab and the notes on the summary), YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
                     useNarrow.ts (matchMedia: below 900 px one column and a bar of tabs); the store derives lifeStrip, lifeRings, statBand, countryFacts
   kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs, RadioGroup)
 src/styles.css      design tokens (light and dark), shared base styles, and the one global rule set for reduced motion and text size
@@ -69,7 +69,7 @@ index.html          mounts the app on `<div id="root">` (the page owns its own `
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review
-e2e/                Playwright: full-loop tests at phone and desktop widths
+e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001)
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
