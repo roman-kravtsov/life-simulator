@@ -60,8 +60,8 @@
 }
 
 .bar .tab {
+  flex: 1 1 0;
   min-height: 2.75rem;
-  white-space: nowrap;
   border-bottom: 0;
   border-top: 3px solid transparent;
   font-size: 0.95rem;

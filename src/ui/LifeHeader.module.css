@@ -128,14 +128,19 @@
 }
 
 /* Narrow: the wordmark, then the help link, Settings and Continue, as far as they fit. */
+/* With larger text they do not all fit on one line, so the tools wrap under the wordmark rather than overlap it. */
 .narrow .row {
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 0 0.5rem;
-  padding: 0 0.9rem;
+  padding: 0.25rem 0.9rem;
   height: auto;
   min-height: 3.5rem;
 }
 
 .narrow .tools {
+  flex-wrap: wrap;
   gap: 0.25rem;
 }

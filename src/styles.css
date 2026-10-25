@@ -111,12 +111,14 @@ main:has(> #content[data-layout="wide"]) {
 /* Focus moved into the page is not left under the header at the top, or under what is fixed at the foot: the plan
    tray in the wide layout when the window is big enough to dock it, the bar of tabs on a phone, nothing between.
    The widths are in em, so they follow the reader's text size; they match NARROW_QUERY (useNarrow.ts) and the tray's
-   query (Ledger.module.css). The tray is about 12rem tall where it is docked. */
+   query (Ledger.module.css). Docked, the tray is about 12rem tall (the five steppers in one row); --tray-space leaves
+   some to spare. */
 html:has(#content[data-layout="wide"]) {
-  scroll-padding-block: 6rem 13rem;
+  --tray-space: 16rem;
+  scroll-padding-block: 6rem var(--tray-space);
 }
 
-@media (width <= 68.75em), (height <= 43.75em) {
+@media (width <= 81.25em), (height <= 43.75em) {
   html:has(#content[data-layout="wide"]) {
     scroll-padding-block: 6rem 1rem;
   }

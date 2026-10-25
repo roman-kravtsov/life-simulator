@@ -95,9 +95,10 @@
   margin-inline: -2rem;
 }
 
-/* In a small window the tray would swallow the story, so it is an ordinary block between this year and the earlier
-   ones. The sizes are in em, so larger text gets there sooner; styles.css has the same two for its scroll padding. */
-@media (width <= 68.75em), (height <= 43.75em) {
+/* Only a window wider than 1300 px and taller than 700 px has room to dock it: narrower, the five steppers wrap to two
+   rows and the tray swallows the story. Otherwise it is an ordinary block between this year and the earlier ones. The
+   sizes are in em, so larger text gets there sooner; styles.css has the same two for its scroll padding. */
+@media (width <= 81.25em), (height <= 43.75em) {
   .tray {
     position: static;
     order: 0;

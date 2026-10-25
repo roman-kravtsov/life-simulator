@@ -56,9 +56,9 @@ src/ui/             React 19 components and the game store
                     autosaves after every turn and archives a life when it ends;
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
-  LifeScreen.tsx    the life screen (UI-004, UI-010): LifeHeader (sticky header, strip, settings dialog, Continue), Ledger (the years, with the PlanWidget tray),
-                    YouColumn and AroundColumn (sticky side columns of tabs; content in LifePanels.tsx, thumbnail in RingsThumb.tsx; SideColumn.module.css),
-                    useNarrow.ts (matchMedia, below 900 px one column and a bar of tabs); the store derives lifeStrip, lifeRings, statBand, countryFacts
+  LifeScreen.tsx    the life screen (UI-004, UI-010), composed of LifeHeader.tsx (sticky header, strip, settings dialog, Continue), Ledger.tsx (the years) with PlanWidget.tsx (the plan tray),
+                    YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
+                    useNarrow.ts (matchMedia: below 900 px one column and a bar of tabs); the store derives lifeStrip, lifeRings, statBand, countryFacts
   kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs)
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests

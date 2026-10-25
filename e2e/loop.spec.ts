@@ -652,7 +652,9 @@ test("the wide layout holds up in smaller windows: no sideways scroll, and the p
   const position = () => region.evaluate((node) => getComputedStyle(node.parentElement!).position);
   for (const [width, height, docked] of [
     [1440, 900, true],
-    [1101, 701, true],
+    [1301, 701, true],
+    [1280, 700, false],
+    [1101, 701, false],
     [1100, 700, false],
     [900, 600, false],
     [1280, 560, false],
