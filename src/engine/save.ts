@@ -130,6 +130,18 @@ export function readSave(raw: unknown, migrations: Migrations = MIGRATIONS, curr
   return hasLogs(save) ? { ok: true, save: save as unknown as SaveFile } : { ok: false, reason: "damaged" };
 }
 
+/** The lines of a stored journal that have the shape of one: damaged storage must not take a life down with it. */
+function soundJournal(journal: unknown): JournalEntry[] {
+  if (!isArray(journal)) return [];
+  return journal.filter(
+    (entry): entry is JournalEntry =>
+      isObject(entry) &&
+      Number.isInteger(entry.age) &&
+      typeof entry.text === "string" &&
+      (entry.prompt === undefined || typeof entry.prompt === "string"),
+  );
+}
+
 const STATS = ["health", "happiness", "belonging", "skills"];
 
 /** True when the snapshot has the shape of a life that matches the logs beside it. Not a full schema check. */
@@ -202,7 +214,7 @@ export function restoreLife(
     const kept: LifeState = {
       ...life,
       ...(save.epitaph ? { epitaph: save.epitaph } : {}),
-      ...(Array.isArray(save.journal) && save.journal.length > 0 ? { journal: save.journal } : {}),
+      ...(soundJournal(save.journal).length > 0 ? { journal: soundJournal(save.journal) } : {}),
     };
     try {
       decisionCard(kept, country, catalog);

@@ -1,9 +1,13 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { catalog } from "../../src/content/events";
 import { reflections } from "../../src/content/reflections";
 import { en } from "../../src/content/strings/en";
 import { advanceAuto, newLife } from "../../src/engine/life";
 import {
   JOURNAL_MAX_LENGTH,
+  hasId,
   journalLine,
   reflectionPrompt,
   withJournalEntry,
@@ -49,9 +53,34 @@ describe("UI-007: reflection prompts", () => {
     }
   });
 
-  it("only names events and stages that exist", () => {
+  it("only names stages that exist, and events that something in the game can produce", () => {
     const stages = ["childhood", "adolescence", "youth", "adulthood", "midlife", "elder"];
     for (const { id, stage } of reflections) if (stage) expect(stages, id).toContain(stage);
+    // An event id is either a narrative event of the catalog or one the engine writes itself; a typo would make
+    // its prompt silently never come, so each literal part of a pattern must be found in one or the other.
+    const dir = join(__dirname, "../../src/engine");
+    const engine = readdirSync(dir)
+      .filter((name) => name.endsWith(".ts"))
+      .map((name) => readFileSync(join(dir, name), "utf8"))
+      .join("\n");
+    const ids = catalog.all.map((def) => def.id);
+    for (const { id, events = [] } of reflections) {
+      for (const pattern of events) {
+        const known = ids.some((known) => hasId([pattern], known));
+        const written = pattern.split("*").every((part) => part === "" || engine.includes(part));
+        expect(known || written, `${id}: ${pattern}`).toBe(true);
+      }
+    }
+  });
+
+  it("offers a first-time prompt at its next turn when a more personal one took its year", () => {
+    const defs: ReflectionDef[] = [
+      { id: "a", text: "t", events: ["x"] },
+      { id: "b", text: "t", events: ["y"], first: true },
+    ];
+    const both = year(20, [event("x"), event("y")]);
+    const history = [both, year(21, [event("y")]), year(22, [event("y")])];
+    expect(history.map((_, i) => reflectionPrompt(history, i, defs)?.id)).toEqual(["a", "b", undefined]);
   });
 
   describe("choosing the prompt of a year", () => {
@@ -258,5 +287,27 @@ describe("UI-007: matching an event id", () => {
     expect(id(["work.starts.*"], "work.starts")).toBeUndefined();
     expect(id(["a.*.b.*.c"], "a.x.b.y.c")).toBeDefined();
     expect(id(["a.*.b.*.c"], "a.x.c")).toBeUndefined();
+  });
+});
+
+describe("UI-007: a damaged journal in a save", () => {
+  it("keeps the sound lines and drops the rest, so the life still loads", () => {
+    const versions = { dataVersion: "d1", contentVersion: "c1" };
+    let life = newLife({ seed: "journal-damage", country, settings: { pace: "every-year" } });
+    while (life.person.alive && life.history.length < 4) life = advanceAuto(life, country);
+    const save = {
+      ...JSON.parse(JSON.stringify(toSave(life, { ...versions, now: "2026-10-25T10:00:00.000Z" }))),
+      snapshot: null,
+      journal: [
+        null,
+        { age: "3", text: "x" },
+        { age: 2, text: 5 },
+        { age: 3, prompt: 7, text: "y" },
+        { age: 4, text: "kept" },
+      ],
+    };
+    const read = readSave(save);
+    const restored = read.ok ? restoreLife(read.save, country, versions) : undefined;
+    expect(restored?.ok && restored.life.journal).toEqual([{ age: 4, text: "kept" }]);
   });
 });

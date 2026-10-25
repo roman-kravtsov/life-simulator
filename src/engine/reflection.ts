@@ -22,7 +22,8 @@ export interface ReflectionDef {
   first?: boolean;
 }
 
-const hasId = (patterns: readonly string[], id: string) =>
+/** Whether an event id is one of the patterns (a `*` stands for any run of characters). */
+export const hasId = (patterns: readonly string[], id: string) =>
   patterns.some((pattern) => {
     const parts = pattern.split("*");
     if (parts.length === 1) return id === pattern;
@@ -48,18 +49,22 @@ function matches(def: ReflectionDef, record: YearRecord): boolean {
 /**
  * The prompt for the year at `index` of the history: the first of the catalog that fits, or none. One prompt a
  * year at most, so the most personal comes first in the catalog; a quiet year, the empty history and the year a
- * person dies in (the closing passage tells it) have none.
+ * person dies in (the closing passage tells it) have none. A prompt marked `first` is used up only when it was
+ * actually offered, so one that a more personal prompt outranked in its year comes at its next turn.
  */
 export function reflectionPrompt(
   history: readonly YearRecord[],
   index = history.length - 1,
   catalog: readonly ReflectionDef[] = reflections,
 ): ReflectionDef | undefined {
-  const record = history[index];
-  if (!record || record.died) return undefined;
-  return catalog.find(
-    (def) => matches(def, record) && !(def.first && history.slice(0, index).some((earlier) => matches(def, earlier))),
-  );
+  const offered = new Set<ReflectionDef>();
+  let found: ReflectionDef | undefined;
+  for (let i = 0; i <= index && i < history.length; i++) {
+    const record = history[i]!;
+    found = record.died ? undefined : catalog.find((def) => matches(def, record) && !(def.first && offered.has(def)));
+    if (found?.first) offered.add(found);
+  }
+  return index < history.length ? found : undefined;
 }
 
 const sameLine = (a: Pick<JournalEntry, "age" | "prompt">, b: Pick<JournalEntry, "age" | "prompt">) =>
