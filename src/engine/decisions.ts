@@ -6,7 +6,17 @@ import type { Effect } from "./effects";
 import type { PendingEvent } from "./events";
 import { ownsMoney } from "./money";
 import type { Rng } from "./rng";
-import type { Cause, DecisionRecord, EventRecord, HelpTopic, Person, Plan, Relationship, Sensitivity } from "./types";
+import type {
+  Cause,
+  DecisionRecord,
+  DriftRecord,
+  EventRecord,
+  HelpTopic,
+  Person,
+  Plan,
+  Relationship,
+  Sensitivity,
+} from "./types";
 
 /** What a system that raised a decision knows, kept with the turn so the choice can be resolved later. */
 export interface Payload {
@@ -143,6 +153,8 @@ export interface Turn {
   };
   /** The focus the year is lived with, for the record. */
   plan?: Plan;
+  /** What moved the stats this year besides events, for the record (SUM-004). */
+  drift?: DriftRecord;
 }
 
 /** What a decision definition needs to be shown and resolved: events with choices, and the systems' own. */

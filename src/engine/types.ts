@@ -11,6 +11,8 @@ export type StatId = "health" | "happiness" | "belonging" | "skills";
 
 export type Stats = Record<StatId, number>;
 
+export const STAT_IDS: readonly StatId[] = ["health", "happiness", "belonging", "skills"];
+
 /** Hidden traits dealt at birth, each from -2 to 2 (CHAR-003). */
 export type TraitId = "temperament" | "curiosity" | "resilience" | "sociability" | "aptitude" | "constitution";
 
@@ -171,6 +173,19 @@ export interface DecisionRecord {
   outcomeTextKey: string;
 }
 
+/** What a year was mostly about, for the colour of its ring in the summary (SUM-002). */
+export type RingTheme = "study" | "work" | "love" | "loss" | "illness" | "move" | "plain";
+
+/**
+ * How a year's baseline drift moved each stat, for the summary (SUM-004). `norm` is how far the norm each
+ * stat drifts toward lay from a neutral person's, split by where the difference came from; `noise` is the
+ * year's random swing.
+ */
+export interface DriftRecord {
+  norm: Record<Cause, Stats>;
+  noise: Stats;
+}
+
 export interface YearRecord {
   /** Age at the end of the year, or at death when `died` is set. */
   age: number;
@@ -181,6 +196,10 @@ export interface YearRecord {
   plan?: Plan;
   events: EventRecord[];
   died?: boolean;
+  /** What the year was mostly about (SUM-002). */
+  theme?: RingTheme;
+  /** What moved the stats besides the year's events (SUM-004). */
+  drift?: DriftRecord;
 }
 
 /** Settings that shape a life and so belong to its save (design 2.4). */
@@ -227,6 +246,8 @@ export interface LifeState {
   history: YearRecord[];
   death?: Death;
   settings: Settings;
+  /** The settings the life began with; `settings` is these with `settingsLog` applied (design 2.4). */
+  startSettings?: Settings;
   plan?: StoredPlan;
   /** The year in progress, waiting for the player to answer a decision (DEC-001). */
   turn?: Turn;
@@ -235,4 +256,6 @@ export interface LifeState {
   settingsLog?: SettingsLogEntry[];
   /** Plans the player set, in order (design 2.4). */
   planLog?: PlanLogEntry[];
+  /** A few words the player wrote for the person at the end (DEATH-004). Not part of what a replay needs. */
+  epitaph?: string;
 }

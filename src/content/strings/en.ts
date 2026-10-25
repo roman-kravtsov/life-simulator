@@ -1,4 +1,5 @@
 // English strings. Keys are grouped by screen.
+import { deathStrings } from "./death";
 import { adolescenceStrings } from "./events/adolescence";
 import { adulthoodStrings } from "./events/adulthood";
 import { earlyStrings } from "./events/early";
@@ -7,12 +8,15 @@ import { lensStrings } from "./events/lens";
 import { midlifeStrings } from "./events/midlife";
 import { shockStrings } from "./events/shocks";
 import { youthStrings } from "./events/youth";
+import { summaryStrings } from "./summary";
 import { systemStrings } from "./systems";
 import { uiStrings } from "./ui";
 
 export const en: Readonly<Record<string, string>> = {
   ...systemStrings,
   ...uiStrings,
+  ...deathStrings,
+  ...summaryStrings,
   ...earlyStrings,
   ...adolescenceStrings,
   ...youthStrings,
@@ -230,7 +234,10 @@ export const en: Readonly<Record<string, string>> = {
   "condition.depression": "depression",
   "event.condition.depression.begins":
     "A heaviness settles over you that has no clear cause. Colours dull, and the things you used to look forward to are only things.",
+  "event.condition.depression.begins.soft":
+    "A heaviness settles over you, and the things you used to look forward to feel far away.",
   "event.condition.depression.worsens": "The heaviness is deeper this year, and harder to explain to anyone.",
+  "event.condition.depression.worsens.soft": "The heaviness is deeper this year.",
   "event.condition.depression.eases": "Some days the heaviness thins, and you notice the light in a room again.",
   "event.condition.depression.ends": "The heaviness lifts a little, as weather does. There is room in the days again.",
   "condition.chronic_back_pain": "back pain",
@@ -278,7 +285,9 @@ export const en: Readonly<Record<string, string>> = {
   "condition.cancer": "cancer",
   "event.condition.cancer.begins":
     "A lump, a test, a long wait, and then a word that changes the shape of the years ahead.",
+  "event.condition.cancer.begins.soft": "You are told you have cancer, and the years ahead change shape.",
   "event.condition.cancer.worsens": "The illness has moved, and the talk around you is lower and more careful.",
+  "event.condition.cancer.worsens.soft": "The illness has moved, and the talk around you is more careful.",
   "event.condition.cancer.eases": "The news is better than it was: smaller, slower, a reason for cautious hope.",
   "event.condition.cancer.ends":
     "The tests come back better than anyone expected. You are told to be glad, and you are, carefully.",

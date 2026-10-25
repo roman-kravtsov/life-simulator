@@ -295,6 +295,8 @@ export function stepConditions(
     const pending: PendingEvent = { id: `health.${def.id}.${id}`, textKey, cause: "chance", effects };
     if (def.sensitivity) pending.sensitivity = def.sensitivity;
     if (def.helpTopic) pending.helpTopic = def.helpTopic;
+    // The hard moments of a sensitive condition have a softer telling; its easing and ending are gentle already.
+    if (def.sensitivity && (id === "begins" || id === "worsens")) pending.softTextKey = `${textKey}.soft`;
     events.push(pending);
   };
   /** The care a condition needs: a question when it is serious and the year has room, the usual care otherwise. */

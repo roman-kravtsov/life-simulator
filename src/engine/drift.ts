@@ -10,7 +10,7 @@ import { FOCUS_EFFECT } from "./focus";
 import { debtStress } from "./money";
 import { jobHealthPenalty } from "./work";
 import type { Rng } from "./rng";
-import type { Person, Stats } from "./types";
+import type { DriftRecord, Person, StatId, Stats } from "./types";
 import type { Country, IncomeGroup } from "./world/types";
 
 /** Health the average person in good circumstances sits at, by age: [age, value], linear in between. */
@@ -128,25 +128,113 @@ export function skillGrowth(person: Person): number {
 
 const swing = (rng: Rng, amplitude: number) => (rng.next() - 0.5) * 2 * amplitude;
 
-/** The stats at the end of this year's drift. Draws a fixed four numbers whatever the person's state. */
+/** The year's random swings. Draws a fixed four numbers whatever the person's state. */
+function driftNoise(person: Person, rng: Rng): Pick<Stats, "health" | "happiness" | "belonging"> {
+  const health = swing(rng, 1.5);
+  const happiness = swing(rng, 2 + 1.5 * (person.traits.temperament + 2));
+  const belonging = swing(rng, 2);
+  swing(rng, 0); // kept so that adding a noise term later does not shift the others
+  return { health, happiness, belonging };
+}
+
+/** The stats at the end of this year's drift. */
 export function driftStats(person: Person, country: Country, rng: Rng): Stats {
   const { stats } = person;
-  const healthNoise = swing(rng, 1.5);
-  const happinessNoise = swing(rng, 2 + 1.5 * (person.traits.temperament + 2));
-  const belongingNoise = swing(rng, 2);
-  swing(rng, 0); // kept so that adding a noise term later does not shift the others
+  const noise = driftNoise(person, rng);
   return {
-    health: clamp(stats.health + RATE.health * (healthNorm(person, country) - stats.health) + healthNoise, 0, 100),
+    health: clamp(stats.health + RATE.health * (healthNorm(person, country) - stats.health) + noise.health, 0, 100),
     happiness: clamp(
-      stats.happiness + RATE.happiness * (happinessNorm(person, country) - stats.happiness) + happinessNoise,
+      stats.happiness + RATE.happiness * (happinessNorm(person, country) - stats.happiness) + noise.happiness,
       0,
       100,
     ),
     belonging: clamp(
-      stats.belonging + RATE.belonging * (belongingNorm(person) - stats.belonging) + belongingNoise,
+      stats.belonging + RATE.belonging * (belongingNorm(person) - stats.belonging) + noise.belonging,
       0,
       100,
     ),
     skills: clamp(stats.skills + skillGrowth(person), 0, 100),
+  };
+}
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/** What each stat drifts toward, and how fast: for skills the yearly gain, which is added as it is. */
+function normsOf(person: Person, country: Country): Stats {
+  return {
+    health: healthNorm(person, country),
+    happiness: happinessNorm(person, country),
+    belonging: belongingNorm(person),
+    skills: skillGrowth(person),
+  };
+}
+
+/**
+ * How a stat carries its past into the next year and how much of this year's norm it takes up: health,
+ * happiness and belonging move part of the way toward the norm, and skills keep what they had and add
+ * the whole of the year's gain (SUM-004 follows each source through the same filter).
+ */
+export const DRIFT_FILTER: Record<StatId, { keep: number; gain: number }> = {
+  health: { keep: 1 - RATE.health, gain: RATE.health },
+  happiness: { keep: 1 - RATE.happiness, gain: RATE.happiness },
+  belonging: { keep: 1 - RATE.belonging, gain: RATE.belonging },
+  skills: { keep: 1, gain: 1 },
+};
+
+/** Closeness to parents of the person with nothing dealt or chosen. */
+const NEUTRAL_CLOSENESS = 50;
+
+/**
+ * The same person with nothing dealt by birth or by life: no traits, the middle of the country's income
+ * distribution, a city, no child labour, no job, no debt, no conditions, parents of middling closeness. Where a stat
+ * drifts for this person is the baseline that the person's circumstances move it away from.
+ */
+function neutralOf(person: Person): Person {
+  const neutral: Person = {
+    ...person,
+    traits: { temperament: 0, curiosity: 0, resilience: 0, sociability: 0, aptitude: 0, constitution: 0 },
+    stats: { ...person.stats, belonging: 50 },
+    location: "urban",
+    money: { ...person.money, percentile: 50, debt: 0 },
+    work: { ...person.work, status: "child" },
+    flags: { ...person.flags, childLabour: false },
+    conditions: [],
+    relationships: person.relationships.map((r) =>
+      r.alive && (r.kind === "mother" || r.kind === "father") ? { ...r, closeness: NEUTRAL_CLOSENESS } : r,
+    ),
+  };
+  delete neutral.focus;
+  return neutral;
+}
+
+/**
+ * Splits the year's drift for the summary (SUM-004), in the units of each stat's norm. The norm a stat
+ * drifts toward differs from the neutral person's norm because of what the person was dealt
+ * (circumstance: traits, household, place, income group, child labour, job, debt), because of the plan
+ * the player lived by (choice), and because of conditions (chance). The year's random swing is chance too.
+ * Draws the same numbers as `driftStats`, so give it a fresh stream of the same name and year.
+ * Rounded to two places.
+ */
+export function driftBreakdown(person: Person, country: Country, rng: Rng): DriftRecord {
+  const noise = driftNoise(person, rng);
+  const unplanned: Person = { ...person };
+  delete unplanned.focus;
+  const withPlan = normsOf(person, country);
+  const withoutPlan = normsOf(unplanned, country);
+  const healthy = normsOf({ ...unplanned, conditions: [] }, country);
+  const neutral = normsOf(neutralOf(person), { ...country, incomeGroup: "upper-middle" });
+  const each = (make: (id: StatId) => number): Stats => ({
+    health: round2(make("health")),
+    happiness: round2(make("happiness")),
+    belonging: round2(make("belonging")),
+    skills: round2(make("skills")),
+  });
+  return {
+    norm: {
+      circumstance: each((id) => healthy[id] - neutral[id]),
+      choice: each((id) => withPlan[id] - withoutPlan[id]),
+      chance: each((id) => withoutPlan[id] - healthy[id]),
+    },
+    noise: each((id) => (id === "skills" ? 0 : noise[id])),
   };
 }
