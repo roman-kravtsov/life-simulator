@@ -114,7 +114,18 @@ describe("SAVE-007: everything stored in the browser can be found and deleted", 
     expect(storageKeys('localStorage.setItem("theme", x)')).toEqual(["theme"]);
   });
 
+  // A key kept in a constant, such as `const KEY = "birthright:theme"`, counts too.
+  const keyConstants = (source: string) =>
+    [...source.matchAll(/\b(?:const|let)\s+\w*KEY\w*\s*=\s*"([^"]*)"/g)].map((m) => m[1]!);
+
+  it("finds the keys kept in constants", () => {
+    expect(keyConstants('const KEY = "birthright:theme";')).toEqual(["birthright:theme"]);
+    expect(keyConstants('const CURRENT_KEY = "current";')).toEqual(["current"]);
+  });
+
   it.each(sourceFiles("src"))("%s keeps its localStorage keys under the birthright: prefix", (file) => {
-    for (const key of storageKeys(readFileSync(file, "utf8"))) expect(key.startsWith("birthright:")).toBe(true);
+    const source = readFileSync(file, "utf8");
+    for (const key of [...storageKeys(source), ...keyConstants(source)])
+      expect(key.startsWith("birthright:")).toBe(true);
   });
 });
