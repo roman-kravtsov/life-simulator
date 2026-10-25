@@ -134,7 +134,7 @@ describe("a stored life that names text this version does not have", () => {
         [...row.querySelectorAll("td")].map((c) => c.textContent),
       );
       expect(rows.find((row) => row[0] === "8")![3]).toBe("Moment 2");
-      expect(rows.find((row) => row[0] === "5")![3]).toBe("");
+      expect(rows.find((row) => row[0] === "5")![3]).toBe("\u2013None");
     });
 
     it("leaves no list at all when every moment is gone", () => {

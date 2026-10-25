@@ -452,7 +452,10 @@ describe("DEATH-004: the epitaph", () => {
     expect(onSave).toHaveBeenCalledWith("Kept bees.");
     expect(screen.getByText("Kept bees.").tagName).toBe("BLOCKQUOTE");
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.getByText(`Your words for ${base.name} are saved.`)).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText(`Your words for ${base.name} are saved.`).closest("[aria-live]")).toHaveAttribute(
+      "aria-live",
+      "polite",
+    );
     // Focus moves to the Edit button, not to the page.
     expect(screen.getByRole("button", { name: "Edit" })).toHaveFocus();
   });
@@ -485,6 +488,20 @@ describe("DEATH-004: the epitaph", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(live).toHaveTextContent("Write a few words first.");
     expect(field()).toBeInTheDocument();
+  });
+
+  it("says it again, as a new node, when Save is pressed with nothing written twice", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const live = screen.getByText(
+      (_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    const first = live.firstElementChild;
+    expect(first).toHaveTextContent("Write a few words first.");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(live).toHaveTextContent("Write a few words first.");
+    expect(live.firstElementChild).not.toBe(first);
   });
 
   it("says once that no characters are left when the limit is reached, and stops saying it after a deletion", async () => {

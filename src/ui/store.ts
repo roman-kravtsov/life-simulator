@@ -358,9 +358,10 @@ export interface GameStore {
   openPast(): Promise<void>;
   /** Opens a finished life as a summary. */
   openPastLife(id: string): Promise<void>;
-  deletePastLife(id: string): Promise<void>;
-  /** Removes every life and preference from this browser and starts over (SAVE-007). */
-  deleteAllData(): Promise<void>;
+  /** Deletes a finished life; resolves true only when it is gone, false when the archive would not let it go. */
+  deletePastLife(id: string): Promise<boolean>;
+  /** Removes every life and preference from this browser and starts over (SAVE-007). Resolves false if it failed. */
+  deleteAllData(): Promise<boolean>;
 }
 
 const START: GameSnapshot = {
@@ -724,9 +725,10 @@ export function createGameStore(
         await persistence.archive.remove(id);
       } catch {
         if (mine === attempt) set({ ...snapshot, problem: "archive" });
-        return;
+        return false;
       }
       await refreshPast(mine);
+      return true;
     },
     async deleteAllData() {
       attempt++;
@@ -734,12 +736,13 @@ export function createGameStore(
         await persistence.deleteAll();
       } catch {
         set({ ...snapshot, problem: "archive" });
-        return;
+        return false;
       }
       shown = null;
       createdAt = undefined;
       yearsFrom = 0;
       set({ ...START, resume: null, pastLives: [], deleted: true });
+      return true;
     },
   };
 }

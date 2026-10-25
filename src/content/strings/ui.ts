@@ -107,6 +107,10 @@ export const uiStrings: Readonly<Record<string, string>> = {
 
   "start.deleted": "All local data in this browser was deleted.",
   "past.deleted": "The life of {name} was deleted.",
+  "past.deleteFailed":
+    "The life of {name} could not be deleted. This browser's storage may be full, blocked or turned off.",
+  "past.deleteAll.failed":
+    "Your local data could not be deleted. This browser's storage may be full, blocked or turned off.",
 
   // When a screen cannot be shown (for example a saved life that names text this version no longer has).
   "app.error.title": "Something went wrong",

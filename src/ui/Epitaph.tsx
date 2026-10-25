@@ -20,7 +20,10 @@ export function Epitaph({ name, epitaph, onSave }: Props) {
   const [draft, setDraft] = useState(epitaph ?? "");
   /** True after the player has acted here, when a control that appears should take focus; never on arrival. */
   const [acted, setActed] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
+  // Each announcement is a new node in the live region, so the same words said twice are heard twice.
+  const [spoken, setSpoken] = useState({ text: "", n: 0 });
+  const announcement = spoken.text;
+  const setAnnouncement = (text: string) => setSpoken((was) => ({ text, n: was.n + 1 }));
 
   const left = EPITAPH_MAX_LENGTH - draft.length;
   const hasWords = draft.trim() !== "";
@@ -93,7 +96,7 @@ export function Epitaph({ name, epitaph, onSave }: Props) {
         </>
       )}
       <p className="visually-hidden" aria-live="polite">
-        {announcement}
+        {announcement && <span key={spoken.n}>{announcement}</span>}
       </p>
     </section>
   );

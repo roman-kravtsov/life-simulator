@@ -109,7 +109,6 @@ export function Rings({ rings, name }: { rings: readonly Ring[]; name: string })
   // Ids are used in url(#...), so keep them to word characters.
   const uid = useId().replace(/\W/g, "");
   const captionId = `${uid}-caption`;
-  const tableId = `${uid}-table`;
   const tile = patternTile(rings.length);
   const { shapes, marks } = useMemo(() => layoutRings(rings), [rings]);
   const themes = RING_THEMES.filter((theme) => rings.some((ring) => ring.theme === theme));
@@ -123,11 +122,11 @@ export function Rings({ rings, name }: { rings: readonly Ring[]; name: string })
   });
 
   return (
-    <figure className={styles.figure} aria-labelledby={captionId}>
+    <figure className={styles.figure} aria-label={t("summary.rings.heading")}>
       <svg
         role="img"
         aria-label={label}
-        aria-describedby={tableId}
+        aria-describedby={captionId}
         viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
         className={styles.rings}
         preserveAspectRatio="xMidYMid meet"
@@ -172,7 +171,7 @@ export function Rings({ rings, name }: { rings: readonly Ring[]; name: string })
         ))}
       </ul>
       <details className={`disclosure ${styles.table}`}>
-        <summary id={tableId}>{t("summary.rings.table")}</summary>
+        <summary>{t("summary.rings.table")}</summary>
         <table>
           <caption className="visually-hidden">{t("summary.rings.table.caption")}</caption>
           <thead>
@@ -189,7 +188,16 @@ export function Rings({ rings, name }: { rings: readonly Ring[]; name: string })
                 <td>{ring.age}</td>
                 <td>{t(`ring.theme.${ring.theme}`)}</td>
                 <td>{t(ringFeltKey(ring.thickness))}</td>
-                <td>{ring.moment === undefined ? "" : t("summary.rings.moment", { number: ring.moment })}</td>
+                <td>
+                  {ring.moment === undefined ? (
+                    <>
+                      <span aria-hidden="true">{t("summary.rings.none.mark")}</span>
+                      <span className="visually-hidden">{t("summary.rings.none")}</span>
+                    </>
+                  ) : (
+                    t("summary.rings.moment", { number: ring.moment })
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

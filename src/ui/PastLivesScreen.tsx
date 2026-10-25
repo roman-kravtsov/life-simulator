@@ -8,6 +8,7 @@ import { t } from "../i18n";
 import { Header } from "./Header";
 import { Button, ConfirmDialog } from "./kit";
 import styles from "./PastLivesScreen.module.css";
+import type { GameStore } from "./store";
 import { useFocusOn } from "./useFocusOn";
 import { causeWords } from "./words";
 
@@ -19,8 +20,10 @@ interface Props {
   /** Whether there is anything stored to delete: a past life or the life in progress. */
   canDeleteAll: boolean;
   onOpen: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDeleteAll: () => void;
+  /** Resolves true only when the life was deleted. */
+  onDelete: GameStore["deletePastLife"];
+  /** Resolves true only when everything was deleted. */
+  onDeleteAll: GameStore["deleteAllData"];
   onBack: () => void;
 }
 
@@ -59,37 +62,45 @@ function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () =>
 export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete, onDeleteAll, onBack }: Props) {
   // Focus returns to the heading when the list arrives and when a life is deleted, whose button is gone.
   const heading = useFocusOn<HTMLHeadingElement>(lives?.length ?? -1);
-  // The one status region, always on the page, says what was deleted once the life's own button is gone.
-  const [notice, setNotice] = useState("");
+  // The one status region, always on the page, says what was deleted (or that it could not be) once the life's own
+  // button is gone. Each notice is a new node, so the same words twice are announced twice; it goes when the player
+  // moves on.
+  const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
+  const say = (text: string) => setNotice((was) => ({ text, n: (was?.n ?? 0) + 1 }));
+  const clear = () => setNotice((was) => (was === null ? was : null));
+  async function remove(life: PastLifeListing) {
+    clear();
+    say(t((await onDelete(life.id)) ? "past.deleted" : "past.deleteFailed", { name: life.name }));
+  }
+  async function removeAll() {
+    clear();
+    if (!(await onDeleteAll())) say(t("past.deleteAll.failed"));
+  }
   return (
-    <section>
+    <section onKeyDownCapture={clear} onClickCapture={clear}>
       <Header />
       <h1 ref={heading} tabIndex={-1}>
         {t("past.title")}
       </h1>
       <p className="lead">{t("past.intro")}</p>
-      {problem && (
-        <p className="note" role="note">
-          {t("past.problem")}
-        </p>
-      )}
       <div role="status">
+        {problem && (
+          <p className="note" role="note">
+            {t("past.problem")}
+          </p>
+        )}
         {lives === null && <p className="small">{t("past.loading")}</p>}
-        {notice && <p className="small">{notice}</p>}
+        {notice && (
+          <p key={notice.n} className="small">
+            {notice.text}
+          </p>
+        )}
       </div>
       {lives !== null && lives.length === 0 && <p>{t("past.empty")}</p>}
       {lives !== null && lives.length > 0 && (
         <ul role="list" className={styles.list}>
           {lives.map((life) => (
-            <Life
-              key={life.id}
-              life={life}
-              onOpen={() => onOpen(life.id)}
-              onDelete={() => {
-                setNotice(t("past.deleted", { name: life.name }));
-                onDelete(life.id);
-              }}
-            />
+            <Life key={life.id} life={life} onOpen={() => onOpen(life.id)} onDelete={() => void remove(life)} />
           ))}
         </ul>
       )}
@@ -100,7 +111,7 @@ export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete
           title={t("past.deleteAll.title")}
           confirmLabel={t("past.deleteAll.yes")}
           cancelLabel={t("past.deleteAll.no")}
-          onConfirm={onDeleteAll}
+          onConfirm={() => void removeAll()}
         >
           <p>{t("past.deleteAll.body")}</p>
         </ConfirmDialog>

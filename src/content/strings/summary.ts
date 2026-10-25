@@ -79,6 +79,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
   "summary.rings.col.felt": "How the year felt",
   "summary.rings.col.moment": "Key moment",
   "summary.rings.moment": "Moment {number}",
+  "summary.rings.none": "None",
+  "summary.rings.none.mark": "\u2013",
 
   "summary.moments.heading": "Key moments",
   "summary.moments.intro": "The years that mattered most, in order. The numbers match the marks on the rings.",

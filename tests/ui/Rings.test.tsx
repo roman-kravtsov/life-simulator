@@ -166,18 +166,18 @@ describe("SUM-002: the rings figure", () => {
     }
   });
 
-  it("is a figure named by its caption, with a list for its legend, pointing to the table", () => {
+  it("is a figure named by the short heading, its picture described by the caption, with a list for its legend", () => {
     const { container } = setup(life(10));
     const figure = container.querySelector("figure")!;
     const caption = figure.querySelector("figcaption")!;
-    expect(figure.getAttribute("aria-labelledby")).toBe(caption.id);
+    expect(figure).toHaveAccessibleName("Your life in rings");
+    expect(figure.hasAttribute("aria-labelledby")).toBe(false);
     expect(caption.id).not.toBe("");
     expect(caption).toHaveTextContent("The table under the picture gives the same, year by year.");
     expect(screen.getByRole("list", { name: "What each colour and pattern means" }).tagName).toBe("UL");
     expect(container.querySelector("ul")!.getAttribute("role")).toBe("list");
-    const summary = container.querySelector("summary")!;
-    expect(screen.getByRole("img").getAttribute("aria-describedby")).toBe(summary.id);
-    expect(screen.getByRole("img")).toHaveAccessibleDescription("Year by year");
+    expect(screen.getByRole("img").getAttribute("aria-describedby")).toBe(caption.id);
+    expect(screen.getByRole("img")).toHaveAccessibleDescription(caption.textContent!);
   });
 
   it("numbers the marks like the key moments", () => {
@@ -211,7 +211,10 @@ describe("SUM-002: the rings figure", () => {
       within(row)
         .getAllByRole("cell")
         .map((c) => c.textContent);
-    expect(cells(rows[0]!)).toEqual(["0", "School and study", "A hard year", ""]);
+    // An empty cell would be read as "blank": a dash shows, and "None" is what a screen reader hears.
+    expect(cells(rows[0]!)).toEqual(["0", "School and study", "A hard year", "\u2013None"]);
+    expect(rows[0]!.lastElementChild!.querySelector("[aria-hidden='true']")).toHaveTextContent("\u2013");
+    expect(rows[0]!.lastElementChild!.querySelector(".visually-hidden")).toHaveTextContent("None");
     expect(cells(rows[3]!)[3]).toBe("Moment 1");
     // The thickness in words follows happiness: thin years are hard, thick years happy.
     const words = rows.map((r) => cells(r)[2]);

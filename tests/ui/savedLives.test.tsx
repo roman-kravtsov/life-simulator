@@ -289,6 +289,64 @@ describe("SAVE-003, SAVE-007: the past lives", () => {
     expect(await within(status).findByText(`The life of ${older!.summary.name} was deleted.`)).toBeInTheDocument();
   });
 
+  it("says a life could not be deleted, in the status region, and does not say it was deleted", async () => {
+    const [older, newer] = lives();
+    const fake = fakePersistence({ status: "none" }, [older!, newer!]);
+    const { user } = await openPast(fake);
+    fake.persistence.archive.remove = () => Promise.reject(new Error("blocked"));
+    const status = await screen.findByRole("status");
+    const name = older!.summary.name;
+    await user.click(screen.getByRole("button", { name: `Delete the life of ${name}` }));
+    await user.click(screen.getByRole("button", { name: "Delete this life" }));
+    expect(
+      await within(status).findByText(`The life of ${name} could not be deleted.`, { exact: false }),
+    ).toBeVisible();
+    expect(within(status).getByText(/Some lives could not be saved to or read from/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(screen.queryByText(`The life of ${name} was deleted.`)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+
+  it("says the failure again, as a new node, when a second delete also fails", async () => {
+    const [older] = lives();
+    const fake = fakePersistence({ status: "none" }, [older!]);
+    const { user } = await openPast(fake);
+    fake.persistence.archive.remove = () => Promise.reject(new Error("blocked"));
+    const status = await screen.findByRole("status");
+    const attempt = async () => {
+      await user.click(screen.getByRole("button", { name: `Delete the life of ${older!.summary.name}` }));
+      await user.click(screen.getByRole("button", { name: "Delete this life" }));
+      return within(status).findByText(/could not be deleted\./);
+    };
+    const first = await attempt();
+    const second = await attempt();
+    expect(second).not.toBe(first);
+  });
+
+  it("lets the deleted notice go when the player moves on", async () => {
+    const [older, newer] = lives();
+    const fake = fakePersistence({ status: "none" }, [older!, newer!]);
+    const { user } = await openPast(fake);
+    await user.click(screen.getByRole("button", { name: `Delete the life of ${older!.summary.name}` }));
+    await user.click(screen.getByRole("button", { name: "Delete this life" }));
+    expect(await screen.findByText(`The life of ${older!.summary.name} was deleted.`)).toBeInTheDocument();
+    await user.tab();
+    expect(screen.queryByText(`The life of ${older!.summary.name} was deleted.`)).not.toBeInTheDocument();
+  });
+
+  it("says deleting all local data failed, in the status region, and stays on the list", async () => {
+    const [older] = lives();
+    const fake = fakePersistence({ status: "none" }, [older!]);
+    fake.persistence.deleteAll = () => Promise.reject(new Error("blocked"));
+    const { user } = await openPast(fake);
+    const status = await screen.findByRole("status");
+    await user.click(await screen.findByRole("button", { name: "Delete all local data" }));
+    await user.click(screen.getByRole("button", { name: "Delete everything" }));
+    expect(await within(status).findByText(/Your local data could not be deleted\./)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Past lives" })).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  });
+
   it("says that all local data was deleted in the start screen's status region, which is there before the words", async () => {
     const [older] = lives();
     const fake = fakePersistence({ status: "none" }, [older!]);

@@ -1046,9 +1046,18 @@ describe("game store: saving, death and the archive (M6)", () => {
     it("deletes one life and refreshes the list", async () => {
       const { store, fake } = withLives();
       await store.openPast();
-      await store.deletePastLife("past-b");
+      expect(await store.deletePastLife("past-b")).toBe(true);
       expect(store.getSnapshot().pastLives!.map((l) => l.id)).toEqual(["past-a"]);
       expect(fake.lives.has("past-b")).toBe(false);
+    });
+
+    it("says a delete failed, and keeps the life, when the archive would not remove it", async () => {
+      const { store, fake } = withLives();
+      fake.persistence.archive.remove = () => Promise.reject(new Error("blocked"));
+      await store.openPast();
+      expect(await store.deletePastLife("past-b")).toBe(false);
+      expect(store.getSnapshot().problem).toBe("archive");
+      expect(store.getSnapshot().pastLives).toHaveLength(2);
     });
 
     it("ignores a life that opens after the player went back", async () => {
@@ -1072,7 +1081,7 @@ describe("game store: saving, death and the archive (M6)", () => {
       await store.begin();
       store.startLife();
       await store.openPast();
-      await store.deleteAllData();
+      expect(await store.deleteAllData()).toBe(true);
       expect(fake.deleted).toBe(true);
       expect(fake.lives.size).toBe(0);
       expect(store.getSnapshot()).toMatchObject({
@@ -1102,7 +1111,7 @@ describe("game store: saving, death and the archive (M6)", () => {
       const { store, fake } = withLives();
       fake.persistence.deleteAll = () => Promise.reject(new Error("blocked"));
       await store.openPast();
-      await store.deleteAllData();
+      expect(await store.deleteAllData()).toBe(false);
       expect(store.getSnapshot()).toMatchObject({ screen: "past", problem: "archive" });
       expect(store.getSnapshot().pastLives).toHaveLength(2);
     });
