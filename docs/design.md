@@ -159,7 +159,7 @@ interface Person {
   relationships: Relationship[];
   conditions: Condition[];      // chronic illness, disability, addiction; each with severity
   flags: Record<string, number | boolean>;  // story memory: "lost_sibling", "moved_abroad", ...
-  journal: JournalEntry[];      // the player's own notes and reflections
+  journal?: JournalEntry[];     // the player's own notes and reflections (UI-007), absent when none; not input to a replay
   history: YearRecord[];        // one per year: stats, events, decisions, ring data
 }
 
