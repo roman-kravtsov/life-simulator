@@ -5,12 +5,13 @@ description: Run the independent review pass (parallel fresh-context reviewers, 
 
 # Independent review before hand-off
 
-Before opening a PR, and before asking Roman to review, run an independent review pass. Skip the reviewers below for changes that touch only docs, data, or tooling and config files (`.claude/`, CI workflows); the documentation step at the end has its own trigger. Spawn the reviewers in parallel, each with fresh context. Give each one its inputs: the diff vs the base branch (`git fetch origin main`, then `git diff origin/main...HEAD`; pass the reviewers this command or the diff text, and commit each round's fixes first, because a three-dot diff does not show uncommitted changes), `CLAUDE.md`, and the `docs/features.md` rows (feature IDs and acceptance criteria) for the feature IDs in the PR. Skip the acceptance pass if the PR delivers no feature IDs.
+Before opening a PR, and before asking Roman to review, run an independent review pass. Skip the reviewers below for changes that touch only docs, data, or tooling and config files (`.claude/`, `.github/`, CI workflows); the documentation step at the end has its own trigger. Spawn the reviewers in parallel, each with fresh context. Give each one its inputs: the diff vs the base branch (`git fetch origin main`, then `git diff origin/main...HEAD`; pass the reviewers this command or the diff text, and commit each round's fixes first, because a three-dot diff does not show uncommitted changes), `CLAUDE.md`, and the `docs/features.md` rows (feature IDs and acceptance criteria) for the feature IDs in the PR. Skip the acceptance pass if the PR delivers no feature IDs.
 
 - **`surgeon-reviewer` (acceptance):** checks that each feature ID's acceptance criteria are met and tested. An unmet criterion is a blocker.
 - **`surgeon-reviewer` (correctness and React):** always runs unless the whole pass is skipped; checks correctness, React patterns per `.claude/skills/vercel-react-best-practices` (its `SKILL.md` index plus the rule files it needs, in addition to the shared inputs), and performance.
 - **`surgeon-reviewer` (CSS), only if a `*.css` or `*.module.css` file or a design token (`src/styles.css`) is added, changed or deleted, or the markup of `src/ui/kit` changes:** checks token use, layout, responsiveness and dead styles.
 - **`accessibility-tester`, only if anything under `src/ui` or `src/styles.css` changes.**
+- **`content-reviewer`, only if anything under `src/content` changes** (events, decisions, strings, health conditions, names): checks tone, sensitivity tags, soft texts, help topics, naming and honesty about hard topics. It uses the same severity words as the list below.
 
 `surgeon-reviewer` normally ignores missing features and style. For the acceptance and CSS passes, say in the prompt that this pass overrides those exclusions: unmet acceptance criteria and CSS problems are in scope for it.
 

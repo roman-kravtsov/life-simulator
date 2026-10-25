@@ -63,7 +63,8 @@ src/ui/             React 19 components and the game store
 src/styles.css      design tokens (light and dark) and shared base styles
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
-.claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review
+.claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
+.github/            CI and deploy workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
 e2e/                Playwright: full-loop tests at phone and desktop widths
 ```
 
@@ -94,6 +95,7 @@ Read these docs before starting work:
 - **New features** get the next free ID in their category. IDs never change and are never reused, even for dropped features.
 - **Update `docs/features.md`** in the same PR: set the status (`in progress` or `done`) with the PR link. A feature is `done` only when its acceptance criteria are met; otherwise mark it `in progress` and say what is left.
 - Record decisions Roman makes in the relevant doc (design decisions in `docs/design.md`, section 7 decisions log).
+- **Agents and skills for the work** (`docs/agents.md`): `frontend-developer` for `src/ui`, `engine-developer` for `src/engine`, the `new-event` skill for events and decisions in `src/content`. When a phase is finished, use the `milestone-handoff` skill for the report to the coordinator.
 
 ## Code rules
 
@@ -139,9 +141,9 @@ npm run e2e            # in the cloud sandbox: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-
 
 ## Independent review before hand-off
 
-Before opening a PR, and before asking Roman to review, run the `pre-handoff-review` skill (`.claude/skills/pre-handoff-review/SKILL.md`) after the checks above pass. The agent that implemented the work runs it; when a subagent such as `frontend-developer` implemented it, the caller runs it, because subagents cannot start reviewers. The hand-off includes its review summary.
+Before opening a PR, and before asking Roman to review, run the `pre-handoff-review` skill (`.claude/skills/pre-handoff-review/SKILL.md`) after the checks above pass. The agent that implemented the work runs it; when a subagent such as `frontend-developer` implemented it, the caller runs it, because subagents cannot start reviewers. The hand-off includes its review summary. When anything under `src/content` changed, the skill also runs the `content-reviewer` agent.
 
 ## Commits and PRs
 
 - Clear commit messages that say what changed and why.
-- PR descriptions list the feature IDs delivered, the checks run, the review summary from the `pre-handoff-review` skill, and anything Roman needs to do.
+- PR descriptions follow `.github/pull_request_template.md`: they list the feature IDs delivered, the checks run, the review summary from the `pre-handoff-review` skill, and anything Roman needs to do.

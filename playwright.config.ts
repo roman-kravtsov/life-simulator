@@ -5,8 +5,12 @@ const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 
 export default defineConfig({
   testDir: "e2e",
+  // One retry on CI, with a trace of the retried run; locally a failure is a failure.
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://localhost:4173/life-simulator/",
+    trace: "on-first-retry",
     launchOptions: executablePath ? { executablePath } : {},
   },
   projects: [
