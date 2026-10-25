@@ -1,0 +1,34 @@
+.resume {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+}
+
+.heading {
+  margin: 0 0 0.5rem;
+}
+
+.line {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+}
+
+.about {
+  margin: 0.75rem 0 0;
+}
+
+.problem {
+  margin: 0 0 1.5rem;
+}
+
+.problem p {
+  margin: 0 0 0.75rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

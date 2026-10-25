@@ -28,11 +28,12 @@ export function lifeScreenProps(
     card: null,
     plan: null,
     quietRun: null,
+    restored: null,
+    problem: null,
     onToggleUsPrices: vi.fn(),
     onContinue: vi.fn(),
     onChoose: vi.fn(),
     onSettings: vi.fn(),
-    onAnother: vi.fn(),
     onBack: vi.fn(),
     ...overrides,
   };

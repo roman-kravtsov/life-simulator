@@ -62,14 +62,6 @@
   margin: 0 0 0.5rem;
 }
 
-.chose {
-  display: block;
-  margin: 0.25rem 0;
-  font-family: var(--font-ui);
-  font-size: 0.9rem;
-  color: var(--ink-soft);
-}
-
 .sectionHeading {
   margin: 1.25rem 0 0.5rem;
 }
@@ -81,13 +73,6 @@
 
 .events li {
   margin-bottom: 0.5rem;
-}
-
-.dataNote {
-  display: block;
-  font-family: var(--font-ui);
-  font-size: 0.85rem;
-  color: var(--ink-soft);
 }
 
 .actions {
