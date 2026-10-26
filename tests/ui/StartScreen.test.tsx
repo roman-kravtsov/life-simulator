@@ -23,14 +23,18 @@ const props = (overrides: Partial<StartScreenProps> = {}): StartScreenProps => (
 });
 
 describe("the start screen (UI-002)", () => {
-  it("puts focus on the title as usual, and on the error when it comes back after a failed load (UI-016)", () => {
+  it("puts focus on the title as usual, and leaves it on Begin when a failure comes while the screen is open", () => {
     const { rerender } = render(<StartScreen {...props()} />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
+    const begin = screen.getByRole("button", { name: "Begin a life" });
+    begin.focus();
+    rerender(<StartScreen {...props({ status: "loading" })} />);
     rerender(<StartScreen {...props({ status: "error" })} />);
-    expect(screen.getByRole("alert")).toHaveFocus();
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(begin).toHaveFocus();
   });
 
-  it("starts on the error, not the title, when the screen opens with a failed load", () => {
+  it("starts on the error, not the title, when the screen opens already in the error state (UI-016)", () => {
     render(<StartScreen {...props({ status: "error" })} />);
     expect(screen.getByRole("alert")).toHaveFocus();
   });

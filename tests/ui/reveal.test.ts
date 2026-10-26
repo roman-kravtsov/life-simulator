@@ -115,10 +115,12 @@ describe("revealTimings", () => {
     },
   );
 
-  it("runs a little over for ten names, which cannot go below the 340 ms floor, and shorter for few", () => {
-    const ten = revealTimings(10).settleAt;
-    expect(ten).toBeGreaterThanOrEqual(REVEAL_REEL_MS);
-    expect(ten).toBeLessThan(REVEAL_REEL_MS + 700);
+  it("runs a little over for nine and ten names, which cannot go below the 340 ms floor, and shorter for few", () => {
+    for (const count of [9, 10]) {
+      const over = revealTimings(count).settleAt;
+      expect(over).toBeGreaterThan(REVEAL_REEL_MS + 50);
+      expect(over).toBeLessThan(REVEAL_REEL_MS + 700);
+    }
     expect(revealTimings(3).settleAt).toBeLessThan(REVEAL_REEL_MS);
     expect(revealTimings(0).settleAt).toBe(0);
   });

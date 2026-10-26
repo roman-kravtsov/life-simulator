@@ -78,11 +78,12 @@ export function StartScreen({
   onOpenSettings,
   onSources,
 }: StartScreenProps) {
-  // Back from a failed load (the birth reveal plays before the country is in), the error is where focus goes; it is
-  // read out, and the title is not what the player was waiting for. Otherwise the title, as ever.
+  // Back from a failed load (the birth reveal plays before the country is in), the screen opens on the error, which is
+  // where focus goes: it is read out, and the title is not what the player was waiting for. Otherwise the title, as
+  // ever. A failure that comes while the player is already here leaves focus where it is, on Begin.
   const [openedOnError] = useState(status === "error");
   const heading = useFocusOn<HTMLHeadingElement>(undefined, !openedOnError);
-  const problem = useFocusOn<HTMLParagraphElement>(status, status === "error");
+  const problem = useFocusOn<HTMLParagraphElement>(undefined, openedOnError);
   const resumeHeading = useId();
   const loading = status === "loading";
   // The words arrive after the status region is on the page (the first render has none), so they are announced.

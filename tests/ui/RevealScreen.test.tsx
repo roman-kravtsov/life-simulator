@@ -161,9 +161,13 @@ describe("the reveal screen", () => {
     for (const { name } of view.stops) expect(screen.queryByText(name)).toBeNull();
     expect(screen.getByText("Realland")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Skip the reveal" })).toBeNull();
+    // Focus is on the status, which is read out; Back is one Tab away, never under the finger that pressed Skip.
     const back = screen.getByRole("button", { name: "Back to start" });
-    expect(back).toHaveFocus();
+    expect(screen.getByRole("status")).toHaveFocus();
+    expect(back).not.toHaveFocus();
     expect(back).toHaveAccessibleDescription("Opening your life…");
+    await user.tab();
+    expect(back).toHaveFocus();
     await user.click(back);
     expect(onBack).toHaveBeenCalledTimes(1);
   });
@@ -240,6 +244,29 @@ describe("the reveal in the app", () => {
     // The reel has stopped on the real name while the country loads.
     expect(document.querySelector("[data-reel]")).toBeNull();
     expect(screen.queryByRole("button", { name: "Begin this life" })).toBeNull();
+    await act(async () => release());
+    expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
+  });
+
+  it("does not turn Skip into Back under the player's finger: a second press after Skip leaves the reveal", async () => {
+    const world = testWorldOfMany();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const { user, store } = setup({
+      ...world,
+      loadCountry: (iso3: string) => gate.then(() => world.loadCountry(iso3)),
+    });
+    await begin(user);
+    const skip = await screen.findByRole("button", { name: "Skip the reveal" });
+    await user.click(skip);
+    expect(await screen.findByText("Opening your life…")).toBeInTheDocument();
+    expect(skip).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Back to start" })).not.toHaveFocus();
+    // Enter or Space again, where Skip was: nothing is pressed.
+    await user.keyboard("{Enter}");
+    await user.keyboard(" ");
+    expect(store.getSnapshot()).toMatchObject({ screen: "reveal" });
     await act(async () => release());
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   });

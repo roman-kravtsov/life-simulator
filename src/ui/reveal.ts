@@ -10,8 +10,8 @@ const STOPS_MAX = 10;
 
 /**
  * How long the first and the last passing name stay, and how long the whole reel runs before the real country. With
- * the settle that follows (about 2.5 s) the reveal takes about 6 s. The reel holds this for 6 or more names; fewer run
- * shorter, and ten run a little over, because no gap goes under the first one.
+ * the settle that follows (about 2.5 s) the reveal takes about 6 s. The reel holds this for 6 to 8 names; fewer run
+ * shorter, and nine (about 3.8 s) and ten (about 4.2 s) run over, because no gap goes under the first one.
  */
 export const REVEAL_FIRST_MS = 340;
 export const REVEAL_LAST_MS = 900;
@@ -75,7 +75,7 @@ const gapsFor = (count: number, p: number): number[] =>
 
 /**
  * The pace of the reel: slowing from about 340 ms to about 900 ms, so no more than three changes a second, and
- * for 6 to 9 names the reel takes `REVEAL_REEL_MS` (ten run a little over, and fewer than 6 run shorter). A shorter
+ * for 6 to 8 names the reel takes `REVEAL_REEL_MS` (nine and ten run a little over, and fewer than 6 run shorter). A shorter
  * list slows later; a longer one slows sooner. The shape is found by bisection, so it is a pure function of the count.
  */
 export function revealTimings(count: number): RevealTimings {

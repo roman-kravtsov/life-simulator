@@ -12,6 +12,7 @@ import { Page } from "./Page";
 import styles from "./RevealScreen.module.css";
 import { revealTimings, type RevealView } from "./reveal";
 import { SiteHeader } from "./SiteHeader";
+import { useFocusOn } from "./useFocusOn";
 
 interface Props {
   view: RevealView;
@@ -68,29 +69,13 @@ export function RevealScreen({ view, onEnd, onBack, display = displayStore }: Pr
   const status = (
     <p role="status" id={statusId} className={styles.status}>
       {caption}
-      {settled && !still && <span className="visually-hidden">. {share}</span>}
+      {settled && <span className="visually-hidden">. {share}</span>}
     </p>
   );
 
-  if (still) {
-    return (
-      <Page header={<SiteHeader />}>
-        <div className={styles.screen}>
-          <div className={styles.skip}>
-            <Button autoFocus aria-describedby={statusId} onPress={onBack}>
-              {t("life.backToStart")}
-            </Button>
-          </div>
-          <div className={styles.stage}>
-            {status}
-            <div className={styles.reel}>
-              <span className={styles.name}>{place}</span>
-            </div>
-          </div>
-        </div>
-      </Page>
-    );
-  }
+  // A different component from the reel's, so that the Skip button is gone, and not turned into Back under the finger
+  // that pressed it.
+  if (still) return <Still place={place} caption={caption} statusId={statusId} onBack={onBack} />;
 
   return (
     <Page header={<SiteHeader />}>
@@ -122,6 +107,38 @@ export function RevealScreen({ view, onEnd, onBack, display = displayStore }: Pr
           </p>
           {/* Invisible: it holds the finished picture for a moment, and its end is the end of the reveal. */}
           <span className={styles.hold} data-hold aria-hidden="true" onAnimationEnd={held} />
+        </div>
+      </div>
+    </Page>
+  );
+}
+
+interface StillProps {
+  place: string;
+  caption: string;
+  statusId: string;
+  onBack: () => void;
+}
+
+/**
+ * No reel (reduced motion, or the reel is over while the country loads): the real name, still. Focus goes to the status,
+ * which is read out; Back to start is one Tab away, so a second press of the key that skipped does not abandon the life.
+ */
+function Still({ place, caption, statusId, onBack }: StillProps) {
+  const status = useFocusOn<HTMLParagraphElement>();
+  return (
+    <Page header={<SiteHeader />}>
+      <div className={styles.screen}>
+        <div className={styles.stage}>
+          <p role="status" id={statusId} ref={status} tabIndex={-1} className={styles.status}>
+            {caption}
+          </p>
+          <div className={styles.reel}>
+            <span className={styles.name}>{place}</span>
+          </div>
+          <Button aria-describedby={statusId} onPress={onBack}>
+            {t("life.backToStart")}
+          </Button>
         </div>
       </div>
     </Page>
