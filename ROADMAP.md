@@ -181,7 +181,7 @@ Phases are in dependency order and priority order together. A phase finishes bef
 
 ## 9. Backlog and deferred ideas
 
-**Backlog.** Everything in `docs/features.md` with status `not started`, grouped into Phases C to H above (57 features, with ADMIN-005).
+**Backlog.** Everything in `docs/features.md` with status `not started`, grouped into the phases above: 59 features, which are CHAR-007 and WORLD-014 (Phase A, MVP), ADMIN-005 (Phase B) and the 56 post-MVP features of Phases C to H.
 
 **Deferred, and why they look attractive but should not start yet.**
 
