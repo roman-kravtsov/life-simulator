@@ -103,12 +103,24 @@ describe("revealTimings", () => {
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(REVEAL_FIRST_MS - 1);
   });
 
-  it.each([6, 8, 10])("keeps the whole reel near %i names' share of the 5 to 6 seconds", (count) => {
-    const { gaps, settleAt } = revealTimings(count);
-    const reel = gaps.reduce((a, b) => a + b, 0);
-    expect(settleAt).toBeCloseTo(reel, 5);
-    expect(reel).toBeGreaterThan(REVEAL_REEL_MS - 400);
-    expect(reel).toBeLessThan(REVEAL_REEL_MS + 700);
+  it.each([6, 7, 8])(
+    "keeps the whole reel at about 3.6 s for %i names, so the reveal runs about 6 s with its settle",
+    (count) => {
+      const { gaps, settleAt } = revealTimings(count);
+      const reel = gaps.reduce((a, b) => a + b, 0);
+      expect(settleAt).toBeCloseTo(reel, 5);
+      expect(REVEAL_REEL_MS).toBe(3600);
+      expect(reel).toBeGreaterThan(REVEAL_REEL_MS - 50);
+      expect(reel).toBeLessThan(REVEAL_REEL_MS + 50);
+    },
+  );
+
+  it("runs a little over for ten names, which cannot go below the 340 ms floor, and shorter for few", () => {
+    const ten = revealTimings(10).settleAt;
+    expect(ten).toBeGreaterThanOrEqual(REVEAL_REEL_MS);
+    expect(ten).toBeLessThan(REVEAL_REEL_MS + 700);
+    expect(revealTimings(3).settleAt).toBeLessThan(REVEAL_REEL_MS);
+    expect(revealTimings(0).settleAt).toBe(0);
   });
 
   it("puts each name's delay at the sum of the gaps before it", () => {

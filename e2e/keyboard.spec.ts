@@ -65,9 +65,9 @@ test("a whole life by keyboard alone: begin, live, write in the journal, decide,
   await page.keyboard.press("Enter");
 
   // The birth reveal (UI-016) puts focus on Skip, which Enter presses.
-  const skip = page.getByRole("button", { name: "Skip" });
+  const skip = page.getByRole("button", { name: "Skip the reveal" });
   await expect(skip).toBeFocused();
-  await expectVisibleFocus(page, "Skip");
+  await expectVisibleFocus(page, "Skip the reveal");
   await page.keyboard.press("Enter");
 
   // The birth screen takes focus on its heading.

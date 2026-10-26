@@ -76,7 +76,7 @@ describe("App", () => {
     expect(heading).toHaveTextContent(/Born in \d{4}/);
   });
 
-  it("keeps focus on the begin button while loading and after a load error", async () => {
+  it("keeps focus on the begin button while loading, and moves it to the error when the load fails", async () => {
     let fail: (error: Error) => void = () => {};
     const failing = { ...testWorld(), loadIndex: () => new Promise<never>((_, reject) => (fail = reject)) };
     const store = createGameStore(() => "test-seed", failing);
@@ -87,7 +87,10 @@ describe("App", () => {
     expect(screen.getByText("Finding where you are born…")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Begin a life" })).toHaveFocus();
     fail(new Error("offline"));
-    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveFocus();
+    // Trying again keeps focus on Begin, which stays pressable.
+    screen.getByRole("button", { name: "Begin a life" }).focus();
+    await user.click(screen.getByRole("button", { name: "Begin a life" }));
     expect(screen.getByRole("button", { name: "Begin a life" })).toHaveFocus();
   });
 
@@ -201,7 +204,7 @@ describe("App", () => {
     await tabTo(user, screen.getByRole("button", { name: "Begin a life" }));
     await user.keyboard("{Enter}");
     // The birth reveal plays; Skip has focus, and Enter on it opens the birth screen (UI-016).
-    expect(await screen.findByRole("button", { name: "Skip" })).toHaveFocus();
+    expect(await screen.findByRole("button", { name: "Skip the reveal" })).toHaveFocus();
     await user.keyboard("{Enter}");
     await screen.findByRole("button", { name: "Begin this life" });
     await tabTo(user, screen.getByRole("button", { name: "Begin this life" }));

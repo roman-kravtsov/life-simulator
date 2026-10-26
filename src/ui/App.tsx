@@ -47,7 +47,7 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
     </ScreenBoundary>
   );
   if (screen === "reveal" && reveal) {
-    return <RevealScreen view={reveal} onEnd={store.endReveal} display={display} />;
+    return <RevealScreen view={reveal} onEnd={store.endReveal} onBack={store.backToStart} display={display} />;
   }
   if (screen === "birth" && life && country) {
     return (

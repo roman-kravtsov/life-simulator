@@ -1,7 +1,7 @@
 // The title page (UI-002): growth rings as an emblem, the title, a few lines on what the game is, the content note and
 // the two settings that shape a life, then Begin a life, one press after the note. A life saved in this browser is
 // offered first (SAVE-002). Past lives, the settings and the sources are quiet buttons at the foot.
-import { useDeferredValue, useId } from "react";
+import { useDeferredValue, useId, useState } from "react";
 import type { Settings } from "../engine/types";
 import { countryName } from "../format";
 import { t } from "../i18n";
@@ -78,7 +78,11 @@ export function StartScreen({
   onOpenSettings,
   onSources,
 }: StartScreenProps) {
-  const heading = useFocusOn<HTMLHeadingElement>();
+  // Back from a failed load (the birth reveal plays before the country is in), the error is where focus goes; it is
+  // read out, and the title is not what the player was waiting for. Otherwise the title, as ever.
+  const [openedOnError] = useState(status === "error");
+  const heading = useFocusOn<HTMLHeadingElement>(undefined, !openedOnError);
+  const problem = useFocusOn<HTMLParagraphElement>(status, status === "error");
   const resumeHeading = useId();
   const loading = status === "loading";
   // The words arrive after the status region is on the page (the first render has none), so they are announced.
@@ -130,7 +134,11 @@ export function StartScreen({
           {loading && <p className="small">{t("start.loading")}</p>}
           {done && <p className="small">{done}</p>}
         </div>
-        {status === "error" && <p role="alert">{t("start.error")}</p>}
+        {status === "error" && (
+          <p role="alert" ref={problem} tabIndex={-1}>
+            {t("start.error")}
+          </p>
+        )}
       </div>
       <nav aria-label={t("start.more")} className={styles.links}>
         <Button onPress={onPast}>{t("start.past")}</Button>

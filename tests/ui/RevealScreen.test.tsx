@@ -39,8 +39,9 @@ const displayWith = (motion: "system" | "reduced" | "full" = "system") => {
 
 const renderReveal = (props: Partial<React.ComponentProps<typeof RevealScreen>> = {}) => {
   const onEnd = vi.fn();
-  const utils = render(<RevealScreen view={view} onEnd={onEnd} display={displayWith()} {...props} />);
-  return { onEnd, user: userEvent.setup(), ...utils };
+  const onBack = vi.fn();
+  const utils = render(<RevealScreen view={view} onEnd={onEnd} onBack={onBack} display={displayWith()} {...props} />);
+  return { onEnd, onBack, user: userEvent.setup(), ...utils };
 };
 
 afterEach(() => vi.unstubAllGlobals());
@@ -56,9 +57,8 @@ describe("the reveal screen", () => {
       for (const { name } of view.stops) expect(status).not.toHaveTextContent(name);
       expect(reel.contains(status)).toBe(false);
     }
-    // The one live region is the status line, and it is polite.
-    expect(container.querySelectorAll("[aria-live]")).toHaveLength(1);
-    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    // The one live region is the status line (role=status is polite already).
+    expect(screen.getAllByRole("status")).toHaveLength(1);
     // And the accessibility tree has none of them: they are only in the hidden reel.
     for (const { name } of view.stops) expect(screen.queryByText(name)).toBeInTheDocument();
     expect(screen.queryByRole("generic", { name: /Alpha/ })).toBeNull();
@@ -67,7 +67,6 @@ describe("the reveal screen", () => {
   it("announces that it is finding the place, then the place once the real name has settled", () => {
     const { container } = renderReveal();
     const status = screen.getByRole("status");
-    expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveTextContent("Finding where you are born…");
     expect(status).not.toHaveTextContent("Realland");
     endAnimation(container.querySelector("[data-settle]")!);
@@ -75,16 +74,26 @@ describe("the reveal screen", () => {
     expect(screen.getByRole("status")).not.toHaveTextContent("Finding");
   });
 
-  it("says how likely the place is, in the year's births, once the line is shown", () => {
-    renderReveal();
-    expect(
-      screen.getByText("About 1 in 40 of the year's births in the 190 countries happen here."),
-    ).toBeInTheDocument();
+  it("says how likely the place is in the same live message as the place, and hides the visible copy of the line", () => {
+    const { container } = renderReveal();
+    const line = "About 1 in 40 of the year's births, across the 190 countries in this game, happen here.";
+    // Visible, but not read twice: the sentence reaches a screen reader through the status.
+    expect(screen.getByText(line)).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("status")).not.toHaveTextContent("About 1 in");
+    endAnimation(container.querySelector("[data-settle]")!);
+    expect(screen.getByRole("status")).toHaveTextContent(`You are born in Realland. ${line}`);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 
-  it("puts Skip first among its controls and gives it focus", async () => {
+  it("describes Skip by the status, so a screen reader says what is going on when focus lands on it", () => {
+    renderReveal();
+    const skip = screen.getByRole("button", { name: "Skip the reveal" });
+    expect(skip).toHaveAccessibleDescription("Finding where you are born…");
+  });
+
+  it("takes focus on Skip, which is the only control of the screen", async () => {
     const { user } = renderReveal();
-    const skip = screen.getByRole("button", { name: "Skip" });
+    const skip = screen.getByRole("button", { name: "Skip the reveal" });
     expect(skip).toHaveFocus();
     const main = screen.getByRole("main");
     expect(within(main).getAllByRole("button")).toEqual([skip]);
@@ -94,7 +103,7 @@ describe("the reveal screen", () => {
 
   it("skips with Skip and with Escape", async () => {
     const { onEnd, user } = renderReveal();
-    await user.click(screen.getByRole("button", { name: "Skip" }));
+    await user.click(screen.getByRole("button", { name: "Skip the reveal" }));
     expect(onEnd).toHaveBeenCalledTimes(1);
     await user.keyboard("{Escape}");
     expect(onEnd).toHaveBeenCalledTimes(2);
@@ -112,21 +121,51 @@ describe("the reveal screen", () => {
     expect(onEnd).toHaveBeenCalledWith();
   });
 
-  it("says it is opening, quietly, when the reel is over and the country is not yet loaded", () => {
-    const { rerender, onEnd } = renderReveal();
-    expect(screen.queryByText("Opening…")).toBeNull();
-    rerender(<RevealScreen view={{ ...view, opening: true }} onEnd={onEnd} display={displayWith()} />);
-    expect(screen.getByText("Opening…")).toBeInTheDocument();
-    expect(within(screen.getByRole("status")).getByText("Opening…")).toBeInTheDocument();
+  it("does not take focus from the header when the hold ends: it waits for a Continue", async () => {
+    const { onEnd, user, container } = renderReveal();
+    // Someone who tabbed away from Skip, to the help link in the header.
+    const help = document.createElement("a");
+    help.href = "#help";
+    help.textContent = "Need to talk?";
+    document.body.prepend(help);
+    help.focus();
+    expect(help).toHaveFocus();
+    endAnimation(container.querySelector("[data-hold]")!);
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(help).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Skip the reveal" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    help.remove();
   });
 
-  it("shows no reel under reduced motion, and ends at once with the note about chance", () => {
-    const { onEnd, container } = renderReveal({ display: displayWith("reduced") });
-    expect(container.querySelector("[data-reel]")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
-    expect(screen.getByText("Opening…")).toBeInTheDocument();
-    expect(onEnd).toHaveBeenCalledTimes(1);
-    expect(onEnd).toHaveBeenCalledWith({ reduced: true });
+  it("ends at the hold as usual when focus is still on Skip or nowhere", () => {
+    const first = renderReveal();
+    expect(screen.getByRole("button", { name: "Skip the reveal" })).toHaveFocus();
+    endAnimation(first.container.querySelector("[data-hold]")!);
+    expect(first.onEnd).toHaveBeenCalledTimes(1);
+    first.unmount();
+    const second = renderReveal();
+    (document.activeElement as HTMLElement).blur();
+    endAnimation(second.container.querySelector("[data-hold]")!);
+    expect(second.onEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops the reel when it is opening: the real name, still, the status, and a way back", async () => {
+    const { rerender, onEnd, onBack, user } = renderReveal();
+    expect(screen.queryByText("Opening your life…")).toBeNull();
+    rerender(<RevealScreen view={{ ...view, opening: true }} onEnd={onEnd} onBack={onBack} display={displayWith()} />);
+    expect(within(screen.getByRole("status")).getByText("Opening your life…")).toBeInTheDocument();
+    expect(document.querySelector("[data-reel]")).toBeNull();
+    expect(document.querySelector("[data-hold]")).toBeNull();
+    for (const { name } of view.stops) expect(screen.queryByText(name)).toBeNull();
+    expect(screen.getByText("Realland")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Skip the reveal" })).toBeNull();
+    const back = screen.getByRole("button", { name: "Back to start" });
+    expect(back).toHaveFocus();
+    expect(back).toHaveAccessibleDescription("Opening your life…");
+    await user.click(back);
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
   it("follows the system's request for reduced motion unless the player chose full motion", () => {
@@ -158,7 +197,7 @@ describe("the reveal in the app", () => {
   it("shows the reveal after Begin, then the birth screen, with focus on its heading, when Skip is pressed", async () => {
     const { user } = setup();
     await begin(user);
-    await user.click(await screen.findByRole("button", { name: "Skip" }));
+    await user.click(await screen.findByRole("button", { name: "Skip the reveal" }));
     const heading = await screen.findByRole("heading", { level: 1, name: /^You are born in / });
     expect(heading).toHaveFocus();
     expect(screen.queryByText("Where you are born is drawn by chance", { exact: false })).toBeNull();
@@ -167,7 +206,7 @@ describe("the reveal in the app", () => {
   it("goes to the birth screen on Escape", async () => {
     const { user } = setup();
     await begin(user);
-    await screen.findByRole("button", { name: "Skip" });
+    await screen.findByRole("button", { name: "Skip the reveal" });
     await user.keyboard("{Escape}");
     expect(await screen.findByRole("heading", { level: 1, name: /^You are born in / })).toHaveFocus();
   });
@@ -175,7 +214,7 @@ describe("the reveal in the app", () => {
   it("goes to the birth screen when the hold animation ends", async () => {
     const { user } = setup();
     await begin(user);
-    await screen.findByRole("button", { name: "Skip" });
+    await screen.findByRole("button", { name: "Skip the reveal" });
     endAnimation(document.querySelector("[data-hold]")!);
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   });
@@ -183,7 +222,7 @@ describe("the reveal in the app", () => {
   it("names the real country, the one the life is lived in, in the result", async () => {
     const { user, store } = setup();
     await begin(user);
-    await screen.findByRole("button", { name: "Skip" });
+    await screen.findByRole("button", { name: "Skip the reveal" });
     const { country } = store.getSnapshot();
     expect(document.querySelector("[data-settle]")).toHaveTextContent(country!.name);
     endAnimation(document.querySelector("[data-settle]")!);
@@ -196,11 +235,30 @@ describe("the reveal in the app", () => {
     const gate = new Promise<void>((resolve) => (release = resolve));
     const { user } = setup({ ...world, loadCountry: (iso3: string) => gate.then(() => world.loadCountry(iso3)) });
     await begin(user);
-    await user.click(await screen.findByRole("button", { name: "Skip" }));
-    expect(await screen.findByText("Opening…")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Skip the reveal" }));
+    expect(await screen.findByText("Opening your life…")).toBeInTheDocument();
+    // The reel has stopped on the real name while the country loads.
+    expect(document.querySelector("[data-reel]")).toBeNull();
     expect(screen.queryByRole("button", { name: "Begin this life" })).toBeNull();
     await act(async () => release());
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
+  });
+
+  it("lets the player go back to the start while the country is still loading, and drops the late load", async () => {
+    const world = testWorldOfMany();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const { user, store } = setup({
+      ...world,
+      loadCountry: (iso3: string) => gate.then(() => world.loadCountry(iso3)),
+    });
+    await begin(user);
+    await user.click(await screen.findByRole("button", { name: "Skip the reveal" }));
+    await user.click(await screen.findByRole("button", { name: "Back to start" }));
+    expect(screen.getByRole("button", { name: "Begin a life" })).toBeInTheDocument();
+    await act(async () => release());
+    expect(store.getSnapshot()).toMatchObject({ screen: "start", life: null, reveal: null });
+    expect(screen.getByRole("button", { name: "Begin a life" })).toBeInTheDocument();
   });
 
   it("shows no reel under reduced motion, and the birth screen says how the country was drawn", async () => {
@@ -219,7 +277,8 @@ describe("the reveal in the app", () => {
     const { user } = setup({ ...world, loadCountry: () => Promise.reject(new Error("offline")) });
     await begin(user);
     expect(await screen.findByRole("button", { name: "Begin a life" })).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    // Focus goes to the error, which is read out, not lost to the page.
+    expect(screen.getByRole("alert")).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Skip the reveal" })).toBeNull();
   });
 });

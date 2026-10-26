@@ -65,5 +65,5 @@ export function endAnimation(element: Element) {
 
 /** Skips the birth reveal (UI-016) that plays between Begin and the birth screen, where the test is not about it. */
 export async function skipReveal(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole("button", { name: "Skip" }));
+  await user.click(await screen.findByRole("button", { name: "Skip the reveal" }));
 }
