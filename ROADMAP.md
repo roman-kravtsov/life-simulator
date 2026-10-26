@@ -1,0 +1,244 @@
+# Birthright: living roadmap
+
+This is the one active plan. It says where the project stands, what comes next and why, and it is updated in the same PR as the work it describes (`CLAUDE.md`, "Keeping the roadmap current"). It does not repeat what other docs own:
+
+- **`docs/features.md`** owns every feature's description, acceptance criteria and status. This file refers to features by ID and never keeps a second copy of a status.
+- **`docs/roadmap.md`** keeps the original milestone map (M1 to M11) of all 164 features. Its M1 to M7 are history now; M8 to M11 are regrouped into the phases below. Where the two disagree, this file wins.
+- **`docs/design.md`** owns how it works, and its section 7 is the log of design decisions. **`docs/mvp.md`** is the original MVP definition.
+
+Status markers: `[x]` done, `[~]` in progress, `[ ]` planned, `[-]` deferred, `[!]` blocked. Priorities: **P0** blocks the core game, **P1** high, **P2** important but can wait, **P3** nice to have. There are no dates: nothing in the project gives a reliable pace to plan by.
+
+Last audited: 2026-10-26, against `main` at `263f66d` (PR #19, M7). The audit evidence is in "Audit evidence" at the end.
+
+---
+
+## 1. Current status
+
+Birthright is a complete game loop that works end to end. A player begins a life, is born into one of 163 countries by the real odds of birth, plays year by year with a three-point focus plan, answers decisions (35 of the 167 events) with an odds lens, and sees the finished life as tree rings with a chance, choice and circumstance breakdown. Lives autosave and can be resumed, finished lives are archived, and any life replays exactly from its seed and logs. It is deployed to GitHub Pages (every merge to `main` ships; the last deploy, run 15, was green).
+
+Of the 108 original MVP features, 107 are `done` and one (A11Y-002, screen readers) is `in progress`. The audit added two release-gate features to the MVP, CHAR-007 and WORLD-014, both `not started`. Lint, typecheck, 2127 unit tests and 29 Playwright tests pass.
+
+The honest summary is that **the MVP is built but not yet proven by play.** Nobody has played it the way a player would, the authored text has not been read by Roman, the screen reader pass has not happened, and the audit found four things that would hurt a first-time player or the "real odds" promise (section 4). The next phase is about those, not about new features.
+
+## 2. Current MVP definition
+
+The MVP is `docs/mvp.md` as built (M1 to M7, 108 features), plus a **release gate** that the original definition did not have, because "all features done" turned out not to be the same as "ready for strangers":
+
+1. The full loop works at 400 px and 1440 px: start, play to death, summary, start again, resume after reload. (Met, tested in `e2e/`.)
+2. Engine, calibration, guard and component tests pass. (Met.)
+3. Keyboard play works for the whole loop. (Met, `e2e/keyboard.spec.ts`.)
+4. Screen-reader play works. (Not met: untested with a real reader.)
+5. Every number shown has a source, and the game is honest about what is data and what is authored. (Not met: see D-004.)
+6. Nothing in a normal life reads as a bug. (Not met: see D-001.)
+7. Roman has read the authored text and accepted or changed it. (Not met.)
+
+The MVP is released when 4 to 7 are met. That is Phase A.
+
+**Boundary.** In: everything in M1 to M7 plus Phase A. Out, until the MVP is released: every other feature in `docs/features.md`. Not changed from `docs/mvp.md`: the full-scope decision (Roman, 2026-10-23), every country with complete data, yearly turns, English only.
+
+## 3. System inventory
+
+Evidence is from the code, the tests and 800 headless lives played with the default course (`advanceAuto`) across 163 countries, not from the feature statuses. "Importance" is to the core loop: _C_ core, _S_ supports, _P_ polish.
+
+| Area                    | What exists and works                                                                                                                                                                                                                                                                                      | Incomplete or missing                                                                                                                                                                                                                | Imp. |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| Core loop and time      | Yearly turn in a fixed order (`advance`), quiet years batched, stops for decisions, no timers. Auto-played lives end at 73 on average.                                                                                                                                                                     | Zoom-in quarters (SIM-008) not started; the engine keeps the period in its RNG stream names so it can be added without breaking yearly replays.                                                                                      | C    |
+| Character               | Sex, name, place, six traits, four stats, birth draw by births.                                                                                                                                                                                                                                            | Names are drawn per relative with no uniqueness (D-001). No same-sex partners (open question). Traits are never revealed in words (CHAR-005).                                                                                        | C    |
+| World data              | 163 countries from UN, World Bank, UNESCO, ILO, WHO, GDIM. Under 15 KB gzipped each, loaded on demand. Sources screen.                                                                                                                                                                                     | 74 countries left out, mostly where World Bank income percentiles are missing (Afghanistan, Argentina, Cuba, Somalia, North Korea, Saudi Arabia...). The report does not say how many births that is. No conflict or migration data. | C    |
+| Family                  | Parents, siblings, own children, caregiving, deaths and grief, all from country data.                                                                                                                                                                                                                      | No inheritance, no grandchildren, no family tree.                                                                                                                                                                                    | S    |
+| Relationships           | Friends (14 events), partners, marriage by country age model, arranged marriage under 18.                                                                                                                                                                                                                  | Other-sex partners only. A marriage ends only by death: no separation or divorce (REL-005). No mentors.                                                                                                                              | S    |
+| Education               | Four school levels calibrated to completion by country, sex, place, household and aptitude. Literacy. Choices for tertiary and leaving school.                                                                                                                                                             | No adult learning, no study abroad.                                                                                                                                                                                                  | S    |
+| Career and work         | Participation, sector, informal or formal, unemployment, child labour, retirement.                                                                                                                                                                                                                         | **One job for life**: sector and formal status are set once and never change. "Promotion" is a flavour event worth 5% of income. No job changes, no self-employment (CAREER-005, CAREER-007).                                        | C    |
+| Money                   | Household percentile, income from the country table, savings and debt with interest, costs, health costs, shocks, PPP formatting.                                                                                                                                                                          | Constant 2021 PPP dollars only: no inflation, no assets of any kind, no housing (MONEY-008).                                                                                                                                         | C    |
+| Health                  | 14 conditions, mortality calibrated to within 1 year of the source, cause of death from WHO, treatment decisions, suicide handled as designed.                                                                                                                                                             | No pregnancy risk, addiction, disability or epidemics.                                                                                                                                                                               | C    |
+| Events and decisions    | 167 events (events can name several stages: 13 infancy, 20 childhood, 25 adolescence, 41 youth, 38 adulthood, 30 midlife, 32 elder), 35 with choices, 25 data notes, validated in CI. Every one fires in 800 lives except two that need a player's earlier choice (`youth.homesick`, `youth.letter_home`). | Prompt count and mix are authored and unread by Roman. One decision about every 6 years (14 per life), so the player decides little.                                                                                                 | C    |
+| Player agency           | Focus plan with diminishing returns, odds lens, locked options, circumstance taking points.                                                                                                                                                                                                                | Weak and mostly invisible: see D-002.                                                                                                                                                                                                | C    |
+| Death and summary       | 13 cause groups with normal and softened passages, rings, key moments, chance/choice/circumstance shares, journal and epitaph on the summary.                                                                                                                                                              | No "other shore" or "road not taken". Choice share is about 3% for a default course (D-002).                                                                                                                                         | C    |
+| Saves                   | Autosave, resume, IndexedDB archive, schema versions, replay fallback, delete all.                                                                                                                                                                                                                         | **Local only, no export** (SAVE-006): clearing site data loses every life. `MIGRATIONS` is empty, so the machinery has never run on a real change.                                                                                   | S    |
+| UI and navigation       | Start, birth, life (three columns, narrow tabs), summary, past lives, settings, sources. Light and dark, text size, reduced motion.                                                                                                                                                                        | Browser Back leaves the site (no router). Birth reveal (UI-016) in progress elsewhere. No hints, no motion.                                                                                                                          | S    |
+| Accessibility           | Landmarks, labels, one live region, contrast test, keyboard-only whole-life test.                                                                                                                                                                                                                          | No screen reader pass, only Chromium tested, no axe check (A11Y-006).                                                                                                                                                                | C    |
+| Content tone and safety | Sensitivity tags, softening, help topic on every difficult or severe event, suicide never a choice.                                                                                                                                                                                                        | Help points to an international directory only; no verified country lines.                                                                                                                                                           | C    |
+| Audio, visuals          | Palette, serif story face, ring graphic. No audio (by design for now).                                                                                                                                                                                                                                     | Portrait, motion.                                                                                                                                                                                                                    | P    |
+| Tooling                 | CI on every PR, deploy, 8 project agents, 4 skills, calibration harness, content validator, guard tests.                                                                                                                                                                                                   | Full unit test run takes about 4 minutes. No balance report (ADMIN-003).                                                                                                                                                             | S    |
+
+**Placeholders, mocks and stubs:** none found. There is no `TODO`, `FIXME` or stub in `src`, `scripts` or `e2e`. Test fixtures are synthetic and marked. The unfinished parts are all _absent_ features, not half-built ones.
+
+**Where the docs and the code agree:** every count checked matched (167 events, 35 decisions, 23 reflection prompts, 14 conditions, 163 countries, `CONTENT_VERSION` 2026.10.1). `docs/mvp.md` still lists the original content _targets_ (about 140 events, 15 prompts, 10 conditions); the game ships more.
+
+## 4. What the audit found
+
+These are the findings that change the plan. Each has an ID in the debt table (section 8).
+
+1. **Duplicate names (D-001).** Every relative's name is drawn independently from a list of 40 or more, with no check against the people already in the life. In 300 sampled lives, 164 (55%) had two living relatives with the same name at some point, and the player's own name was shared by someone in their life in over 1,500 year-ends. A screenshot from the first life played in the browser shows a friend, another friend and a spouse all named Meena. Event text refers to people by name, so this reads as a bug right away.
+2. **Choices barely register (D-002).** A default-course life credits 2.6% of what shaped it to choice (49% circumstance, 49% chance). Putting all three points in one area every year, over 400 lives, moves things by modest and uneven amounts: all-in Learn raises skills by about 10 points and the final income percentile by about 9; all-in Health adds about 1 year of life; all-in Rest adds about 4 happiness; all-in Belonging and all-in Earn add little that shows (all-in Earn against all-in Rest roughly halves unemployment and doubles savings at 45, but does not move the player's rank). Learn looks like a dominant strategy. The design says "choices shift the odds but never escape them", which is the right principle, but at present a player may not be able to _see_ the shift. That is the game's central promise.
+3. **The game never says what is authored (D-004).** `docs/design.md` records dozens of authored numbers (school shares, spending rates, focus effects, onset chances) and says none is shown as a published statistic. But the sources screen says "every value in the game keeps its source and year", and nothing tells the player that the model between the data points is ours. The excluded 74 countries skew to conflict and fragile states, which matters for "the real odds of birth today". `docs/mvp.md` set "every number shown has a source" as a definition of done.
+4. **Career and household stand still (D-003).** After the first job, work does not change. Marriage does not end. The person's money is two numbers. For a game about how a life unfolds, adulthood (about 50 of 73 years) is the thinnest part of the model, and the in-flight property and investing design lands on top of it.
+5. **Nothing is backed up (D-005).** Lives live in `localStorage` and IndexedDB only. There is no export.
+
+Smaller: 718 KB (215 KB gzipped) single JavaScript chunk including all strings; `src/ui/store.ts` (914 lines) mixes the store with about 450 lines of view derivations; the screen reader and non-Chromium gaps already tracked; PR #20 (dependabot) is open.
+
+## 5. Phases
+
+Phases are in dependency order and priority order together. A phase finishes before the next starts unless noted; work inside a phase may run in parallel threads. The M-numbers of `docs/roadmap.md` are kept in brackets.
+
+### Phase A: Release candidate (P0)
+
+- **Objective.** Make the existing MVP ready for people who are not Roman.
+- **Why.** The release gate in section 2 has four unmet conditions, and one of them (duplicate names) is visible in the first minute.
+- **Included.** [~] A11Y-002 screen reader pass (needs a person with NVDA or VoiceOver; the cloud cannot do it). [ ] CHAR-007 distinct names. [ ] WORLD-014 method note: what is data, what is authored, and the share of births in the excluded countries. [ ] A11Y-006 automated axe check (promoted from post-MVP: it is small and gives the screen reader pass a safety net). [ ] Roman's read of the authored text and decisions on the open items in `docs/design.md` section 7 (see "Open decisions"). [ ] Browser check on Firefox and Safari (an e2e project each, or a manual list). [ ] Merge or close PR #20.
+- **Dependencies.** None. UI-016 is separate and can land before or after.
+- **Technical work.** A names helper that picks from the list skipping names already in the life (a new draw from the `names` stream per relative would change replays, so decide whether to bump `CONTENT_VERSION` or use the existing roll with a deterministic skip). A "How this works" section on the sources screen with the authored assumptions listed from design 7. An excluded-births line computed in the pipeline report. `@axe-core/playwright` in the e2e suite.
+- **Player-facing outcome.** No repeated names, a page that explains the model, and a game the maintainers have actually read.
+- **Definition of done.** Section 2, conditions 4 to 7, all met; guard test for unique names among living relatives over a batch; the report states the excluded share of births.
+
+### Phase B: Agency and balance (P1)
+
+- **Objective.** Make a player's choices visible and make the plan worth thinking about.
+- **Why.** It is the game's central promise (D-002) and it gets more expensive to change once more systems read the plan.
+- **Included.** [ ] ADMIN-003 balance report (promoted, it is P1 already). [ ] ADMIN-005 agency probe: for a batch of lives, the effect of each focus area and of each decision's options on outcomes and on the chance/choice/circumstance shares. [ ] A balance pass using it: make Learn stop dominating, give Earn a visible return (rank, not only savings), let lifelong choices show on the summary. [ ] Check how the odds lens and the summary describe a plan that is only slightly better. [ ] Decide whether the default plan should remain a free pass (a player who never touches the plan gets a life that is nobody's choice).
+- **Dependencies.** Phase A's names fix is independent; the balance pass needs the calibration gate (life expectancy within 2 years) to stay green.
+- **Technical work.** A script like `scripts/calibrate.ts` that sweeps plans; changes to `FOCUS_EFFECT` and the money mix in `src/engine/money.ts`; recalibration; `CONTENT_VERSION` if events change. Writes go to design 7.
+- **Outcome.** A player can tell, from the summary and the odds lens, what their attention did.
+- **Done when.** The probe's numbers are in `docs/` and in CI, no single focus area is best in all measured outcomes, and a life played with a deliberate plan shows a clearly higher choice share than the default one (the target is Roman's call).
+
+### Phase C: First impression and keepsakes (P1 to P2)
+
+- **Objective.** A strong first minute, and lives that survive the browser.
+- **Included.** [~] UI-016 birth reveal (in progress in its own thread). [ ] SAVE-006 export and import (promoted from P2 to P1, D-005). [ ] UI-015 first-life hints. [ ] UI-013 motion, with UI-016's rules (no timers, reduced motion respected). [ ] SHARE-001 share text and SHARE-002 share image (P2, after the summary is final).
+- **Dependencies.** Phase A. SAVE-006 uses the save schema (SAVE-004).
+- **Technical work.** A JSON file with the save plus the seed and logs, validated on import by `readSave`; UI in settings and the past lives screen.
+- **Outcome.** A first minute that sets the tone, and a player who can keep or share a life.
+- **Done when.** An exported life imports on a clean browser and replays identically; the reveal passes its own rules.
+
+### Phase D: Adult life depth (P1 to P2)
+
+- **Objective.** Make the 50 adult years carry a story: work that changes, households that change, things that are owned.
+- **Why.** See finding 4. This is where the "lives diverge" experience is made or lost.
+- **Included (in order).** [ ] **TD-001 money model groundwork first** (section 8): decide the shape of assets and whether money stays in constant dollars. [ ] CAREER-005 career progression and job changes. [ ] REL-005 separation and divorce (with REL-007, domestic violence, written with extra care). [ ] MONEY-008 home ownership and the property, investing and inflation design now in progress (Roman chose "mirror of inequality", a Property tab and sales offered by the engine; inflation is open). [ ] FAM-006 inheritance (needs assets). [ ] CAREER-007 self-employment. [ ] EDU-006 adult learning, HEALTH-007 pregnancy risk, HEALTH-009 disability. [ ] Same-sex partners, if Roman decides yes (a new feature ID is needed).
+- **Dependencies.** Phase B (so new systems join a balanced model), TD-001, a `CONTENT_VERSION` bump and a save schema bump with a real migration for the money change (the first one).
+- **Technical work.** `Person.money` grows assets and liabilities; new effect types in `src/engine/effects.ts`; new streams (`assets`, `market`...); calibration for ownership rates where data exists (World Bank Findex and similar must be checked against `docs/analysis.md` 1.7 before use); store views split (TD-003) before a Property tab is added.
+- **Outcome.** Work, marriage and money change over a life, and two people from the same country can end up very differently for reasons the summary can name.
+- **Done when.** Per feature, its acceptance criteria; calibration gate still green; a v1 save migrates and loads (test).
+
+### Phase E: Zoom-in quarters (P2) [M8]
+
+- **Objective.** Crisis years play at quarter pace (TIME-003, SIM-008, DEC-007, TIME-005, EVENT-009, TIME-004).
+- **Why later.** The yearly loop is solid and calibrated, zoom is a large change to every system, and it does not fix any finding above. It is cheap to keep ready: the RNG streams already include the period.
+- **Rule until then.** A new yearly system must express its chances as yearly probabilities that can be converted (`1 - (1 - p)^(1/4)`), so that Phase D does not make Phase E harder.
+- **Done when.** Design 3.1.1's triggers Z1 to Z12 are tested and the yearly risk totals match the unzoomed year.
+
+### Phase F: World depth (P2) [rest of M9]
+
+- **Included.** [ ] WORLD-010 conflict data (UCDP), DEC-008 migration, MONEY-009 remittances, EDU-005 study abroad, HEALTH-008 addiction, HEALTH-010 epidemics, EVENT-008 regional events, CHAR-005 trait reveal, REL-006 mentor.
+- **Why later.** These need new data sources and the most careful writing. Migration changes which country's data a life lives under, so it must come after the money model and the save format have settled.
+
+### Phase G: Reflection, replay and tools (P2) [rest of M10]
+
+- **Included.** [ ] SUM-006 the other shore, SUM-007 the road not taken, SUM-008 life charts, RNG-006 play a given seed, SHARE-003 seed link, DEC-006 auto mode, ADMIN-002 event preview, ADMIN-004 debug mode, ANLT-002 your lives in numbers, FAM-008 family tree, WORLD-006, WORLD-013, A11Y-006 if not done.
+- **Why.** Replay is built (RNG-004), so these are views on top of it. The other shore and the road not taken are the best ways to show chance and choice, and they are strongest after Phase B.
+
+### Phase H: Later (P3) [M11]
+
+- [-] L10N-004 and L10N-005 (other languages), AUDIO-001 and AUDIO-002, WORLD-011 and WORLD-012 (other eras), ACH-001 and ACH-002, ANLT-003, BE-003, FAM-007, CHAR-006.
+- Revisit when Phase D is done. Anything needing a server (BE-003, ANLT-003) also needs a decision about the "no tracking, entirely in the browser" promise.
+
+## 6. Next up, in order
+
+1. [ ] Roman reviews this roadmap and answers the open decisions marked **blocks A**.
+2. [ ] CHAR-007 distinct names (engine, small, no UI change).
+3. [ ] WORLD-014 method note and excluded-births figure.
+4. [ ] A11Y-002 pass with a real screen reader (Roman or a volunteer), A11Y-006 axe.
+5. [ ] ADMIN-003 and ADMIN-005 (the probe), then the Phase B balance pass.
+6. [~] UI-016 birth reveal (other thread), and the property and investing design (other thread): see "Coordination" below.
+
+**Recommended single next step: CHAR-007, distinct names.** It is the smallest change, it fixes the most visible flaw, it needs nothing from anyone else, and it is a good first test of how a `CONTENT_VERSION` or replay-affecting change should be handled before the larger ones in Phases B and D.
+
+## 7. Completed work
+
+- [x] M1 Foundations ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)), M2 World data ([#7](https://github.com/roman-kravtsov/life-simulator/pull/7)), M3 A life that runs ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)), M4 Life systems ([#14](https://github.com/roman-kravtsov/life-simulator/pull/14)), M5 Events and decisions ([#15](https://github.com/roman-kravtsov/life-simulator/pull/15)), M6 Death, summary and saves ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)), M7 Playable game ([#19](https://github.com/roman-kravtsov/life-simulator/pull/19)). 107 of 108 MVP features done.
+- [x] Docs and setup: analysis (#2), design (#3), features, roadmap and MVP (#4), stat rename (#13), Ledger life screen (#17), agents and skills (#1, #8, #9, #10, #12, #18).
+
+**In progress.** [~] A11Y-002 (screen reader pass). [~] UI-016 birth reveal (own thread, not yet in `docs/features.md`). [~] Property and investing design (own thread, no feature IDs yet; MONEY-008 home ownership is the existing row).
+
+## 8. Technical debt and risks
+
+| ID     | Item                                                                           | Why it matters                                                                                                                                                                                                                                                                                                                                                                                                   | When             | Pri. |
+| ------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---- |
+| D-001  | Relatives' names are not unique (CHAR-007)                                     | Reads as a bug; event text names people                                                                                                                                                                                                                                                                                                                                                                          | Phase A          | P0   |
+| D-002  | Player choices barely change the outcome; Learn dominant                       | The central promise of the game                                                                                                                                                                                                                                                                                                                                                                                  | Phase B          | P1   |
+| D-003  | One job for life; marriage never ends; money is two numbers                    | Adulthood is the thinnest part of the model                                                                                                                                                                                                                                                                                                                                                                      | Phase D          | P1   |
+| D-004  | Authored assumptions are not disclosed in the game; excluded births not stated | Honesty of "real odds"                                                                                                                                                                                                                                                                                                                                                                                           | Phase A          | P0   |
+| D-005  | No export; local storage only                                                  | One cleared cache loses every life                                                                                                                                                                                                                                                                                                                                                                               | Phase C          | P1   |
+| TD-001 | **Money model shape and units**                                                | Property, investing, inheritance and inflation all depend on it. Money is constant 2021 PPP dollars today. Recommendation: keep constant dollars and model real returns, since nominal prices would need an inflation series per country (more data, more authored numbers) for little player value. Decide before the property design is built. Expensive to postpone: every later system reads `person.money`. | Before D         | P1   |
+| TD-002 | `MIGRATIONS` is empty; the first real schema change has not been rehearsed     | A bad first migration can lose saved lives. Do it with a test fixture of a v1 save before Phase D.                                                                                                                                                                                                                                                                                                               | Before D         | P1   |
+| TD-003 | `src/ui/store.ts` is 914 lines: store plus about 450 lines of view derivations | A Property tab and a Phase D money view would grow it further. Move the `lifeOverview`, `countryFacts`, `birthSummary` family to a views module. No behaviour change.                                                                                                                                                                                                                                            | Before D         | P2   |
+| TD-004 | New yearly systems must stay quarter-convertible                               | Avoids rework in Phase E                                                                                                                                                                                                                                                                                                                                                                                         | Phase D          | P2   |
+| TD-005 | Single 718 KB JavaScript chunk, all event text included                        | Fine on broadband, slow on the phones the game is about. Split the content and strings by life stage or load on demand when it is next touched.                                                                                                                                                                                                                                                                  | Phase C or later | P3   |
+| TD-006 | Unit tests take about 4 minutes                                                | CI and local cycle time; mostly calibration batches. Tag the heavy ones and keep them in CI only if it starts to hurt.                                                                                                                                                                                                                                                                                           | When it hurts    | P3   |
+| TD-007 | Only Chromium is tested                                                        | Phase A browser check                                                                                                                                                                                                                                                                                                                                                                                            | Phase A          | P1   |
+| TD-008 | Known `note.tfr` plural wording bug (M7 notes)                                 | Small text defect; also a warning about English-only grammar in strings if L10N-004 ever starts                                                                                                                                                                                                                                                                                                                  | Phase A          | P3   |
+| TD-009 | Authored numbers are spread across engine files                                | Phase B needs one place to see and tune them. Consider a single `tuning` module when ADMIN-005 is built.                                                                                                                                                                                                                                                                                                         | Phase B          | P2   |
+
+## 9. Backlog and deferred ideas
+
+**Backlog.** Everything in `docs/features.md` with status `not started`, grouped into Phases C to H above (57 features, with ADMIN-005).
+
+**Deferred, and why they look attractive but should not start yet.**
+
+- [-] **Zoom-in quarters (SIM-008).** Big and spreads into every system; no audit finding depends on it.
+- [-] **Property and investing before TD-001 and Phase B.** The design can go on, the build should wait for the money model decision, the migration rehearsal and a balanced base.
+- [-] **Migration (DEC-008).** Data-heavy and it changes the data a life runs under.
+- [-] **Second language, audio, other eras, shared memorials, opt-in statistics.** Each is large; none fixes the loop; the last two break "no server, no tracking" and need their own decision.
+- [-] **Auto mode (DEC-006) as a player feature.** The harness already has a default-course player. As a feature it only matters once agency (Phase B) is worth showing off.
+- [-] **Achievements and portraits.** They pull toward scores, which the tone rules out.
+- [-] **More events for their own sake.** There are 167, enough for few repeats. Add content when a phase needs it, not to grow the number.
+
+## 10. Open decisions for Roman
+
+Decisions marked **blocks A** stop Phase A. The others are collected from `docs/design.md` section 7.
+
+- [ ] **Blocks A.** Read the authored text (23 reflection prompts, 13 closing passages, the shaping sentences, the "A pause" eyebrow) and the 167 events; accept or send back notes.
+- [ ] **Blocks A.** Disclosure wording: how much of the authored model to show, and where (WORLD-014).
+- [ ] **Blocks A.** Same-sex partners: yes in the MVP, later, or never? It affects names, grief text, arranged marriages and the partner model.
+- [ ] Default pace: "quiet years" on, to confirm.
+- [ ] Browser Back button: leave the site (now), or step through the game's screens (needs a router or history handling).
+- [ ] Text size: accept that at the larger sizes the side columns may scroll in a short window, or make the narrow layout follow the setting.
+- [ ] Country help lines: ship only the international directory, or supply verified lines per country.
+- [ ] Authored numbers (the "authored" list in design 7): accept as is, or rank which to validate against data first.
+- [ ] Money units (TD-001): constant dollars with real returns (recommended), or nominal with inflation.
+- [ ] Whether the MVP release gate in section 2 replaces "all M1 to M7 features done" as the definition.
+- [ ] Phase order: D before E (recommended) as against the original M8 before M9.
+
+## 11. Coordination with work in other threads
+
+- **UI-016 birth reveal.** Needs a row in `docs/features.md` (the next free UI ID is UI-016 and the thread's own prompt says to add it). It touches `StartScreen`, `App` and `store.ts`, so it will conflict with TD-003 if both run at once: do TD-003 after it merges.
+- **Property and investing.** Extend MONEY-008 (home ownership, `post-MVP`, M, P2) rather than inventing a parallel feature; add new IDs in MONEY for investing and sales only when the design is final. It should read Phase D's order and TD-001 and TD-002 before the build. It also adds a tab to the life screen, which must still fit a 640 px window (`CLAUDE.md`).
+- **Docs split (the AI setup review).** If `docs/features.md` is split by category, this file only needs its references updated; it keeps no per-feature status for that reason.
+
+## 12. Keeping this file current
+
+`CLAUDE.md` ("Keeping the roadmap current") is the rule. In short: when a PR finishes, starts or drops work, changes the MVP scope or a priority, or settles a decision, the same PR updates this file (status markers, "Next up", "Open decisions", the change log). Before substantial work, read this file and check it against the code; if they disagree, fix the file in the same PR and say so in the change log. Feature statuses stay in `docs/features.md`; design decisions go in `docs/design.md` section 7 and are linked here.
+
+For a significant scope change, add a change-log line with: what changed, why, what it replaces or affects, and what follows for the phases.
+
+## 13. Change log
+
+| Date       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-26 | First version. Audited `main` at `263f66d`. Declared the MVP built but not yet released and added a release gate. Grouped M8 to M11 into Phases C to H, moved forward SAVE-006, A11Y-006 and ADMIN-003, and added CHAR-007, WORLD-014 and ADMIN-005 to `docs/features.md`. Proposed Phase D before the zoom-in quarters. Replaces the use of `docs/roadmap.md` as the plan, which stays as the milestone map. All of it is a proposal until Roman answers the open decisions. |
+
+---
+
+## Audit evidence
+
+Everything here was run on 2026-10-26 against `main` at `263f66d`, so a later audit can compare.
+
+- `npm run lint`, `typecheck`: clean. `npm test`: 66 files, 2127 tests passed in 231 s. `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run e2e`: 29 passed, 3 skipped by project (phone-only or desktop-only tests).
+- Deploy workflow, run 15 on `main`: success. The live site could not be fetched from the cloud sandbox (the proxy blocks `github.io`), so it was not loaded from outside.
+- Source: `src/` 145 files, `src/engine` about 6,200 lines, `src/ui` about 4,500, tests about 14,700. No `TODO`, `FIXME` or stub.
+- Content counts from the code: 167 events (35 with choices), 23 reflection prompts, 14 conditions, 163 countries (127.0 million births a year across them).
+- 800 default-course lives over 163 countries: average death at 73.0, 109 events a life (quiet ones included), 14 decisions a life, mean happiness 59.
+- Plan sweep, 400 lives for each of six plans (default and all-in on each area), then 375 lives to age 45 for Earn against Rest: the numbers in finding 2.
+- 300 lives for the chance/choice/circumstance shares (0.49, 0.03, 0.49) and for names (164 had a repeated name among living relatives).
+- Browser run at 400 px and 1440 px: start, birth, about 40 years of play: no console errors.
+- The headless scripts were throwaway and are not in the repo; ADMIN-003 and ADMIN-005 would make them permanent.
