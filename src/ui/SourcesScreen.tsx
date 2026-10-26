@@ -3,7 +3,8 @@ import { loadIndex } from "../data";
 import type { CountryIndex } from "../engine/world/types";
 import { countryName, formatDate, formatNumber } from "../format";
 import { t } from "../i18n";
-import { Header } from "./Header";
+import { Page } from "./Page";
+import { SiteHeader } from "./SiteHeader";
 import { Button } from "./kit";
 import styles from "./SourcesScreen.module.css";
 import { useFocusOn } from "./useFocusOn";
@@ -39,8 +40,7 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
   }
 
   return (
-    <section>
-      <Header />
+    <Page header={<SiteHeader />}>
       <h1 ref={heading} tabIndex={-1}>
         {t("sources.title")}
       </h1>
@@ -56,7 +56,7 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
       )}
       {state.status === "ready" && <SourceList index={state.index} />}
       <Button onPress={onBack}>{t("sources.back")}</Button>
-    </section>
+    </Page>
   );
 }
 

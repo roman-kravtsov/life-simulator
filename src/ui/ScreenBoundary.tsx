@@ -2,7 +2,8 @@
 // has, a record from an older one). This catches that and says so calmly, with a way back, rather than blanking the app.
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { t } from "../i18n";
-import { Header } from "./Header";
+import { Page } from "./Page";
+import { SiteHeader } from "./SiteHeader";
 import { Button } from "./kit";
 import { useFocusOn } from "./useFocusOn";
 
@@ -14,8 +15,7 @@ interface Props {
 function CouldNotShow({ onBack }: { onBack: () => void }) {
   const heading = useFocusOn<HTMLHeadingElement>();
   return (
-    <section>
-      <Header />
+    <Page header={<SiteHeader />}>
       <h1 ref={heading} tabIndex={-1}>
         {t("app.error.title")}
       </h1>
@@ -23,7 +23,7 @@ function CouldNotShow({ onBack }: { onBack: () => void }) {
       <Button variant="primary" onPress={onBack}>
         {t("life.backToStart")}
       </Button>
-    </section>
+    </Page>
   );
 }
 

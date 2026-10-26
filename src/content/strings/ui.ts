@@ -55,6 +55,29 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "settings.pace": "Skip quiet years",
   "settings.pace.about": "Years with nothing to decide or tell pass in one step.",
 
+  // The settings screen and how the page looks (UI-009, UI-011, A11Y-004, A11Y-005).
+  "settingsScreen.title": "Settings",
+  "settingsScreen.play.about":
+    "For the lives you begin from now. A life in progress keeps its own, which you can change from its Settings button.",
+  "settingsScreen.stored": "What is stored on this device",
+  "settingsScreen.stored.about":
+    "Your lives and these settings are kept in this browser only. Nothing is tracked or sent anywhere.",
+  "settingsScreen.back": "Back",
+  "display.heading": "How it looks",
+  "display.theme": "Theme",
+  "display.theme.about": "System follows the light or dark setting of this device.",
+  "display.theme.system": "System",
+  "display.theme.light": "Light",
+  "display.theme.dark": "Dark",
+  "display.textSize": "Text size",
+  "display.textSize.about": "On top of the text size set in your browser.",
+  "display.textSize.default": "Default",
+  "display.textSize.large": "Larger",
+  "display.textSize.larger": "Largest",
+  "display.motion": "Reduce motion",
+  "display.motion.about":
+    "Holds back movement, such as the growth rings drawing themselves. Until you change it, it follows this device.",
+
   // Help (UI-012).
   "help.talk": "Need to talk?",
   "help.newTab": "Free helplines directory. Opens in a new tab.",
@@ -118,7 +141,6 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "life.journal": "Journal",
   "life.settings": "Settings",
   "life.settings.close": "Close",
-  "life.settings.theme": "Light or dark",
   "life.who.line": "Age {age} \u00b7 {where}",
   "life.strip.birth": "Birth",
   "life.strip.end": "about {age}",
@@ -159,7 +181,38 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "country.income": "Each person in a middle household, a day (international dollars)",
   "country.source": "{source}, {year}",
   "country.none": "The game has no measured figures for this country to show here.",
-  "notes.placeholder": "Your notes will gather here when reflection prompts arrive.",
+
+  // The stats that moved over the step just taken, said to a screen reader in the story's live region (A11Y-002).
+  "life.statChange.rose.one": "{stat} rose by {count}.",
+  "life.statChange.rose.other": "{stat} rose by {count}.",
+  "life.statChange.fell.one": "{stat} fell by {count}.",
+  "life.statChange.fell.other": "{stat} fell by {count}.",
+
+  // A large family in the Family tab: the rest are one press away (UI-004).
+  "family.more.one": "And {count} more person",
+  "family.more.other": "And {count} more people",
+  "family.all.title": "Everyone in your life",
+  "family.all.close": "Close",
+
+  // Reflection prompts and the journal (UI-007, SUM-005). Always optional: nothing here asks for an answer.
+  "reflection.heading": "A pause",
+  "journal.left.one": "{count} character left",
+  "journal.left.other": "{count} characters left",
+  "journal.limit": "No characters left",
+  "journal.save": "Save",
+  "journal.saved": "Your line is saved.",
+  "journal.removed": "Your line was removed.",
+  "journal.empty": "There is nothing to save.",
+  "journal.age": "At {age}",
+  "notes.own": "A line for this year",
+  "notes.latest": "Latest lines",
+  "notes.none": "Nothing written yet.",
+  "notes.all.one": "Read the line in full",
+  "notes.all.other": "All {count} lines",
+  "notes.dialog.title": "Your journal",
+  "notes.dialog.close": "Close",
+  "summary.notes.heading": "Your notes",
+  "birth.back": "Back",
 
   // When a screen cannot be shown (for example a saved life that names text this version no longer has).
   "app.error.title": "Something went wrong",

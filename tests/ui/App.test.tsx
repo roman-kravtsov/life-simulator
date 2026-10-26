@@ -67,7 +67,7 @@ describe("App", () => {
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading).toHaveTextContent(/You are born in /);
     expect(heading).toHaveFocus();
-    expect(screen.getByText(/Your household is among the .* tenth of households/)).toBeInTheDocument();
+    expect(screen.getByText(/Of all the households in .*, yours is in the .*tenth/)).toBeInTheDocument();
     expect(screen.getByText(/Your mother, .*, is \d+\. Your father, .*, is \d+\./)).toBeInTheDocument();
     expect(screen.getByText(/You are .*, a (girl|boy)\./)).toBeInTheDocument();
     expect(screen.getByText(/^Life test-seed$/)).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("App", () => {
     const status = screen.getByRole("status");
     await nextYear(user);
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent(/This year/);
+    expect(status).toHaveTextContent(/You turn \d+\.|A new chapter begins|A decision is waiting\./);
   });
 
   it("tells each year's events or says it was quiet", async () => {
@@ -146,9 +146,10 @@ describe("App", () => {
     await startLife(user);
     for (let i = 0; i < 6 && store.getSnapshot().life?.person.alive; i++) {
       await nextYear(user);
-      const status = screen.getByRole("status");
-      const quiet = within(status).queryByText("A quiet year.");
-      const items = within(status).queryAllByRole("listitem");
+      // The year as the story shows it (the live region says the same in plain lines).
+      const story = within(screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!);
+      const quiet = story.queryByText("A quiet year.");
+      const items = story.queryAllByRole("listitem");
       expect(Boolean(quiet) !== items.length > 0).toBe(true);
     }
   });
@@ -176,13 +177,14 @@ describe("App", () => {
   it("lets the life screen use the whole window and every other screen keep the reading width (UI-010)", async () => {
     const { user } = setup();
     const content = () => document.getElementById("content")!;
-    expect(content()).not.toHaveAttribute("data-layout");
+    expect(content()).toHaveAttribute("data-layout", "reading");
     await begin(user);
-    expect(content()).not.toHaveAttribute("data-layout");
+    expect(content()).toHaveAttribute("data-layout", "reading");
     await user.click(screen.getByRole("button", { name: "Begin this life" }));
     expect(content()).toHaveAttribute("data-layout", "wide");
+    expect(content()).toBe(screen.getByRole("main"));
     await backToStart(user);
-    expect(content()).not.toHaveAttribute("data-layout");
+    expect(content()).toHaveAttribute("data-layout", "reading");
   });
 
   it("offers a skip link to the main content", () => {

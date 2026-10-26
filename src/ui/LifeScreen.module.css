@@ -1,13 +1,5 @@
-.screen {
-  /* The header is a fixed height in the wide layout, so the side columns can sit exactly below it. */
-  --life-header-height: 5.5rem;
-  /* A share of the window as well as rems, so large text or a small window leaves the story room. */
-  --life-side-width: min(18rem, 28vw);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
+/* The header's height and the side columns' width are tokens in src/styles.css (--life-header-height,
+   --life-side-width), because the header is outside the main. */
 
 /* The page scrolls as one. The story is first in the page; grid puts the columns side by side. */
 .columns {
@@ -75,4 +67,12 @@
 
 .events li {
   margin-bottom: 0.5rem;
+}
+
+/* The reflection prompt after the year: set apart by a rule, calm, and at the reading measure. */
+.pause {
+  margin: 1rem 0 0.5rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
 }

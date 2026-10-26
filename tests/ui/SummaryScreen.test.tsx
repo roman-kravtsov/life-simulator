@@ -560,3 +560,47 @@ describe("DEATH-004: the epitaph", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
   });
 });
+
+describe("SUM-005: the notes", () => {
+  const journal = [
+    { age: 6, prompt: "school.start", text: "Friends, I hope." },
+    { age: 30, text: "A good year." },
+    { age: 41, prompt: "no.longer.a.prompt", text: "Kept anyway." },
+  ];
+
+  it("lists the journal in the order of the years, with the prompt a line answered above it", () => {
+    render(<SummaryScreen {...props(view({ journal }))} />);
+    const section = within(screen.getByRole("region", { name: "Your notes" }));
+    const items = section.getAllByRole("listitem");
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent("At 6");
+    expect(items[0]).toHaveTextContent(en["reflection.school.start"]!);
+    expect(items[0]).toHaveTextContent("Friends, I hope.");
+    expect(items[1]).toHaveTextContent(/^At 30\s*A good year\.$/);
+    // A prompt this version no longer has is left out; the line itself stays.
+    expect(items[2]).toHaveTextContent(/^At 41\s*Kept anyway\.$/);
+  });
+
+  it("comes before the epitaph, which keeps its place and behaviour", () => {
+    render(<SummaryScreen {...props(view({ journal, epitaph: "Kept bees." }))} />);
+    const notes = screen.getByRole("heading", { name: "Your notes" });
+    const epitaph = screen.getByRole("heading", { name: "A few words" });
+    expect(notes.compareDocumentPosition(epitaph) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText("Kept bees.").tagName).toBe("BLOCKQUOTE");
+  });
+
+  it("is left out when nothing was written, and for an archived summary kept before there was a journal", () => {
+    const { rerender } = render(<SummaryScreen {...props(view({ journal: [] }))} />);
+    expect(screen.queryByRole("heading", { name: "Your notes" })).not.toBeInTheDocument();
+    const old = { ...base } as Partial<LifeSummary>;
+    delete old.journal;
+    rerender(<SummaryScreen {...props({ summary: old as LifeSummary, lastYear: [], archived: true })} />);
+    expect(screen.queryByRole("heading", { name: "Your notes" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(base.name);
+  });
+
+  it("is shown for a past life opened from the archive", () => {
+    render(<SummaryScreen {...props(view({ journal }, [], true))} />);
+    expect(within(screen.getByRole("region", { name: "Your notes" })).getAllByRole("listitem")).toHaveLength(3);
+  });
+});

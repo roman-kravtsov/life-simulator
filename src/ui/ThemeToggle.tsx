@@ -1,6 +1,6 @@
 import { t } from "../i18n";
 import { Button } from "./kit";
-import { toggleTheme } from "./theme";
+import { toggleTheme } from "./display";
 
 export function ThemeToggle() {
   return (

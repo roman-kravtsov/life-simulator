@@ -67,6 +67,15 @@ describe("SAVE-002: continuing a life from the start screen", () => {
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   });
 
+  it("is offered after going back from the birth screen, where the life is already saved", async () => {
+    const { user } = open(fakePersistence());
+    await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await screen.findByRole("button", { name: "Begin this life" });
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Birthright");
+    expect(screen.getByRole("region", { name: "Continue your life" })).toBeInTheDocument();
+  });
+
   it("is reached by keyboard before the button that begins a new life", async () => {
     const { fake } = await savedAfter(2);
     const { user } = open(fake);
@@ -221,6 +230,26 @@ describe("SAVE-003, SAVE-007: the past lives", () => {
     expect(items[0]).toHaveTextContent("Walked far.");
     expect(items[0]).toHaveTextContent(/Finished October 2[0-9], 2026/);
     expect(items[1]).not.toHaveTextContent("Walked far.");
+  });
+
+  it("shows each life's growth rings as a small picture that a screen reader skips (UI-008)", async () => {
+    const [older, newer] = lives();
+    await openPast(fakePersistence({ status: "none" }, [older!, newer!]));
+    const items = await screen.findAllByRole("listitem");
+    for (const [item, life] of [
+      [items[0]!, newer!],
+      [items[1]!, older!],
+    ] as const) {
+      const pictures = item.querySelectorAll("svg");
+      expect(pictures).toHaveLength(1);
+      expect(pictures[0]).toHaveAttribute("aria-hidden", "true");
+      // One circle a ring, the oldest innermost.
+      expect(pictures[0]!.querySelectorAll("circle")).toHaveLength(life.summary.rings.length);
+      expect(life.summary.rings.length).toBeGreaterThan(0);
+      // The picture comes before the name, and the name stays the item's heading.
+      const name = within(item).getByRole("heading", { level: 2 });
+      expect(pictures[0]!.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
   });
 
   it("opens a life as its summary, and Past lives leads back to the list", async () => {

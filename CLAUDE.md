@@ -35,6 +35,7 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   partnership.ts    marriage-age model, courtship, arranged marriage under 18, fertility
   death.ts          the death record, cause groups, closing passage keys and the comparison with life expectancy (DEATH-001 to 003)
   summary.ts, rings.ts   the finished life as data: facts, growth rings and their themes, key moments, chance/choice/circumstance shares
+  reflection.ts     reflection prompts (a pure function of the years lived, from content/reflections.ts) and the journal lines (UI-007)
   save.ts, replay.ts   the save file, schema migrations, restoring a life (snapshot, or replay from seed and logs), replay (RNG-004)
   validate.ts       content validation (ADMIN-001): validateEvents, validateConditions, run over what ships in the tests
   calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
@@ -43,29 +44,33 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
   world/            country schema (types.ts), validator, birth draw, data loader
-src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/death.ts, strings/summary.ts, strings/events/*.ts and strings/ui.ts),
+src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/death.ts, strings/summary.ts, strings/reflection.ts, strings/events/*.ts and strings/ui.ts),
                     version.ts (CONTENT_VERSION, saved with every life),
-                    events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region)
+                    events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region),
+                    reflections.ts (the reflection prompts and what triggers each)
 src/data.ts         loads the baked country files in the browser (fetch), outside the engine
 src/save/           browser storage outside the engine: current.ts (the life in progress, localStorage `birthright:current`), archive.ts (finished lives, IndexedDB via idb),
                     index.ts (the Persistence interface the store uses, browserPersistence, noPersistence)
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
-  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, choose, setSettings, toggleUsPrices, plus resume, epitaph and past lives);
+  store.ts          holds engine state and the loaded country, exposes actions (begin, startLife, continueYear, choose, setSettings, toggleUsPrices, writeJournal, openSettings, plus resume, epitaph and past lives);
                     autosaves after every turn and archives a life when it ends;
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
+  Page.tsx          the shell every screen renders through: the header outside `<main id="content">`, `data-layout` reading or wide; SiteHeader.tsx is the header of every screen but the life screen
+  SettingsScreen.tsx, DisplaySettings.tsx, DeleteAllData.tsx   the settings screen (UI-009); display.ts keeps theme, text size and reduced motion on `<html>` (`birthright:theme`, `birthright:text-size`, `birthright:motion`), outside any save
   LifeScreen.tsx    the life screen (UI-004, UI-010), composed of LifeHeader.tsx (sticky header, strip, settings dialog, Continue), Ledger.tsx (the years) with PlanWidget.tsx (the plan tray),
-                    YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
+                    Journal.tsx (the reflection prompt, the Notes tab and the notes on the summary), YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
                     useNarrow.ts (matchMedia: below 900 px one column and a bar of tabs); the store derives lifeStrip, lifeRings, statBand, countryFacts
-  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs)
-src/styles.css      design tokens (light and dark) and shared base styles
+  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs, RadioGroup)
+src/styles.css      design tokens (light and dark), shared base styles, and the one global rule set for reduced motion and text size
+index.html          mounts the app on `<div id="root">` (the page owns its own `<main>`)
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
 .github/            CI and deploy workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
-e2e/                Playwright: full-loop tests at phone and desktop widths
+e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001)
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
@@ -104,6 +109,7 @@ Read these docs before starting work:
 - **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `siblings`, `siblings:birth`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `care`, `friends`, `romance`, `fertility`, `outcomes`, `mortality`, `cause`, `autoplay`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
 - **Events and decisions are content** (`src/content/events/<stage>.ts`, strings in `src/content/strings/events/`). `tests/engine/validate.test.ts` runs `validateEvents` over everything that ships: text, soft text, note, choice, outcome, lens and lock keys must exist, outcome probabilities must sum to 1, a choice with several outcomes needs a lens phrase for each, severe and difficult events need a `helpTopic` and a `softText`, `world` paths must resolve, and roles, follow-ups and illness ids must exist. A repeatable notable event needs `cooldownYears` of at least 6 unless it is `quiet` or `once` (`tests/engine/content.test.ts`, which also holds the size and pacing targets). Text may only name the event's roles (`{friend}`). One decision a year at most; the odds lens reads the engine's own probabilities, never a separate number.
 - **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, the share out of work, marriage ages, children per woman, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
+- **Reduced motion is one global rule set in `src/styles.css`** (the system's `prefers-reduced-motion` and the player's setting); a component or module must not write its own `prefers-reduced-motion` query (`tests/ui/styles.test.ts`). Colours must pass WCAG AA (`tests/ui/contrast.test.ts` reads every colour a style sheet sets for text).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
 - **Bump `CONTENT_VERSION`** (`src/content/version.ts`) when a change to events or conditions could make a logged life play differently; a test pins a fingerprint of the catalog and fails until you do. A new `LifeState` or `SaveFile` field needs `readSave`/`MIGRATIONS` thought: a save of the old shape must still load (a test pins the shape of `LifeState` and `SaveFile` and fails until you update it).
 - **Browser storage:** every localStorage key starts with `birthright:` (a guard test), so "delete all local data" can find it. Storage can be missing or full: never let a read or write throw into the UI.
@@ -116,7 +122,7 @@ Read these docs before starting work:
 - **Sensitive content** (death, suicide, violence) is never graphic, always tagged with a sensitivity level, and followed by help resources where relevant. Suicide is never a player choice.
 - **No tracking, analytics or third-party requests** (fonts included). A guard test checks for common trackers.
 - **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow `.claude/skills/vercel-react-best-practices`, a client-only subset trimmed for this SPA: read its `SKILL.md` index and open only the rule files you need, never the whole `rules/` folder.
-- **The life screen scrolls as one page, and its side columns are sticky and must fit a window 640 px tall** (and 600 px) without scrolling in every tab; `e2e/loop.spec.ts` checks this. Keep panels to short lines. The narrow layout (below 900 px) is one column with a bar of tabs; the smallest phone is about 390 px, so test at about 400 px; 360 px is not supported.
+- **The life screen scrolls as one page, and its side columns are sticky and must fit a window 640 px tall** (and 600 px) without scrolling in every tab; `e2e/loop.spec.ts` checks this at the default text size (at the larger text sizes a panel may scroll inside itself, design 7). Keep panels to short lines. The narrow layout (below 900 px) is one column with a bar of tabs; the smallest phone is about 390 px, so test at about 400 px; 360 px is not supported.
 - **Accessibility is part of done:** keyboard play, visible focus, labelled controls, announcements for new events, colour never the only signal, reduced motion respected.
 - Match the surrounding code: naming, comment density and idiom.
 

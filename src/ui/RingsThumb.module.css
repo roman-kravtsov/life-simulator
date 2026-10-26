@@ -5,10 +5,10 @@
   flex: none;
 }
 
-/* A thin line of paper between rings, so neighbours never merge. */
+/* A thin line of paper between rings, so neighbours never merge; thinner for a long life (RingsThumb sets it). */
 .ring {
   stroke: var(--paper-raised);
-  stroke-width: 1;
+  stroke-width: var(--ring-line, 1);
 }
 
 .seed {

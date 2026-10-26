@@ -4,10 +4,10 @@
 import type { ReactNode } from "react";
 import type { HelpTopic, Relationship, Sex } from "../engine/types";
 import type { Country, CountryIndex } from "../engine/world/types";
-import { capitalise, countryName, formatMoney, formatPercent, pluralKey } from "../format";
+import { capitalise, countryName, formatMoney, formatNumber, formatPercent, pluralKey } from "../format";
 import { t } from "../i18n";
 import { HelpNote } from "./HelpNote";
-import { Switch } from "./kit";
+import { Button, Dialog, Switch } from "./kit";
 import styles from "./LifePanels.module.css";
 import {
   closenessBand,
@@ -117,14 +117,16 @@ export function MoneyPanel({ money, showUsPrices, onToggleUsPrices }: MoneyPanel
         )}
         {holdings && !hasHoldings && <Fact label={t("money.field.holdings")}>{t("money.none")}</Fact>}
       </dl>
-      <Switch isSelected={showUsPrices} onChange={() => onToggleUsPrices()}>
-        {t("money.usSwitch")}
-      </Switch>
+      {/* The lines come before the switch, the panel's only control, so a keyboard player who reaches it has passed
+          them all, even when large text makes the panel scroll. */}
+      <p className={`small ${styles.note}`}>{t("money.note", { year: money.year })}</p>
       {/* Always present, so a screen reader hears the text arrive when the switch is turned on. */}
       <p className={`small ${styles.note}`} aria-live="polite">
         {showUsPrices && t("money.usComparison")}
       </p>
-      <p className={`small ${styles.note}`}>{t("money.note", { year: money.year })}</p>
+      <Switch isSelected={showUsPrices} onChange={() => onToggleUsPrices()}>
+        {t("money.usSwitch")}
+      </Switch>
     </>
   );
 }
@@ -199,24 +201,72 @@ function siblingsHeading(siblings: readonly Relationship[]): string {
   return t(siblings.length === 0 ? "family.siblings.none" : "family.siblings.noneLiving");
 }
 
-/** Parents, brothers and sisters, and the others in the life (REL-001, FAM-002). */
-export function FamilyPanel({ family }: { family: FamilySummary }) {
+/** Most people the Family tab lists, so the tab fits a short window however large the family (UI-004). */
+const FAMILY_SHOWN = 8;
+
+/** The people the tab has room for when there are too many: the living first, then in the order of the groups. */
+function shownOf({ parents, siblings, others }: FamilySummary): Set<Relationship> | null {
+  const everyone = [...parents, ...siblings, ...others];
+  if (everyone.length <= FAMILY_SHOWN) return null;
+  const living = everyone.filter((r) => r.alive);
+  const dead = everyone.filter((r) => !r.alive);
+  return new Set([...living, ...dead].slice(0, FAMILY_SHOWN));
+}
+
+interface GroupsProps {
+  family: FamilySummary;
+  /** Only these people, in their groups; everyone when absent. */
+  shown?: Set<Relationship> | null;
+}
+
+/**
+ * The groups, each with its heading (h3, in the tab and under the dialog's h2 title), even when none of its people has
+ * room; the siblings heading counts them all.
+ */
+function FamilyGroups({ family, shown }: GroupsProps) {
   const { parents, siblings, others } = family;
+  const only = (people: readonly Relationship[]) => (shown ? people.filter((r) => shown.has(r)) : people);
   return (
     <>
       {parents.length > 0 && (
         <>
           <h3 className={styles.group}>{t("family.parents")}</h3>
-          <RelativeList relatives={parents} />
+          <RelativeList relatives={only(parents)} />
         </>
       )}
       <h3 className={styles.group}>{siblingsHeading(siblings)}</h3>
-      <RelativeList relatives={siblings} />
+      <RelativeList relatives={only(siblings)} />
       {others.length > 0 && (
         <>
           <h3 className={styles.group}>{t("family.others")}</h3>
-          <RelativeList relatives={others} />
+          <RelativeList relatives={only(others)} />
         </>
+      )}
+    </>
+  );
+}
+
+/**
+ * Parents, brothers and sisters, and the others in the life (REL-001, FAM-002). A large family shows eight people
+ * and a button that opens everyone in a dialog, so the tab never has to scroll.
+ */
+export function FamilyPanel({ family }: { family: FamilySummary }) {
+  const shown = shownOf(family);
+  const total = family.parents.length + family.siblings.length + family.others.length;
+  const hidden = shown ? total - shown.size : 0;
+  return (
+    <>
+      <FamilyGroups family={family} shown={shown} />
+      {hidden > 0 && (
+        <div className={styles.more}>
+          <Dialog
+            title={t("family.all.title")}
+            closeLabel={t("family.all.close")}
+            trigger={<Button>{t(pluralKey("family.more", hidden), { count: formatNumber(hidden) })}</Button>}
+          >
+            <FamilyGroups family={family} />
+          </Dialog>
+        </div>
       )}
     </>
   );

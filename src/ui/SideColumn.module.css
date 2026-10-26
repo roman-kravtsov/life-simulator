@@ -109,27 +109,11 @@
 }
 
 /* The panel takes the height that is left, so switching tabs never moves anything. */
+/* Smooth scrolling is held back with the rest of the page's motion (src/styles.css). */
 .panel {
   flex: 1 1 0;
   min-height: 0;
   padding-top: 0.6rem;
   overflow-y: auto;
-}
-
-.notes {
-  margin: 0;
-  padding: 0.5rem;
-  outline: none;
-}
-
-/* Inside the box: the panel scrolls, so a ring drawn outside the text would be cut off. */
-.notes:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: -3px;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .panel {
-    scroll-behavior: smooth;
-  }
+  scroll-behavior: smooth;
 }

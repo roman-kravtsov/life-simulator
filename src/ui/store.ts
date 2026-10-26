@@ -9,10 +9,12 @@ import { lifeExpectancy } from "../engine/mortality";
 import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
 import { buildRings, RING_THEMES, type Ring } from "../engine/rings";
 import { isSnapshotOf, readSave, restoreLife, toSave, type SaveFile } from "../engine/save";
+import { JOURNAL_MAX_LENGTH, journalLine, reflectionPrompt, withJournalEntry } from "../engine/reflection";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
 import { keyMoments, summarize, type LifeSummary } from "../engine/summary";
 import { conditionCatalog } from "../content/healthConditions";
+import { reflections } from "../content/reflections";
 import { CONTENT_VERSION } from "../content/version";
 import {
   DEFAULT_SETTINGS,
@@ -27,6 +29,7 @@ import {
   type Sector,
   type Settings,
   type Sex,
+  type StatId,
   type YearRecord,
 } from "../engine/types";
 import { drawBirthCountry } from "../engine/world/birth";
@@ -35,9 +38,15 @@ import { incomeBand, type IncomeBand } from "../format";
 import { noPersistence, type PastLife, type PastLifeListing, type Persistence } from "../save";
 
 // Screens read these through the store, so they never import the engine for a value.
-export { EPITAPH_MAX_LENGTH, RING_THEMES };
+export { EPITAPH_MAX_LENGTH, JOURNAL_MAX_LENGTH, RING_THEMES };
 
-export type Screen = "start" | "birth" | "life" | "sources" | "summary" | "past";
+/**
+ * The string key of a reflection prompt's words, for a journal line that answered it (UI-007, SUM-005); undefined
+ * when this version no longer has that prompt, so the line is shown without it.
+ */
+export const promptTextKey = (id: string): string | undefined => reflections.find((def) => def.id === id)?.text;
+
+export type Screen = "start" | "birth" | "life" | "sources" | "summary" | "past" | "settings";
 
 export type LoadStatus = "idle" | "loading" | "error";
 
@@ -59,6 +68,10 @@ export interface GameSnapshot {
   plan: PlanOverview | null;
   /** The years that just passed quietly, or null when the last step was a single year (TIME-002). */
   quietRun: QuietRun | null;
+  /** The prompt for the year just lived, with the player's line if they wrote one (UI-007); null when there is none to offer. */
+  reflection: ReflectionView | null;
+  /** The stats that moved by 3 or more over the step just taken, for the screen reader (A11Y-002). */
+  statChanges: StatChange[];
   /** The finished life on the summary screen (SUM-001); null on every other screen. */
   summary: SummaryView | null;
   /** What the start screen offers about a life saved in this browser (SAVE-002); null when there is none. */
@@ -80,6 +93,50 @@ export interface SummaryView {
   lastYear: EventRecord[];
   /** True when the life was opened from the archive rather than just finished. */
   archived: boolean;
+}
+
+/** A reflection prompt as the life screen shows it: which one, in which year, and what the player has written for it. */
+export interface ReflectionView {
+  id: string;
+  /** The string key of the prompt's words. */
+  textKey: string;
+  /** The age the line is written at. */
+  age: number;
+  written?: string;
+}
+
+/** One stat that moved over a step: the change in points, with its sign. */
+export interface StatChange {
+  stat: StatId;
+  delta: number;
+}
+
+/** A stat counts as having moved when it changed by this many points or more. */
+const STAT_CHANGE_MIN = 3;
+const STAT_ORDER: readonly StatId[] = ["health", "happiness", "belonging", "skills"];
+
+/**
+ * How the stats moved from the end of the year before the step (the record at `from - 1`) to the end of the last
+ * year: those that changed by 3 points or more, the largest first. Nothing for the first year, which has no year
+ * before it.
+ */
+export function statChanges(history: readonly YearRecord[], from: number): StatChange[] {
+  const before = history[from - 1];
+  const last = history.at(-1);
+  if (!before || !last) return [];
+  return STAT_ORDER.map((stat) => ({ stat, delta: Math.round(last.stats[stat] - before.stats[stat]) }))
+    .filter(({ delta }) => Math.abs(delta) >= STAT_CHANGE_MIN)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+}
+
+/** The prompt for the year on screen: not while a decision waits, whose year is not told yet, nor once the life is over. */
+function reflectionOf(life: LifeState, card: DecisionCard | null): ReflectionView | null {
+  if (!life.person.alive || life.turn || card) return null;
+  const found = reflectionPrompt(life.history);
+  if (!found) return null;
+  const age = life.person.age;
+  const written = journalLine(life, age, found.id);
+  return { id: found.id, textKey: found.text, age, ...(written ? { written } : {}) };
 }
 
 /** A saved life the start screen can offer to continue, or the reason it cannot. */
@@ -154,6 +211,8 @@ function quietRunOf(life: LifeState, from: number): QuietRun | null {
 
 /** What the birth screen says about the household and parents, derived here so screens stay free of engine code. */
 export interface BirthSummary {
+  /** Older brothers and sisters at the birth. */
+  siblings: number;
   band: number;
   /** Daily income per person in PPP dollars at the household's percentile. */
   income: number;
@@ -170,6 +229,7 @@ export function birthSummary(life: LifeState, country: Country): BirthSummary {
     return found;
   };
   return {
+    siblings: relationships.filter((r) => r.kind === "sibling").length,
     band: householdBand(money.householdPercentile),
     income: dailyIncome(country, money.householdPercentile),
     incomeYear: country.money.percentiles.year,
@@ -422,6 +482,11 @@ export interface GameStore {
   backToStart(): void;
   openSources(): void;
   closeSources(): void;
+  /** The settings screen, from the start screen (UI-009). */
+  openSettings(): void;
+  closeSettings(): void;
+  /** Writes the player's line for the year just lived, answering the prompt `prompt` or a line of their own; an empty line removes it (UI-007). */
+  writeJournal(text: string, prompt?: string): void;
   /** Reads what is saved in this browser, once when the game opens (SAVE-002). Never throws. */
   init(): void;
   /** Loads the saved life and goes back into it. */
@@ -451,6 +516,8 @@ const START: GameSnapshot = {
   card: null,
   plan: null,
   quietRun: null,
+  reflection: null,
+  statChanges: [],
   summary: null,
   resume: null,
   pastLives: null,
@@ -557,14 +624,20 @@ export function createGameStore(
   }
 
   /** The snapshot with a new life state and everything the screens derive from it. */
-  const lived = (life: LifeState, country: Country, changes: Partial<GameSnapshot> = {}): GameSnapshot => ({
-    ...snapshot,
-    ...changes,
-    life,
-    card: decisionCard(life, country) ?? null,
-    plan: planOverview(life),
-    quietRun: quietRunOf(life, yearsFrom),
-  });
+  const lived = (life: LifeState, country: Country, changes: Partial<GameSnapshot> = {}): GameSnapshot => {
+    const card = decisionCard(life, country) ?? null;
+    return {
+      ...snapshot,
+      ...changes,
+      life,
+      card,
+      plan: planOverview(life),
+      quietRun: quietRunOf(life, yearsFrom),
+      reflection: reflectionOf(life, card),
+      // While a decision waits the page tells the wait, so the last year's changes are not told.
+      statChanges: card ? [] : statChanges(life.history, yearsFrom),
+    };
+  };
 
   /**
    * Keeps a finished life in the archive; the snapshot learns if that failed. `stored` runs once the archive
@@ -686,6 +759,19 @@ export function createGameStore(
     },
     closeSources() {
       set(fresh());
+    },
+    openSettings() {
+      attempt++;
+      set(fresh({ screen: "settings" }));
+    },
+    closeSettings() {
+      set(fresh());
+    },
+    writeJournal(text, prompt) {
+      const { life, country } = snapshot;
+      if (!life || !country || !life.person.alive) return;
+      const changed = withJournalEntry(life, { age: life.person.age, ...(prompt ? { prompt } : {}), text });
+      set(lived(changed, country, { problem: autosave(changed) }));
     },
     init() {
       set({ ...snapshot, resume: readResume() });

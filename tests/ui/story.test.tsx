@@ -34,7 +34,9 @@ describe("years that pass quietly (TIME-002)", () => {
 
   it("names the year when only one passed", () => {
     render(<LifeScreen {...lifeScreenProps(country, { life: withEvents([]), quietRun: { from: 7, to: 7 } })} />);
-    expect(screen.getByText("The year you turn 7 passes quietly.")).toBeInTheDocument();
+    // Said in the live region, and shown in the story.
+    expect(within(screen.getByRole("status")).getByText("The year you turn 7 passes quietly.")).toBeInTheDocument();
+    expect(screen.getAllByText("The year you turn 7 passes quietly.")).toHaveLength(2);
   });
 
   it("says nothing about quiet years after a single year", () => {
@@ -86,7 +88,8 @@ describe("what the player chose, in the story (DEC-001)", () => {
       },
     ]);
     render(<LifeScreen {...lifeScreenProps(country, { life })} />);
-    const item = within(screen.getByRole("status")).getByRole("listitem");
+    const story = screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!;
+    const item = within(story).getByRole("listitem");
     expect(item).toHaveTextContent("You chose: Stand up to them");
     expect(item).toHaveTextContent("Kofi pays you back, late and with more thanks than you needed.");
   });
@@ -123,8 +126,10 @@ describe("data notes (EVENT-005)", () => {
       { id: "e", textKey: "event.midlife.looking_back", dataNote: note("note.tfr", 2.4), effects: [] },
     ]);
     render(<LifeScreen {...lifeScreenProps(country, { life })} />);
-    expect(
-      screen.getByText(/women have about 2\.4 children over a lifetime \(Synthetic test data, 2023\)/),
-    ).toBeInTheDocument();
+    const story = within(screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!);
+    const said = /women have about 2\.4 children over a lifetime \(Synthetic test data, 2023\)/;
+    expect(story.getByText(said)).toBeInTheDocument();
+    // The live region says it too, with the event.
+    expect(within(screen.getByRole("status")).getByText(said)).toBeInTheDocument();
   });
 });

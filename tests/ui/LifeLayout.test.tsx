@@ -121,7 +121,7 @@ describe("the header (UI-004, UI-012)", () => {
     expect(next).not.toHaveAccessibleDescription();
   });
 
-  it("opens the settings in a dialog: the two choices, light or dark, and the way back to the start", async () => {
+  it("opens the settings in a dialog: the two choices, how it looks, and the way back to the start", async () => {
     const { props, user } = renderLife();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Settings" }));
@@ -129,7 +129,11 @@ describe("the header (UI-004, UI-012)", () => {
     await user.click(dialog.getByRole("switch", { name: "Softer telling" }));
     expect(props.onSettings).toHaveBeenCalledWith({ softening: true });
     expect(dialog.getByRole("switch", { name: "Skip quiet years" })).toBeChecked();
-    expect(dialog.getByRole("button", { name: "Switch light or dark" })).toBeInTheDocument();
+    const looks = within(dialog.getByRole("region", { name: "How it looks" }));
+    expect(looks.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+    expect(looks.getByRole("radiogroup", { name: "Text size" })).toBeInTheDocument();
+    expect(looks.getByRole("switch", { name: "Reduce motion" })).toBeInTheDocument();
+    expect(dialog.queryByRole("button", { name: "Switch light or dark" })).not.toBeInTheDocument();
     await user.click(dialog.getByRole("button", { name: "Back to start" }));
     expect(props.onBack).toHaveBeenCalledTimes(1);
   });
@@ -340,27 +344,25 @@ describe("the column around you (UI-004)", () => {
     );
   });
 
-  it("holds a placeholder for the notes until reflection prompts arrive", async () => {
+  it("holds the notes: a field for a line of your own this year (UI-007)", async () => {
     const { user } = renderLife();
     await user.click(screen.getByRole("tab", { name: "Notes" }));
-    expect(screen.getByRole("tabpanel", { name: "Notes" })).toHaveTextContent(
-      "Your notes will gather here when reflection prompts arrive.",
-    );
+    const notes = within(screen.getByRole("tabpanel", { name: "Notes" }));
+    expect(notes.getByRole("textbox", { name: "A line for this year" })).toBeInTheDocument();
+    expect(notes.getByText("Nothing written yet.")).toBeInTheDocument();
   });
 
-  it("opens the notes from the Journal button and moves focus into them", async () => {
+  it("opens the notes from the Journal button and moves focus into their field", async () => {
     const { user } = renderLife();
     await user.click(screen.getByRole("button", { name: "Journal" }));
     expect(screen.getByRole("tab", { name: "Notes" })).toHaveAttribute("aria-selected", "true");
-    expect(
-      within(screen.getByRole("tabpanel", { name: "Notes" })).getByText(/Your notes will gather here/),
-    ).toHaveFocus();
+    const field = () =>
+      within(screen.getByRole("tabpanel", { name: "Notes" })).getByRole("textbox", { name: "A line for this year" });
+    expect(field()).toHaveFocus();
     // Pressed again with the tab already open, focus still goes back in.
     await user.click(screen.getByRole("tab", { name: "Family" }));
     await user.click(screen.getByRole("button", { name: "Journal" }));
-    expect(
-      within(screen.getByRole("tabpanel", { name: "Notes" })).getByText(/Your notes will gather here/),
-    ).toHaveFocus();
+    expect(field()).toHaveFocus();
   });
 });
 
@@ -385,9 +387,9 @@ describe("the ledger of years (UI-004)", () => {
   it("puts this year on top: the age, the story and the year's events", () => {
     renderLife({ age: 16 }, {}, history);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Age 16");
-    const status = within(screen.getByRole("status"));
-    expect(status.getByText("You turn 16.")).toBeInTheDocument();
-    expect(status.getByRole("heading", { level: 2, name: "This year" })).toBeInTheDocument();
+    expect(within(screen.getByRole("status")).getByText("You turn 16.")).toBeInTheDocument();
+    const story = within(screen.getByRole("heading", { level: 2, name: "This year" }).parentElement!);
+    expect(story.getByText("You turn 16.")).toBeInTheDocument();
   });
 
   it("lists the earlier years below, newest first, one paragraph each, in a list with a name", () => {
@@ -535,6 +537,18 @@ describe("the narrow layout (UI-010)", () => {
     expect(screen.getByRole("complementary", { name: "Around you" }).closest("[inert]")).toBeNull();
     await user.click(screen.getByRole("tab", { name: "Notes" }));
     expect(screen.getByRole("tabpanel", { name: "Notes" })).toBeInTheDocument();
+  });
+
+  it("puts the two parts of the settings dialog one level under its title", async () => {
+    windowIsNarrow(false);
+    const { user } = renderLife({ age: 16 });
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Settings" }));
+    expect(dialog.getByRole("heading", { level: 2, name: "Settings" })).toBeInTheDocument();
+    expect(dialog.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
+      "How you want to play",
+      "How it looks",
+    ]);
   });
 
   it("has the settings in a dialog too", async () => {

@@ -1,17 +1,19 @@
 // The end of a life (SUM-001, SUM-003, SUM-004, DEATH-002, DEATH-003, DEATH-004): the closing passage, the
 // years against the life expectancy of the place, the rings, the key moments, what shaped the life, a few plain
-// facts, the last year and the epitaph. No score and no rank: a life is told, not graded.
+// facts, the last year, the player's notes (SUM-005) and the epitaph. No score and no rank: a life is told, not graded.
 import type { Ring } from "../engine/rings";
 import type { LifeFacts, LifeSummary } from "../engine/summary";
 import type { EventRecord } from "../engine/types";
 import type { CountryIndex } from "../engine/world/types";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { countryName, formatList, formatNumber, formatPercent, pluralKey } from "../format";
 import { hasString, t } from "../i18n";
 import { Epitaph } from "./Epitaph";
 import { DecisionLine, EventLine } from "./EventLine";
-import { Header } from "./Header";
+import { Page } from "./Page";
+import { SiteHeader } from "./SiteHeader";
 import { HelpNote } from "./HelpNote";
+import { JournalEntries } from "./Journal";
 import { Button } from "./kit";
 import { Rings } from "./Rings";
 import type { GameSnapshot, SummaryView } from "./store";
@@ -145,6 +147,7 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
     return tellable(summary);
   }, [summary]);
   const heading = useFocusOn<HTMLHeadingElement>();
+  const notesId = useId();
   // A death by suicide is stated plainly and the help is always there, unless the year's own event carries it.
   const deathHelp = death.cause === "selfHarm" && !lastYear.some(carriesSuicideHelp);
   const percents = wholePercents(shaping.overall);
@@ -152,8 +155,7 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
   const coda = tryT(death.codaKey);
 
   return (
-    <section>
-      <Header />
+    <Page header={<SiteHeader />}>
       <h1 ref={heading} tabIndex={-1}>
         {summary.name}
         <span className="subtitle">
@@ -229,6 +231,16 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
         </>
       )}
 
+      {/* An archived summary from before the journal has no field for it. */}
+      {(summary.journal?.length ?? 0) > 0 && (
+        <section aria-labelledby={notesId}>
+          <h2 id={notesId} className={`eyebrow ${styles.heading}`}>
+            {t("summary.notes.heading")}
+          </h2>
+          <JournalEntries entries={summary.journal ?? []} />
+        </section>
+      )}
+
       <Epitaph name={summary.name} epitaph={summary.epitaph} onSave={onEpitaph} />
 
       {/* Said politely when it happens: the archive write finishes after the summary is on screen. */}
@@ -247,6 +259,6 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
         <Button onPress={onPast}>{t("summary.past")}</Button>
         <Button onPress={onBack}>{t("life.backToStart")}</Button>
       </div>
-    </section>
+    </Page>
   );
 }

@@ -151,35 +151,34 @@
   color: var(--ink-soft);
 }
 
-/* The rings grow outward, the first year first, slowly, and only when motion is welcome. */
-@media (prefers-reduced-motion: no-preference) {
-  .ring {
-    transform-box: view-box;
-    transform-origin: center;
-    animation: grow 600ms ease-out both;
-    animation-delay: calc(min(var(--i, 0), 90) * 20ms);
-  }
+/* The rings grow outward, the first year first, slowly. The page holds this back when motion is not welcome
+   (src/styles.css); the rings then simply stand, as the animation ends where they are drawn. */
+.ring {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: grow 600ms ease-out both;
+  animation-delay: calc(min(var(--i, 0), 90) * 20ms);
+}
 
-  .mark {
-    animation: appear 400ms ease-out both;
-    animation-delay: 2s;
-  }
+.mark {
+  animation: appear 400ms ease-out both;
+  animation-delay: 2s;
+}
 
-  @keyframes grow {
-    from {
-      transform: scale(0);
-    }
-    to {
-      transform: scale(1);
-    }
+@keyframes grow {
+  from {
+    transform: scale(0);
   }
+  to {
+    transform: scale(1);
+  }
+}
 
-  @keyframes appear {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
