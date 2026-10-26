@@ -1,6 +1,6 @@
 # Birthright: roadmap (original milestone map)
 
-> **History.** The active plan is [`ROADMAP.md`](../ROADMAP.md) in the repository root: it holds the current status, priorities, phases and open decisions, and regroups M8 to M11 into phases. M1 to M7 below are built (see `ROADMAP.md` for the audit). This file stays as the map from milestones to feature IDs; where the two disagree, `ROADMAP.md` wins.
+> **History.** The active plan is [`ROADMAP.md`](../ROADMAP.md) in the repository root: it holds the current status, priorities, phases and open decisions, and regroups M8 to M11 into phases. M1 to M7 below are built (see `ROADMAP.md` for the audit). CHAR-007, WORLD-014 and ADMIN-005 were added after this map was made and appear only in `ROADMAP.md`. This file stays as the map from milestones to feature IDs; where the two disagree, `ROADMAP.md` wins.
 
 Derived from `docs/features.md`. Milestones are in dependency order: every feature's dependencies are in the same or an earlier milestone (checked by script when this file was written). Inside a milestone, features are listed roughly in build order.
 
