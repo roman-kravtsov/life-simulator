@@ -59,9 +59,12 @@ describe("the reveal screen", () => {
     }
     // The one live region is the status line (role=status is polite already).
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    // And the accessibility tree has none of them: they are only in the hidden reel.
-    for (const { name } of view.stops) expect(screen.queryByText(name)).toBeInTheDocument();
-    expect(screen.queryByRole("generic", { name: /Alpha/ })).toBeNull();
+    // Every place a passing name is written sits inside an aria-hidden ancestor, so none reaches the accessibility tree.
+    for (const { name } of view.stops) {
+      const places = screen.getAllByText(name);
+      expect(places.length).toBeGreaterThan(0);
+      for (const place of places) expect(place.closest('[aria-hidden="true"]')).not.toBeNull();
+    }
   });
 
   it("announces that it is finding the place, then the place once the real name has settled", () => {

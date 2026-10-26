@@ -76,7 +76,7 @@ const gapsFor = (count: number, p: number): number[] =>
 /**
  * The pace of the reel: slowing from about 340 ms to about 900 ms, so no more than three changes a second, and
  * for 6 to 8 names the reel takes `REVEAL_REEL_MS` (nine and ten run a little over, and fewer than 6 run shorter). A shorter
- * list slows later; a longer one slows sooner. The shape is found by bisection, so it is a pure function of the count.
+ * list rises steadily from the first name; a longer one stays near 340 ms and slows late. The shape is found by bisection, so it is a pure function of the count.
  */
 export function revealTimings(count: number): RevealTimings {
   let low = 0.4;
