@@ -1,0 +1,124 @@
+/* The birth reveal (UI-016). One timeline, set by custom properties and run by CSS animations (no timers): each passing
+   name fades in at its --delay and out after its --gap, exactly as the next fades in; the real name arrives at --settle,
+   an ink rule is drawn, one line fades in, and the invisible hold element ends the reveal. Reduced motion never gets here
+   (the screen renders no reel then), and the same ink and rule are used for every birth. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  min-height: 70dvh;
+  padding: 1rem var(--gutter) 2rem;
+}
+
+.skip {
+  align-self: flex-start;
+}
+
+.stage {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.status {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+/* Every name sits in the one cell, so the cell is as tall as the tallest and nothing moves when the name changes. */
+.reel {
+  display: grid;
+  width: 100%;
+  color: var(--ink);
+  font-family: var(--font-story);
+  font-size: clamp(2rem, 9vw, 3.5rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.stop,
+.real {
+  grid-area: 1 / 1;
+  align-self: center;
+  opacity: 0;
+}
+
+/* No backwards fill on "out": until it starts, "in" holds the name, so it fades out as the next one fades in. */
+.stop {
+  animation:
+    in 120ms var(--delay) forwards,
+    out 120ms calc(var(--delay) + var(--gap)) forwards;
+}
+
+.real {
+  animation: in 400ms var(--settle) forwards;
+}
+
+.rule {
+  display: block;
+  width: min(100%, 12rem);
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: draw 500ms calc(var(--settle) + 400ms) forwards;
+}
+
+.share {
+  max-width: 24rem;
+  margin: 0;
+  color: var(--ink-soft);
+  opacity: 0;
+  animation: in 400ms calc(var(--settle) + 700ms) forwards;
+}
+
+.hold {
+  display: block;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  animation: hold 700ms calc(var(--settle) + 1100ms) forwards;
+}
+
+@keyframes in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes hold {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0;
+  }
+}

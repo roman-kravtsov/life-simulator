@@ -7,7 +7,7 @@ import { App } from "../../src/ui/App";
 import { createGameStore } from "../../src/ui/store";
 import { testWorld } from "../fixtures/country";
 import { deadlyCountry } from "./fakes";
-import { backToStart } from "./helpers";
+import { backToStart, skipReveal } from "./helpers";
 
 const setup = (settings?: Partial<Settings>) => {
   const store = createGameStore(() => "test-seed", testWorld());
@@ -18,6 +18,7 @@ const setup = (settings?: Partial<Settings>) => {
 
 const begin = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: "Begin a life" }));
+  await skipReveal(user);
   await screen.findByRole("button", { name: "Begin this life" });
 };
 
@@ -171,6 +172,7 @@ describe("App", () => {
     expect(screen.queryByRole("button", { name: "Continue to the next year" })).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Begin another life" }));
+    await skipReveal(user);
     expect(await screen.findByRole("button", { name: "Begin this life" })).toBeInTheDocument();
   }, 60_000);
 
@@ -197,6 +199,9 @@ describe("App", () => {
     // Focus starts on the heading; the header (help link, theme) and the settings come before the main action.
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
     await tabTo(user, screen.getByRole("button", { name: "Begin a life" }));
+    await user.keyboard("{Enter}");
+    // The birth reveal plays; Skip has focus, and Enter on it opens the birth screen (UI-016).
+    expect(await screen.findByRole("button", { name: "Skip" })).toHaveFocus();
     await user.keyboard("{Enter}");
     await screen.findByRole("button", { name: "Begin this life" });
     await tabTo(user, screen.getByRole("button", { name: "Begin this life" }));

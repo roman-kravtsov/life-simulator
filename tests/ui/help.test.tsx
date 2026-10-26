@@ -10,7 +10,7 @@ import { createGameStore } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { makePerson } from "../fixtures/person";
 import { deadlyCountry } from "./fakes";
-import { lifeOf, lifeScreenProps } from "./helpers";
+import { lifeOf, lifeScreenProps, skipReveal } from "./helpers";
 
 const country = makeCountry({ region: "Western Africa" });
 const topics: HelpTopic[] = ["suicide", "violence", "abuse", "grief", "addiction", "illness"];
@@ -49,6 +49,7 @@ describe("help resources (UI-012)", () => {
       await check(); // past lives
       await user.click(screen.getByRole("button", { name: "Back to start" }));
       await user.click(screen.getByRole("button", { name: "Begin a life" }));
+      await skipReveal(user);
       await screen.findByRole("button", { name: "Begin this life" });
       await check(); // birth
       await user.click(screen.getByRole("button", { name: "Begin this life" }));
@@ -60,6 +61,7 @@ describe("help resources (UI-012)", () => {
       const store = createGameStore(() => "test-seed", testWorld(deadlyCountry()));
       render(<App store={store} />);
       await user.click(screen.getByRole("button", { name: "Begin a life" }));
+      await skipReveal(user);
       await user.click(await screen.findByRole("button", { name: "Begin this life" }));
       await user.click(screen.getByRole("button", { name: "Continue to the next year" }));
       expect(screen.getByRole("button", { name: "Begin another life" })).toBeInTheDocument();

@@ -9,7 +9,7 @@ import { ScreenBoundary } from "../../src/ui/ScreenBoundary";
 import { createGameStore } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { deadlyCountry, fakePersistence, finishedLife } from "./fakes";
-import { backToStart } from "./helpers";
+import { backToStart, skipReveal } from "./helpers";
 
 const country = makeCountry({ region: "Western Africa" });
 
@@ -57,6 +57,8 @@ describe("the page shell (UI-010)", () => {
     await user.click(screen.getByRole("button", { name: "Back to start" }));
 
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
+
+    await skipReveal(user);
     await screen.findByRole("button", { name: "Begin this life" });
     expectShell("birth");
     expect(screen.getByRole("main")).toHaveAttribute("data-layout", "reading");
@@ -79,6 +81,7 @@ describe("the page shell (UI-010)", () => {
     const user = userEvent.setup();
     render(<App store={createGameStore(() => "shell-seed", testWorld(country))} />);
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await skipReveal(user);
     await user.click(await screen.findByRole("button", { name: "Begin this life" }));
     expect(screen.getByRole("main")).toHaveAttribute("data-layout", "wide");
     await backToStart(user);

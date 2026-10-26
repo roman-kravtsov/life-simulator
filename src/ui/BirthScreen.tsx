@@ -18,6 +18,8 @@ interface Props {
   country: Country;
   /** Source details, for the source and year under each fact about the country. */
   sources: CountryIndex["sources"];
+  /** True when the reveal of the country was left out for reduced motion, so this says how it was drawn (UI-016). */
+  chanceNote?: boolean;
   onContinue: () => void;
   /** Back to the start; the life is already saved, so the start screen offers to continue it. */
   onBack: () => void;
@@ -27,7 +29,7 @@ interface Props {
 const siblingsLine = (count: number) =>
   t(count === 0 ? "birth.siblings.none" : pluralKey("birth.siblings", count), { count: formatNumber(count) });
 
-export function BirthScreen({ life, country, sources, onContinue, onBack }: Props) {
+export function BirthScreen({ life, country, sources, chanceNote = false, onContinue, onBack }: Props) {
   const { person, seed } = life;
   const heading = useFocusOn<HTMLHeadingElement>();
   const countryHeading = useId();
@@ -41,6 +43,7 @@ export function BirthScreen({ life, country, sources, onContinue, onBack }: Prop
         {t("birth.title", { country: place })}
         <span className="subtitle">{t("birth.year", { year: person.birthYear })}</span>
       </h1>
+      {chanceNote && <p className={`small ${styles.paragraph}`}>{t("reveal.chanceNote")}</p>}
       <p className={styles.paragraph}>
         {t("birth.you", { name: person.name, sex: t(`birth.sex.${person.sex}`) })} {t(`birth.place.${person.location}`)}
       </p>
