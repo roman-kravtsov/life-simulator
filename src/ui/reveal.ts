@@ -30,7 +30,7 @@ export interface RevealView {
   stops: RevealCountry[];
   /** About 1 in this many of the year's births are in the real country. */
   share: number;
-  /** How many countries the world has, for the line under the name. */
+  /** How many countries are in the game's index, for the line under the name (the countries with full data, not the world). */
   countries: number;
   /** Set once the reel is over (or skipped) while the country is still loading. */
   opening: boolean;

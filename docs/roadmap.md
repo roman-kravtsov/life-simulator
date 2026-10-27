@@ -4,7 +4,7 @@
 
 Derived from `docs/features.md`. Milestones are in dependency order: every feature's dependencies are in the same or an earlier milestone (checked by script when this file was written). Inside a milestone, features are listed roughly in build order.
 
-M1 to M7 together are the proposed MVP: 108 of 164 features. Phase 4 (`docs/mvp.md`) confirms or trims this line before anything is built.
+M1 to M7 together are the proposed MVP: 108 of 165 features. Phase 4 (`docs/mvp.md`) confirms or trims this line before anything is built.
 
 ---
 

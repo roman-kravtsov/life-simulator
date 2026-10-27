@@ -3,7 +3,7 @@
 This is the one active plan. It says where the project stands, what comes next and why, and it is updated in the same PR as the work it describes (`CLAUDE.md`, "Keeping the roadmap current"). It does not repeat what other docs own:
 
 - **`docs/features.md`** owns every feature's description, acceptance criteria and status. This file refers to features by ID and never keeps a second copy of a status.
-- **`docs/roadmap.md`** keeps the original milestone map (M1 to M11) of the 164 original features (`docs/features.md` now has 167: CHAR-007, WORLD-014 and ADMIN-005 are placed only here). Its M1 to M7 are history now; M8 to M11 are regrouped into the phases below. Where the two disagree, this file wins.
+- **`docs/roadmap.md`** keeps the original milestone map (M1 to M11) of the 165 features it lists (`docs/features.md` now has 168: CHAR-007, WORLD-014 and ADMIN-005 are placed only here). Its M1 to M7 are history now; M8 to M11 are regrouped into the phases below. Where the two disagree, this file wins.
 - **`docs/design.md`** owns how it works, and its section 7 is the log of design decisions. **`docs/mvp.md`** is the original MVP definition.
 
 Status markers: `[x]` done, `[~]` in progress, `[ ]` planned, `[-]` deferred, `[!]` blocked. Priorities: **P0** blocks the core game, **P1** high, **P2** important but can wait, **P3** nice to have. There are no dates: nothing in the project gives a reliable pace to plan by.
@@ -16,7 +16,7 @@ Last audited: 2026-10-26, against `main` at `263f66d` (PR #19, M7). The audit ev
 
 Birthright is a complete game loop that works end to end. A player begins a life, is born into one of 163 countries by the real odds of birth, plays year by year with a three-point focus plan, answers decisions (35 of the 167 events) with an odds lens, and sees the finished life as tree rings with a chance, choice and circumstance breakdown. Lives autosave and can be resumed, finished lives are archived, and any life replays exactly from its seed and logs. It is deployed to GitHub Pages (every merge to `main` ships; the last deploy, run 15, was green).
 
-Of the 108 original MVP features, 107 are `done` and one (A11Y-002, screen readers) is `in progress`. The audit added two release-gate features to the MVP, CHAR-007 and WORLD-014, both `not started`. Lint, typecheck, 2127 unit tests and 29 Playwright tests pass.
+Of the 108 original MVP features, 107 are `done` and one (A11Y-002, screen readers) is `in progress`. The audit added two release-gate features to the MVP, CHAR-007 and WORLD-014, both `not started`. Lint, typecheck, 2127 unit tests and 29 Playwright tests passed at the audit.
 
 The honest summary is that **the MVP is built but not yet proven by play.** Nobody has played it the way a player would, the authored text has not been read by Roman, the screen reader pass has not happened, and the audit found four things that would hurt a first-time player or the "real odds" promise (section 4). The next phase is about those, not about new features.
 
@@ -211,7 +211,7 @@ Decisions marked **blocks A** stop Phase A. The others are collected from `docs/
 
 ## 11. Coordination with work in other threads
 
-- **UI-016 birth reveal.** Built in [#22](https://github.com/roman-kravtsov/life-simulator/pull/22) with its row in `docs/features.md`. It touches `StartScreen`, `App` and `store.ts` (a new `reveal` screen and an `endReveal` action), so it will conflict with TD-003 if both run at once: do TD-003 after it merges.
+- **UI-016 birth reveal.** Built in [#22](https://github.com/roman-kravtsov/life-simulator/pull/22) with its row in `docs/features.md`. It touches `StartScreen`, `App`, `BirthScreen` and `store.ts` (a new `reveal` screen and an `endReveal` action), so it will conflict with TD-003 if both run at once: do TD-003 after it merges.
 - **Property and investing.** Extend MONEY-008 (home ownership, `post-MVP`, M, P2) rather than inventing a parallel feature; add new IDs in MONEY for investing and sales only when the design is final. It should read Phase D's order and TD-001 and TD-002 before the build. It also adds a tab to the life screen, which must still fit a 640 px window (`CLAUDE.md`).
 - **Docs split (the AI setup review).** If `docs/features.md` is split by category, this file only needs its references updated; it keeps no per-feature status for that reason.
 
