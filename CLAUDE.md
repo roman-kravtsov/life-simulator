@@ -77,7 +77,7 @@ e2e/                Playwright: full-loop tests at phone and desktop widths; key
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
 - **Determinism:** a life is fully defined by its seed, the data version, the content version and the player's decision, plan and settings logs. Saves store those plus a snapshot (a cache), so any life can be replayed exactly (`replay`, tested over many random lives). Design 2.4 has the format.
-- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, `idb` (IndexedDB), Vitest, React Testing Library, `fake-indexeddb` (tests), Playwright, ESLint, Prettier. Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
+- **Stack:** React 19 + Vite (SPA), TypeScript strict, CSS Modules, React Aria Components, `idb` (IndexedDB), Vitest, React Testing Library, `fake-indexeddb` (tests), Playwright, ESLint, Prettier. Node 22.22.2 or newer (jsdom 30 needs it; CI uses Node 22). Hosted as a static site on GitHub Pages under `/life-simulator/`; no backend.
 
 ## Data pipeline
 
@@ -108,6 +108,7 @@ Read these docs before starting work:
 
 ## Code rules
 
+- **Dependencies stay on the latest version their peers allow.** TypeScript is held at 6.0 (`~6.0.3`) because `typescript-eslint` declares `typescript <6.1.0`; move to TypeScript 7 only when `typescript-eslint` supports it. `@types/node` stays on 22 to match the Node version CI and the sandbox run. `.github/dependabot.yml` ignores those two major bumps; remove the ignore when the reason goes away. A dependency update that touches the engine, replay or saves must say so in its PR.
 - **Engine (`src/engine/`) is pure TypeScript:** no React, no DOM, no I/O. The UI talks to it through `src/ui/store.ts`.
 - **No unseeded randomness in the engine.** Never use `Math.random` or `crypto` there; draw from `stream(seed, name, year, quarter?)` in `src/engine/rng.ts`. Use a separate stream per subsystem so that new content does not shift other rolls. ESLint and a guard test enforce this.
 - **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `siblings`, `siblings:birth`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `care`, `friends`, `romance`, `fertility`, `outcomes`, `mortality`, `cause`, `reveal`, `autoplay`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
