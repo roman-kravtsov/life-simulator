@@ -1,5 +1,5 @@
 // Shared by the component tests of the life screen. Everything here is SYNTHETIC.
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import type { Country } from "../../src/engine/world/types";
@@ -50,4 +50,20 @@ export async function backToStart(user: ReturnType<typeof userEvent.setup>) {
   await user.click(
     within(screen.getByRole("dialog", { name: "Settings" })).getByRole("button", { name: "Back to start" }),
   );
+}
+
+/**
+ * Ends a CSS animation of an element, which jsdom never runs. React listens for the prefixed name when the page has no
+ * AnimationEvent, as in jsdom, and for the plain one in a browser, so both are sent; only one is heard.
+ */
+export function endAnimation(element: Element) {
+  act(() => {
+    for (const type of ["animationend", "webkitAnimationEnd"])
+      element.dispatchEvent(new Event(type, { bubbles: true }));
+  });
+}
+
+/** Skips the birth reveal (UI-016) that plays between Begin and the birth screen, where the test is not about it. */
+export async function skipReveal(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("button", { name: "Skip the reveal" }));
 }

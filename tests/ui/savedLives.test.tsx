@@ -7,7 +7,7 @@ import { LifeScreen } from "../../src/ui/LifeScreen";
 import { createGameStore } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { fakePersistence, finishedLife, playYears, type Fake } from "./fakes";
-import { backToStart, lifeScreenProps } from "./helpers";
+import { backToStart, lifeScreenProps, skipReveal } from "./helpers";
 
 const country = makeCountry({ region: "Western Africa" });
 const clock = () => "2026-10-25T10:00:00.000Z";
@@ -59,6 +59,7 @@ describe("SAVE-002: continuing a life from the start screen", () => {
   it("is offered again after going back to the start from a life in progress", async () => {
     const { user } = open(fakePersistence());
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await skipReveal(user);
     await user.click(await screen.findByRole("button", { name: "Begin this life" }));
     await backToStart(user);
     expect(screen.getByRole("region", { name: "Continue your life" })).toBeInTheDocument();
@@ -70,6 +71,7 @@ describe("SAVE-002: continuing a life from the start screen", () => {
   it("is offered after going back from the birth screen, where the life is already saved", async () => {
     const { user } = open(fakePersistence());
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await skipReveal(user);
     await screen.findByRole("button", { name: "Begin this life" });
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Birthright");
@@ -196,6 +198,7 @@ describe("SAVE-001: a life the browser would not keep", () => {
     fake.refuseCurrent = true;
     const { user } = open(fake);
     await user.click(screen.getByRole("button", { name: "Begin a life" }));
+    await skipReveal(user);
     await user.click(await screen.findByRole("button", { name: "Begin this life" }));
     expect(screen.getByText(/This life could not be saved in your browser/)).toBeInTheDocument();
     fake.refuseCurrent = false;

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { CONTENT_VERSION } from "../../src/content/version";
+import { newLife } from "../../src/engine/life";
+import { stream } from "../../src/engine/rng";
+import { drawBirthCountry } from "../../src/engine/world/birth";
 import { adultPercentile, dailyIncome } from "../../src/engine/money";
 import { SEED_PATTERN } from "../../src/engine/seed";
 import {
@@ -23,7 +26,7 @@ import {
   statBand,
   statChanges,
 } from "../../src/ui/store";
-import { makeCountry, testWorld } from "../fixtures/country";
+import { makeCountry, testWorld, testWorldOfMany } from "../fixtures/country";
 import { adultAt, makePerson, moneyAt } from "../fixtures/person";
 import { deadlyCountry, fakePersistence, finishedLife } from "./fakes";
 
@@ -44,6 +47,9 @@ describe("game store", () => {
     const done = store.begin();
     expect(store.getSnapshot().status).toBe("loading");
     await done;
+    // The reveal plays first (UI-016); the birth screen follows once it ends.
+    expect(store.getSnapshot().screen).toBe("reveal");
+    store.endReveal();
     const { screen, life, country, status } = store.getSnapshot();
     expect(screen).toBe("birth");
     expect(status).toBe("idle");
@@ -96,6 +102,7 @@ describe("game store", () => {
   it("can begin another life after one ends, with a new seed", async () => {
     const store = setup();
     await store.begin();
+    store.endReveal();
     await store.begin();
     expect(store.getSnapshot().life?.seed).toBe("seed-1");
   });
@@ -107,6 +114,7 @@ describe("game store", () => {
     await store.begin();
     expect(store.getSnapshot()).toMatchObject({ screen: "start", status: "error" });
     await store.begin();
+    store.endReveal();
     expect(store.getSnapshot().screen).toBe("birth");
   });
 
@@ -597,6 +605,7 @@ describe("game store: saving, death and the archive (M6)", () => {
       const { store, fake } = withFake();
       await store.begin();
       const first = fake.saved.at(-1)!;
+      store.endReveal();
       await store.begin();
       const second = fake.saved.at(-1)!;
       expect(second.seed).toBe("seed-1");
@@ -716,6 +725,7 @@ describe("game store: saving, death and the archive (M6)", () => {
       store.startLife();
       store.continueYear();
       await store.begin();
+      store.endReveal();
       expect(store.getSnapshot()).toMatchObject({ screen: "birth", summary: null });
       expect(store.getSnapshot().life?.seed).toBe("seed-1");
       await store.begin();
@@ -1447,5 +1457,169 @@ describe("the birth summary and the country at birth (UI-003, WORLD-008)", () =>
     const { life, country } = store.getSnapshot();
     const older = life!.person.relationships.filter((r) => r.kind === "sibling").length;
     expect(birthSummary(life!, country!).siblings).toBe(older);
+  });
+});
+
+describe("the birth reveal (UI-016)", () => {
+  /** A world whose country files are held until `release()`, to play the reveal before the life is ready. */
+  function slowWorld() {
+    const world = testWorldOfMany();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    return {
+      world: { ...world, loadCountry: (iso3: string) => gate.then(() => world.loadCountry(iso3)) },
+      release,
+    };
+  }
+  const storeOf = (world: ReturnType<typeof testWorldOfMany> | ReturnType<typeof slowWorld>["world"]) =>
+    createGameStore(seeds(), world, fakePersistence().persistence);
+
+  it("shows the reveal after Begin, with the country already drawn, and the birth screen after it ends", async () => {
+    const store = storeOf(testWorldOfMany());
+    expect(store.getSnapshot().reveal).toBeNull();
+    await store.begin();
+    const shown = store.getSnapshot();
+    expect(shown.screen).toBe("reveal");
+    expect(shown.status).toBe("idle");
+    expect(shown.life?.person.countryIso3).toBe(shown.country?.iso3);
+    expect(shown.reveal?.country.name).toBe(shown.country?.name);
+    expect(shown.reveal?.stops.map((s) => s.name)).not.toContain(shown.country?.name);
+    expect(shown.reveal?.opening).toBe(false);
+    store.endReveal();
+    expect(store.getSnapshot()).toMatchObject({ screen: "birth", reveal: null, chanceNote: false });
+  });
+
+  it("shows the reveal while the country loads, and keeps it until the reel ends", async () => {
+    const { world, release } = slowWorld();
+    const store = storeOf(world);
+    const done = store.begin();
+    await vi.waitFor(() => expect(store.getSnapshot().screen).toBe("reveal"));
+    expect(store.getSnapshot()).toMatchObject({ life: null, country: null, status: "idle" });
+    expect(store.getSnapshot().reveal?.stops.length).toBeGreaterThanOrEqual(6);
+    release();
+    await done;
+    expect(store.getSnapshot()).toMatchObject({ screen: "reveal" });
+    expect(store.getSnapshot().life).not.toBeNull();
+  });
+
+  it("ignores a second begin during the reveal", async () => {
+    const world = testWorldOfMany();
+    const loadIndex = vi.fn(world.loadIndex);
+    const store = storeOf({ ...world, loadIndex });
+    await store.begin();
+    const before = store.getSnapshot();
+    await store.begin();
+    expect(loadIndex).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toBe(before);
+  });
+
+  it("gives the same life and the same saved file whether the reveal is skipped early, late or never", async () => {
+    const lifeAfter = async (how: "late" | "early" | "never") => {
+      const { world, release } = slowWorld();
+      const fake = fakePersistence();
+      const store = createGameStore(
+        () => "reveal-seed",
+        world,
+        fake.persistence,
+        () => "2026-10-26T00:00:00.000Z",
+      );
+      const done = store.begin();
+      await vi.waitFor(() => expect(store.getSnapshot().screen).toBe("reveal"));
+      if (how === "early") store.endReveal();
+      release();
+      await done;
+      if (how === "late") store.endReveal();
+      const { life, country, screen } = store.getSnapshot();
+      if (how !== "never") expect(screen).toBe("birth");
+      else expect(screen).toBe("reveal");
+      return { life, iso3: country?.iso3, saved: fake.saved };
+    };
+    const [late, early, never] = [await lifeAfter("late"), await lifeAfter("early"), await lifeAfter("never")];
+    expect(early).toEqual(late);
+    expect(never).toEqual(late);
+    expect(late.saved).toHaveLength(1);
+  });
+
+  it("draws the same country and life as before the reveal existed: from the birth stream alone", async () => {
+    const world = testWorldOfMany();
+    const index = await world.loadIndex();
+    const entry = drawBirthCountry(index, stream("fixed-seed", "birth", 0));
+    const country = await world.loadCountry(entry.iso3);
+    const store = createGameStore(() => "fixed-seed", world, fakePersistence().persistence);
+    await store.begin();
+    store.endReveal();
+    expect(store.getSnapshot().life).toEqual(newLife({ seed: "fixed-seed", country, settings: DEFAULT_SETTINGS }));
+  });
+
+  it("ends on the birth screen once the country loads, when the reveal was skipped before it did", async () => {
+    const { world, release } = slowWorld();
+    const store = storeOf(world);
+    const done = store.begin();
+    await vi.waitFor(() => expect(store.getSnapshot().screen).toBe("reveal"));
+    store.endReveal();
+    // Not ready: the reveal stays, saying it is opening, and does not give up.
+    expect(store.getSnapshot()).toMatchObject({ screen: "reveal", life: null });
+    expect(store.getSnapshot().reveal?.opening).toBe(true);
+    release();
+    await done;
+    expect(store.getSnapshot()).toMatchObject({ screen: "birth", reveal: null, status: "idle" });
+    expect(store.getSnapshot().life?.person.age).toBe(0);
+  });
+
+  it("remembers reduced motion for the chance note on the birth screen, and forgets it with the screen", async () => {
+    const { world, release } = slowWorld();
+    const store = storeOf(world);
+    const done = store.begin();
+    await vi.waitFor(() => expect(store.getSnapshot().screen).toBe("reveal"));
+    store.endReveal({ reduced: true });
+    release();
+    await done;
+    expect(store.getSnapshot()).toMatchObject({ screen: "birth", chanceNote: true });
+    store.startLife();
+    expect(store.getSnapshot().chanceNote).toBe(false);
+    store.backToStart();
+    await store.begin();
+    expect(store.getSnapshot().chanceNote).toBe(false);
+  });
+
+  it("does nothing when ended outside a reveal", async () => {
+    const store = storeOf(testWorldOfMany());
+    store.endReveal({ reduced: true });
+    expect(store.getSnapshot()).toMatchObject({ screen: "start", chanceNote: false });
+    await store.begin();
+    store.endReveal();
+    const birth = store.getSnapshot();
+    store.endReveal({ reduced: true });
+    expect(store.getSnapshot()).toBe(birth);
+  });
+
+  it("goes back to the start with an error when the country fails to load, during the reveal", async () => {
+    const world = testWorldOfMany();
+    const store = storeOf({ ...world, loadCountry: () => Promise.reject(new Error("offline")) });
+    await store.begin();
+    expect(store.getSnapshot()).toMatchObject({ screen: "start", status: "error", reveal: null, life: null });
+  });
+
+  it("drops a load that finishes after the player left the reveal", async () => {
+    const { world, release } = slowWorld();
+    const store = storeOf(world);
+    const done = store.begin();
+    await vi.waitFor(() => expect(store.getSnapshot().screen).toBe("reveal"));
+    store.backToStart();
+    release();
+    await done;
+    expect(store.getSnapshot()).toMatchObject({ screen: "start", life: null, reveal: null });
+  });
+
+  it("saves the life as soon as the country has loaded, as before; a reload then resumes at the birth screen", async () => {
+    const fake = fakePersistence();
+    const world = testWorldOfMany();
+    const store = createGameStore(seeds(), world, fake.persistence);
+    await store.begin();
+    expect(fake.saved).toHaveLength(1);
+    const again = createGameStore(seeds(), world, fake.persistence);
+    again.init();
+    await again.resumeLife();
+    expect(again.getSnapshot().screen).toBe("birth");
   });
 });

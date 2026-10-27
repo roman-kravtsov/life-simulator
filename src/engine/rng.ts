@@ -110,6 +110,7 @@ export type StreamName =
   | "outcomes"
   | "money"
   | "names"
+  | "reveal"
   | "autoplay";
 
 /**

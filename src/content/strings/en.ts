@@ -70,6 +70,15 @@ export const en: Readonly<Record<string, string>> = {
   "birth.seed": "Life {seed}",
   "birth.continue": "Begin this life",
 
+  // The birth reveal (UI-016): the names that pass are never read out, only these.
+  "reveal.finding": "Finding where you are born…",
+  "reveal.result": "You are born in {country}",
+  "reveal.skip": "Skip the reveal",
+  "reveal.continue": "Continue",
+  "reveal.share": "About 1 in {share} of the year's births, across the {count} countries in this game, happen here.",
+  "reveal.opening": "Opening your life…",
+  "reveal.chanceNote": "Where you are born is drawn by chance, weighted by where children are born each year.",
+
   "kind.mother": "mother",
   "kind.father": "father",
   "kind.sibling": "sibling",

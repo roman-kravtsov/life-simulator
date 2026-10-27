@@ -4,7 +4,7 @@
 
 Derived from `docs/features.md`. Milestones are in dependency order: every feature's dependencies are in the same or an earlier milestone (checked by script when this file was written). Inside a milestone, features are listed roughly in build order.
 
-M1 to M7 together are the proposed MVP: 108 of 164 features. Phase 4 (`docs/mvp.md`) confirms or trims this line before anything is built.
+M1 to M7 together are the proposed MVP: 108 of 165 features. Phase 4 (`docs/mvp.md`) confirms or trims this line before anything is built.
 
 ---
 
@@ -62,7 +62,7 @@ WORLD-010, DEC-008, REL-005, REL-007, CAREER-005, HEALTH-007, HEALTH-008, HEALTH
 ### M10. Reflection, replay and sharing
 The other shore, the road not taken, seeds you can share, auto mode, tooling and polish.
 
-SUM-006, SUM-007, SUM-008, RNG-006, SHARE-001, SHARE-002, SHARE-003, SAVE-006, DEC-006, ANLT-002, FAM-008, ADMIN-002, ADMIN-003, ADMIN-004, A11Y-006, UI-013, UI-014, UI-015, WORLD-006, WORLD-013
+SUM-006, SUM-007, SUM-008, RNG-006, SHARE-001, SHARE-002, SHARE-003, SAVE-006, DEC-006, ANLT-002, FAM-008, ADMIN-002, ADMIN-003, ADMIN-004, A11Y-006, UI-013, UI-014, UI-015, UI-016, WORLD-006, WORLD-013
 
 ### M11. Later
 Other languages, audio, past and future eras, collections, and anything needing a server.

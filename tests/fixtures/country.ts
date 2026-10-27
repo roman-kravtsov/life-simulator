@@ -107,3 +107,44 @@ export function testWorld(country: Country = makeCountry({ region: "Western Afri
     loadCountry: () => Promise.resolve(country),
   };
 }
+
+/**
+ * A SYNTHETIC world of several countries with different births, so the birth reveal has names to pass. Each country is
+ * the fixture country under its own code and name; `loadCountry` can be replaced to hold or fail a load.
+ */
+export function testWorldOfMany(count = 8) {
+  const countries = Array.from({ length: count }, (_, i) =>
+    makeCountry({
+      iso3: `T${String(i).padStart(2, "0")}`,
+      iso2: `T${i}`,
+      name: `Testland ${i + 1}`,
+      region: "Western Africa",
+      demography: {
+        ...makeCountry().demography,
+        birthsPerYear: { value: 1_000_000 / (i + 1), source: "test", year: 2023 },
+      },
+    }),
+  );
+  const index: CountryIndex = {
+    dataVersion: "test",
+    countries: countries.map((c) => ({
+      iso3: c.iso3,
+      iso2: c.iso2,
+      name: c.name,
+      region: c.region,
+      incomeGroup: c.incomeGroup,
+      birthsPerYear: c.demography.birthsPerYear.value,
+      population: c.demography.population.value,
+    })),
+    excluded: [],
+    sources: testSources,
+  };
+  return {
+    countries,
+    loadIndex: () => Promise.resolve(index),
+    loadCountry: (iso3: string) => {
+      const found = countries.find((c) => c.iso3 === iso3);
+      return found ? Promise.resolve(found) : Promise.reject(new Error(`No country ${iso3}`));
+    },
+  };
+}

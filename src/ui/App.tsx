@@ -4,6 +4,7 @@ import { BirthScreen } from "./BirthScreen";
 import { DEFAULT_DISPLAY, displayStore, type Display, type DisplayStore } from "./display";
 import { LifeScreen } from "./LifeScreen";
 import { PastLivesScreen } from "./PastLivesScreen";
+import { RevealScreen } from "./RevealScreen";
 import { ScreenBoundary } from "./ScreenBoundary";
 import { SettingsScreen } from "./SettingsScreen";
 import { SourcesScreen } from "./SourcesScreen";
@@ -34,6 +35,8 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
     problem,
     restored,
     deleted,
+    reveal,
+    chanceNote,
   } = useSyncExternalStore(store.subscribe, store.getSnapshot);
   // A display preference the reader chose is kept in this browser too, so it is something "delete all" removes.
   const preferencesStored = useSyncExternalStore(display.subscribe, () => !isDefaultDisplay(display.getSnapshot()));
@@ -43,9 +46,13 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
       {element}
     </ScreenBoundary>
   );
+  if (screen === "reveal" && reveal) {
+    return <RevealScreen view={reveal} onEnd={store.endReveal} onBack={store.backToStart} display={display} />;
+  }
   if (screen === "birth" && life && country) {
     return (
       <BirthScreen
+        chanceNote={chanceNote}
         life={life}
         country={country}
         sources={sources ?? {}}

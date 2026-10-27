@@ -87,6 +87,9 @@ test("begins a life, shows the birth screen and plays years without errors or ho
   await page.goto("./");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Birthright");
   await page.getByRole("button", { name: "Begin a life" }).click();
+  // UI-016: the reveal comes first; its names are not read out. Skip leads on to the birth screen.
+  await expect(page.locator("[data-reel]")).toHaveAttribute("aria-hidden", "true");
+  await page.getByRole("button", { name: "Skip the reveal" }).click();
 
   // CHAR-001, MONEY-001, FAM-001, RNG-003: the new person in words.
   await expect(page.getByRole("heading", { level: 1 })).toContainText("You are born in");
@@ -132,6 +135,7 @@ test("shows the school, money, family and work panels on the life screen without
   await fixedRandom(page, 20261024);
   await page.goto("./");
   await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Skip the reveal" }).click();
   await page.getByRole("button", { name: "Begin this life" }).click();
 
   // MONEY-007, EDU-001, FAM-002: shown from the first year, each in its tab.
@@ -176,6 +180,7 @@ test("the plan can be placed by keyboard and carries over, and the help link is 
   await expect(page.getByRole("switch", { name: "Skip quiet years" })).toBeChecked();
 
   await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Skip the reveal" }).click();
   await page.getByRole("button", { name: "Begin this life" }).click();
   await expect(talk).toBeVisible();
 
@@ -232,6 +237,7 @@ test("the plan can be placed by keyboard and carries over, and the help link is 
 test("a setting changed in the middle of a life stays changed", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Skip the reveal" }).click();
   await page.getByRole("button", { name: "Begin this life" }).click();
   // On the life screen the settings are in a dialog under the Settings button.
   const dialog = page.getByRole("dialog", { name: "Settings" });
@@ -300,6 +306,7 @@ test("the settings screen, from the start: the theme, the text size and motion a
 
   // The start screen, the birth screen and the life screen at the largest text, without sideways scroll.
   await page.getByRole("button", { name: "Begin a life" }).click();
+  // Motion is reduced, so there is no birth reveal to skip (UI-016).
   await page.getByRole("button", { name: "Begin this life" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 0");
   expect(await noHorizontalScroll(page)).toBe(true);
@@ -348,6 +355,7 @@ async function playToTheEnd(page: Page) {
 /** Begins a life and goes into its first year. */
 async function beginLife(page: Page) {
   await page.getByRole("button", { name: "Begin a life" }).click();
+  await page.getByRole("button", { name: "Skip the reveal" }).click();
   await page.getByRole("button", { name: "Begin this life" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 0");
 }
@@ -491,6 +499,7 @@ test("deleting all local data empties the list and leaves nothing of the game in
   await beginLife(page);
   await playToTheEnd(page);
   await page.getByRole("button", { name: "Begin another life" }).click();
+  await page.getByRole("button", { name: "Skip the reveal" }).click();
   await page.getByRole("button", { name: "Begin this life" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 0");
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("birthright:")))).toEqual(
@@ -754,4 +763,58 @@ test("the wide layout holds up in smaller windows: no sideways scroll, and the p
     expect(await noHorizontalScroll(page), `${width} x ${height}: the page scrolls sideways`).toBe(true);
     expect(await position(), `${width} x ${height}`).toBe(docked ? "sticky" : "static");
   }
+});
+
+test("the birth reveal: the reel is not announced, it fits at the width of the window, and it ends on the birth screen by itself on the country it showed (UI-016)", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await fixedRandom(page, 20261026);
+  await page.goto("./");
+  await page.getByRole("button", { name: "Begin a life" }).click();
+
+  // Skip takes focus and the reel is hidden from assistive technology; the one live message names no passing country.
+  await expect(page.getByRole("button", { name: "Skip the reveal" })).toBeFocused();
+  const reel = page.locator("[data-reel]");
+  await expect(reel).toHaveAttribute("aria-hidden", "true");
+  await expect(page.getByRole("status")).toHaveText(/Finding where you are born|You are born in/);
+  const settled = (await page.locator("[data-settle]").textContent()) ?? "";
+  expect(settled).not.toBe("");
+  expect(await noHorizontalScroll(page)).toBe(true);
+
+  // Left alone, it ends on the birth screen with no key pressed (no fixed sleeps: the timeout is only the longest it
+  // may take), in the country the reel settled on.
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toContainText(`You are born in ${settled}`, { timeout: 20_000 });
+  await expect(heading).toBeFocused();
+  await expect(page.getByRole("button", { name: "Begin this life" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the birth reveal ends with Escape too, on the same country the life is lived in (UI-016)", async ({ page }) => {
+  await fixedRandom(page, 20261027);
+  await page.goto("./");
+  await page.getByRole("button", { name: "Begin a life" }).click();
+  const settled = (await page.locator("[data-settle]").textContent()) ?? "";
+  await page.keyboard.press("Escape");
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toContainText(`You are born in ${settled}`);
+  await expect(heading).toBeFocused();
+});
+
+test("under reduced motion there is no reel: the birth screen opens at once and says how the country was drawn (UI-016)", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./");
+  await page.getByRole("button", { name: "Begin a life" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("You are born in");
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  await expect(page.locator("[data-reel]")).toHaveCount(0);
+  await expect(
+    page.getByText("Where you are born is drawn by chance, weighted by where children are born each year."),
+  ).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
 });

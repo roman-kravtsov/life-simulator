@@ -36,6 +36,7 @@ import { drawBirthCountry } from "../engine/world/birth";
 import type { Country, CountryIndex } from "../engine/world/types";
 import { incomeBand, type IncomeBand } from "../format";
 import { noPersistence, type PastLife, type PastLifeListing, type Persistence } from "../save";
+import { revealView, type RevealView } from "./reveal";
 
 // Screens read these through the store, so they never import the engine for a value.
 export { EPITAPH_MAX_LENGTH, JOURNAL_MAX_LENGTH, RING_THEMES };
@@ -46,7 +47,7 @@ export { EPITAPH_MAX_LENGTH, JOURNAL_MAX_LENGTH, RING_THEMES };
  */
 export const promptTextKey = (id: string): string | undefined => reflections.find((def) => def.id === id)?.text;
 
-export type Screen = "start" | "birth" | "life" | "sources" | "summary" | "past" | "settings";
+export type Screen = "start" | "reveal" | "birth" | "life" | "sources" | "summary" | "past" | "settings";
 
 export type LoadStatus = "idle" | "loading" | "error";
 
@@ -84,6 +85,10 @@ export interface GameSnapshot {
   restored: "replayed" | "inexact" | "both" | null;
   /** Set when everything stored in this browser was just deleted, so the start screen can say so (SAVE-007). */
   deleted: boolean;
+  /** The birth reveal on screen (UI-016): the country already drawn, the names that pass before it; null on every other screen. */
+  reveal: RevealView | null;
+  /** Set when the reveal was left out for reduced motion, so the birth screen says how the country was drawn (UI-016). */
+  chanceNote: boolean;
 }
 
 /** A finished life as the summary screen shows it. */
@@ -467,8 +472,17 @@ export interface WorldLoader {
 export interface GameStore {
   getSnapshot(): GameSnapshot;
   subscribe(listener: () => void): () => void;
-  /** Draws a birth country by the real odds, loads it and shows the birth screen. */
+  /**
+   * Draws a birth country by the real odds, shows the birth reveal while the country loads, then the birth screen
+   * (once the reveal has ended). Ignored while a begin is loading or the reveal is on screen.
+   */
   begin(): Promise<void>;
+  /**
+   * The birth reveal is over: its last animation ended, or the player skipped it, or reduced motion left it out
+   * (`reduced`, which also adds the line about chance to the birth screen). Goes to the birth screen when the life
+   * is ready; otherwise the reveal says it is opening and the birth screen follows when the country has loaded.
+   */
+  endReveal(options?: { reduced?: boolean }): void;
   /** From the birth screen into the first year. */
   startLife(): void;
   /** Lives the next year (or a run of quiet ones). `plan` sets the focus points; leave it out to keep the plan as it is. */
@@ -524,6 +538,8 @@ const START: GameSnapshot = {
   problem: null,
   restored: null,
   deleted: false,
+  reveal: null,
+  chanceNote: false,
 };
 
 const lastYearOf = (life: { history?: readonly { events?: EventRecord[] }[] }): EventRecord[] =>
@@ -692,14 +708,20 @@ export function createGameStore(
       return () => listeners.delete(listener);
     },
     async begin() {
-      if (snapshot.status === "loading") return;
+      // One begin at a time: while the index loads, and while the reveal plays.
+      if (snapshot.status === "loading" || snapshot.screen === "reveal") return;
       const mine = ++attempt;
       set(fresh({ status: "loading" }));
       try {
         const seed = makeSeed();
         const index = await world.loadIndex();
+        if (mine !== attempt) return;
         const entry = drawBirthCountry(index, stream(seed, "birth", 0));
-        const country = await world.loadCountry(entry.iso3);
+        // The country loads while the reveal plays (UI-016); the reveal only presents what is already drawn.
+        const loading = world.loadCountry(entry.iso3);
+        loading.catch(() => undefined);
+        set(fresh({ screen: "reveal", reveal: revealView(seed, index, entry) }));
+        const country = await loading;
         if (mine !== attempt) return;
         yearsFrom = 0;
         dataVersion = index.dataVersion;
@@ -707,10 +729,14 @@ export function createGameStore(
         createdAt = undefined;
         shown = null;
         const life = newLife({ seed, country, settings: snapshot.settings });
+        // The reel may have ended (or been skipped) while the country was loading; if so, this is the moment to move on.
+        const over = snapshot.reveal?.opening === true;
         set(
           lived(life, country, {
             ...fresh({ resume: null }),
-            screen: "birth",
+            screen: over ? "birth" : "reveal",
+            reveal: over ? null : snapshot.reveal,
+            chanceNote: snapshot.chanceNote,
             country,
             sources: index.sources,
             problem: autosave(life),
@@ -720,9 +746,16 @@ export function createGameStore(
         if (mine === attempt) set(fresh({ status: "error" }));
       }
     },
+    endReveal(options) {
+      if (snapshot.screen !== "reveal" || !snapshot.reveal) return;
+      const chanceNote = snapshot.chanceNote || options?.reduced === true;
+      // The life is ready: on to the birth screen. Otherwise say it is opening; begin() moves on when the country is in.
+      if (snapshot.life) set({ ...snapshot, screen: "birth", reveal: null, chanceNote });
+      else set({ ...snapshot, reveal: { ...snapshot.reveal, opening: true }, chanceNote });
+    },
     startLife() {
       if (!snapshot.life) return;
-      set({ ...snapshot, screen: "life", problem: autosave(snapshot.life) });
+      set({ ...snapshot, screen: "life", chanceNote: false, problem: autosave(snapshot.life) });
     },
     continueYear(plan) {
       const { life, country } = snapshot;

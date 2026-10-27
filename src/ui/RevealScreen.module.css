@@ -1,0 +1,150 @@
+/* The birth reveal (UI-016). One timeline, set by custom properties and run by CSS animations (no timers): each passing
+   name fades in at its --delay and out after its --gap, exactly as the next fades in; the last one's fade-out and the
+   real name's fade-in take the same time, so they cross without a dip. Then, from --settle: the ink rule is drawn, the
+   line about the odds fades in, and the invisible hold element runs on to the end of the reveal. Reduced motion never
+   gets here (the screen renders no reel then), and the same ink and rule are used for every birth. */
+.screen {
+  /* The timeline after --settle (set inline: when the reel ends). Each step starts where the last needs it. */
+  --fade: 120ms;
+  --real-at: var(--settle);
+  --rule-at: calc(var(--settle) + 300ms);
+  --rule-for: 400ms;
+  --share-at: calc(var(--settle) + 450ms);
+  --share-for: 300ms;
+  --hold-at: calc(var(--share-at) + var(--share-for));
+  --hold-for: 1750ms;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  min-height: 70dvh;
+  /* The main already keeps the gutter at the sides. */
+  padding: 1rem 0;
+}
+
+.skip {
+  align-self: flex-start;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+/* Two lines are kept for it, so a long place name does not move the reel. */
+.status {
+  min-height: 3.2em;
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+/* Every name sits in the one cell, so the cell is as tall as the tallest and nothing moves when the name changes. */
+.reel {
+  display: grid;
+  width: 100%;
+  color: var(--ink);
+  font-family: var(--font-story);
+  font-size: clamp(2rem, 9vw, 3.5rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.stop,
+.real,
+.name {
+  grid-area: 1 / 1;
+  align-self: center;
+}
+
+.stop,
+.real {
+  opacity: 0;
+}
+
+/* No backwards fill on "out": until it starts, "in" holds the name, so it fades out as the next one fades in. */
+.stop {
+  animation:
+    in var(--fade) var(--delay) forwards,
+    out var(--fade) calc(var(--delay) + var(--gap)) forwards;
+}
+
+.real {
+  animation: in var(--fade) var(--real-at) forwards;
+}
+
+/* The name that stands still while the country loads: no animation at all. */
+.name {
+  opacity: 1;
+}
+
+/* A border, not a background, so it stays when the system forces its own colours. */
+.rule {
+  display: block;
+  width: min(100%, 12rem);
+  height: 0;
+  border-top: 2px solid var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: draw var(--rule-for) var(--rule-at) forwards;
+}
+
+.share {
+  max-width: 24rem;
+  margin: 0;
+  color: var(--ink-soft);
+  opacity: 0;
+  animation: in var(--share-for) var(--share-at) forwards;
+}
+
+/* Out of the flow, so it adds no gap to the stage. */
+.hold {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  animation: hold var(--hold-for) var(--hold-at) forwards;
+}
+@keyframes in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes hold {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0;
+  }
+}
