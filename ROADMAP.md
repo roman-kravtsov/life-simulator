@@ -84,9 +84,9 @@ Phases are in dependency order and priority order together. A phase finishes bef
 ### Phase A: Release candidate (P0)
 
 - **Objective.** Make the existing MVP ready for people who are not Roman.
-- **Why.** The release gate in section 2 has four unmet conditions, and one of them (duplicate names) is visible in the first minute.
+- **Why.** The release gate in section 2 has four unmet conditions; one of them, duplicate names, was visible in the first minute and is fixed by CHAR-007.
 - **Included.** [~] A11Y-002 screen reader pass (needs a person with NVDA or VoiceOver; the cloud cannot do it). [x] CHAR-007 distinct names (built; names now skip the living relatives and the person, `CONTENT_VERSION` 2026.10.2). [ ] WORLD-014 method note: what is data, what is authored, and the share of births in the excluded countries. [ ] A11Y-006 automated axe check (proposed for the MVP; `docs/features.md` still says post-MVP: it is small and gives the screen reader pass a safety net). [ ] Roman's read of the authored text and decisions on the open items in `docs/design.md` section 7 (see "Open decisions"). [ ] Browser check on Firefox and Safari (an e2e project each, or a manual list). [ ] Merge or close PR #20.
-- **Dependencies.** None. UI-016 is separate and can land before or after.
+- **Dependencies.** None. UI-016 was separate and has merged.
 - **Technical work.** CHAR-007 is done: `src/engine/names.ts` picks the name the existing roll points at, or the next free one in the list, so no stream gains a draw and a life with no clash keeps its names. It bumped `CONTENT_VERSION` to 2026.10.2 because a replay of a life that had a clash now names someone differently. A "How this works" section on the sources screen with the authored assumptions listed from design 7. An excluded-births line computed in the pipeline report. `@axe-core/playwright` in the e2e suite.
 - **Player-facing outcome.** No repeated names, a page that explains the model, and a game the maintainers have actually read.
 - **Definition of done.** Section 2, conditions 4 to 7, all met; guard test for unique names among living relatives over a batch (done, `tests/engine/distinctNames.test.ts`); the report states the excluded share of births.
