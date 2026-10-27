@@ -104,7 +104,7 @@ Phases are in dependency order and priority order together. A phase finishes bef
 ### Phase C: First impression and keepsakes (P1 to P2)
 
 - **Objective.** A strong first minute, and lives that survive the browser.
-- **Included.** [~] UI-016 birth reveal (in progress in its own thread). [ ] SAVE-006 export and import (proposed promotion from P2 to P1, D-005; `docs/features.md` still says P2). [ ] UI-015 first-life hints. [ ] UI-013 motion, with UI-016's rules (no timers, reduced motion respected). [ ] SHARE-001 share text and SHARE-002 share image (P2, after the summary is final).
+- **Included.** [~] UI-016 birth reveal ([#22](https://github.com/roman-kravtsov/life-simulator/pull/22), built and in review; `docs/features.md` has the row, `in progress` until Roman accepts the done wording). [ ] SAVE-006 export and import (proposed promotion from P2 to P1, D-005; `docs/features.md` still says P2). [ ] UI-015 first-life hints. [ ] UI-013 motion, with UI-016's rules (no timers, reduced motion respected). [ ] SHARE-001 share text and SHARE-002 share image (P2, after the summary is final).
 - **Dependencies.** Phase A. SAVE-006 uses the save schema (SAVE-004).
 - **Technical work.** A JSON file with the save plus the seed and logs, validated on import by `readSave`; UI in settings and the past lives screen.
 - **Outcome.** A first minute that sets the tone, and a player who can keep or share a life.
@@ -149,7 +149,7 @@ Phases are in dependency order and priority order together. A phase finishes bef
 3. [ ] WORLD-014 method note and excluded-births figure.
 4. [ ] A11Y-002 pass with a real screen reader (Roman or a volunteer), A11Y-006 axe.
 5. [ ] ADMIN-003 and ADMIN-005 (the probe), then the Phase B balance pass.
-6. [~] UI-016 birth reveal (other thread), and the property and investing design (other thread): see "Coordination" below.
+6. [~] UI-016 birth reveal ([#22](https://github.com/roman-kravtsov/life-simulator/pull/22), waiting on Roman's review), and the property and investing design (other thread): see "Coordination" below.
 
 **Recommended single next step: CHAR-007, distinct names.** It is the smallest change, it fixes the most visible flaw, it needs nothing from anyone else, and it is a good first test of how a `CONTENT_VERSION` or replay-affecting change should be handled before the larger ones in Phases B and D.
 
@@ -158,7 +158,7 @@ Phases are in dependency order and priority order together. A phase finishes bef
 - [x] M1 Foundations ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)), M2 World data ([#7](https://github.com/roman-kravtsov/life-simulator/pull/7)), M3 A life that runs ([#11](https://github.com/roman-kravtsov/life-simulator/pull/11)), M4 Life systems ([#14](https://github.com/roman-kravtsov/life-simulator/pull/14)), M5 Events and decisions ([#15](https://github.com/roman-kravtsov/life-simulator/pull/15)), M6 Death, summary and saves ([#16](https://github.com/roman-kravtsov/life-simulator/pull/16)), M7 Playable game ([#19](https://github.com/roman-kravtsov/life-simulator/pull/19)). 107 of 108 MVP features done.
 - [x] Docs and setup: analysis (#2), design (#3), features, roadmap and MVP (#4), stat rename (#13), Ledger life screen (#17), agents and skills (#1, #8, #9, #10, #12, #18).
 
-**In progress.** [~] A11Y-002 (screen reader pass). [~] UI-016 birth reveal (own thread, not yet in `docs/features.md`). [~] Property and investing design (own thread, no feature IDs yet; MONEY-008 home ownership is the existing row).
+**In progress.** [~] A11Y-002 (screen reader pass). [~] UI-016 birth reveal ([#22](https://github.com/roman-kravtsov/life-simulator/pull/22), in review). [~] Property and investing design (own thread, no feature IDs yet; MONEY-008 home ownership is the existing row).
 
 ## 8. Technical debt and risks
 
@@ -211,7 +211,7 @@ Decisions marked **blocks A** stop Phase A. The others are collected from `docs/
 
 ## 11. Coordination with work in other threads
 
-- **UI-016 birth reveal.** Needs a row in `docs/features.md` (the next free UI ID is UI-016 and the thread's own prompt says to add it). It touches `StartScreen`, `App` and `store.ts`, so it will conflict with TD-003 if both run at once: do TD-003 after it merges.
+- **UI-016 birth reveal.** Built in [#22](https://github.com/roman-kravtsov/life-simulator/pull/22) with its row in `docs/features.md`. It touches `StartScreen`, `App` and `store.ts` (a new `reveal` screen and an `endReveal` action), so it will conflict with TD-003 if both run at once: do TD-003 after it merges.
 - **Property and investing.** Extend MONEY-008 (home ownership, `post-MVP`, M, P2) rather than inventing a parallel feature; add new IDs in MONEY for investing and sales only when the design is final. It should read Phase D's order and TD-001 and TD-002 before the build. It also adds a tab to the life screen, which must still fit a 640 px window (`CLAUDE.md`).
 - **Docs split (the AI setup review).** If `docs/features.md` is split by category, this file only needs its references updated; it keeps no per-feature status for that reason.
 
@@ -227,6 +227,7 @@ For a significant scope change, add a change-log line with: what changed, why, w
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-10-26 | First version. Audited `main` at `263f66d`. Declared the MVP built but not yet released and added a release gate. Grouped M8 to M11 into Phases C to H, moved forward SAVE-006, A11Y-006 and ADMIN-003, and added CHAR-007, WORLD-014 and ADMIN-005 to `docs/features.md`. Proposed Phase D before the zoom-in quarters. Replaces the use of `docs/roadmap.md` as the plan, which stays as the milestone map. All of it is a proposal until Roman answers the open decisions. |
 | 2026-10-26 | Money units decided: Roman chose a full nominal engine (choice C, property design thread; design not final). TD-001 rewritten from "decide" to "rework the money engine" and made the first step of Phase D, after the Phase B probe gives a baseline. Phase order unchanged. Supersedes the constant-dollar recommendation.                                                                                                                                                  |
+| 2026-10-27 | UI-016 birth reveal built ([#22](https://github.com/roman-kravtsov/life-simulator/pull/22)), in review; row added to `docs/features.md` as `in progress` (Roman to accept the done wording). Phase C status updated; no phase or priority changed. Merged `main` (this file) into the branch.                                                                                                                                                                                 |
 
 ---
 
