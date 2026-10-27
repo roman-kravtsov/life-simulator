@@ -3,6 +3,7 @@
 // how sociable the person is, with a little noise. Events and the Belonging focus move it too
 // (the `relationship` effects in effects.ts).
 import { namesForRegion } from "../content/names";
+import { pickName, takenNames } from "./names";
 import { clamp } from "./dist";
 import type { PendingEvent } from "./events";
 import { FOCUS_EFFECT } from "./focus";
@@ -90,9 +91,9 @@ export interface FriendStep {
 
 /**
  * A friend made, and friendships that have faded away. Always draws four numbers (the chance, then
- * the friend's sex, name and closeness).
+ * the friend's sex, name and closeness). `reserved` holds the names of relatives the year has already added.
  */
-export function stepFriends(person: Person, country: Country, rng: Rng): FriendStep {
+export function stepFriends(person: Person, country: Country, rng: Rng, reserved: readonly string[] = []): FriendStep {
   const roll = rng.next();
   const sexRoll = rng.next();
   const nameRoll = rng.next();
@@ -122,7 +123,7 @@ export function stepFriends(person: Person, country: Country, rng: Rng): FriendS
     const friend: Relationship = {
       id: `friend-${person.age}`,
       kind: "friend",
-      name: list[Math.min(list.length - 1, Math.floor(nameRoll * list.length))]!,
+      name: pickName(list, nameRoll, takenNames({ ...person, relationships }, reserved)),
       sex,
       age: Math.max(FRIEND_FROM_AGE - 2, person.age + Math.floor(((nameRoll * 7919) % 1) * 5) - 2),
       alive: true,

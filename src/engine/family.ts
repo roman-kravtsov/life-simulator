@@ -1,6 +1,7 @@
 // Parents at birth (FAM-001), siblings (FAM-002) and the family growing older and dying (FAM-003).
 import { namesForRegion } from "../content/names";
 import { normal, clamp, poisson } from "./dist";
+import { pickName, takenNames } from "./names";
 import type { Rng } from "./rng";
 import type { Person, Relationship, Sex } from "./types";
 import type { Country } from "./world/types";
@@ -13,8 +14,17 @@ const FATHER_EXTRA_YEARS = { mean: 3.5, sd: 4 };
  * childbirth (the mother) and a few years above it (the father). Orphanhood comes later, as
  * they age and die by the life table.
  */
-export function generateParents(family: Rng, country: Country, names: Rng): [Relationship, Relationship] {
+export function generateParents(
+  family: Rng,
+  country: Country,
+  names: Rng,
+  taken: ReadonlySet<string> = new Set(),
+): [Relationship, Relationship] {
   const list = namesForRegion(country.region);
+  const motherRoll = names.next();
+  const fatherRoll = names.next();
+  const mother = pickName(list.female, motherRoll, taken);
+  const father = pickName(list.male, fatherRoll, new Set([...taken, mother.toLocaleLowerCase()]));
   const motherAge = clamp(Math.round(normal(family, country.demography.meanAgeAtBirth.value, MOTHER_AGE_SD)), 16, 46);
   const fatherAge = Math.max(
     17,
@@ -24,7 +34,7 @@ export function generateParents(family: Rng, country: Country, names: Rng): [Rel
     {
       id: "mother",
       kind: "mother",
-      name: list.female[names.int(0, list.female.length - 1)]!,
+      name: mother,
       sex: "female",
       age: motherAge,
       alive: true,
@@ -33,7 +43,7 @@ export function generateParents(family: Rng, country: Country, names: Rng): [Rel
     {
       id: "father",
       kind: "father",
-      name: list.male[names.int(0, list.male.length - 1)]!,
+      name: father,
       sex: "male",
       age: fatherAge,
       alive: true,
@@ -76,14 +86,14 @@ function sibling(
   sexRoll: number,
   nameRoll: number,
   closenessRoll: number,
+  taken: ReadonlySet<string>,
 ): Relationship {
   const ratio = country.demography.sexRatioAtBirth.value;
   const sex: Sex = sexRoll < ratio / (1 + ratio) ? "male" : "female";
-  const names = namesForRegion(country.region)[sex];
   return {
     id,
     kind: "sibling",
-    name: names[Math.floor(nameRoll * names.length)]!,
+    name: pickName(namesForRegion(country.region)[sex], nameRoll, taken),
     sex,
     age,
     alive: true,
@@ -96,15 +106,19 @@ function sibling(
  * so the number before this child is Poisson with the rate times the years she had behind her, and
  * each came at a uniform moment among them. Brothers and sisters who died young are not listed, only
  * counted in `lost`, because they were born. Younger siblings come later, year by year (rollSiblingBirth).
+ * Each takes a name the person, the parents (`taken`) and the brothers and sisters before them do not have;
+ * one who did not live takes none.
  */
 export function generateSiblings(
   rng: Rng,
   country: Country,
   motherAge: number,
+  taken: ReadonlySet<string> = new Set(),
 ): { siblings: Relationship[]; lost: number } {
   const years = Math.max(0, Math.min(motherAge, FERTILE_AGES[1]) - FERTILE_AGES[0]);
   const count = poisson(rng, birthRate(country) * years);
   const siblings: Relationship[] = [];
+  const names = new Set(taken);
   let lost = 0;
   for (let i = 0; i < count; i++) {
     const age = Math.max(1, Math.round(rng.next() * years));
@@ -112,12 +126,14 @@ export function generateSiblings(
     const survival = rng.next();
     const nameRoll = rng.next();
     const closenessRoll = rng.next();
-    const born = sibling(country, `sibling-${i + 1}`, age, sexRoll, nameRoll, closenessRoll);
+    const born = sibling(country, `sibling-${i + 1}`, age, sexRoll, nameRoll, closenessRoll, names);
     const table = country.demography.lifeTable.value[born.sex];
     let alive = 1;
     for (let a = 0; a < age; a++) alive *= 1 - table[Math.min(a, table.length - 1)]!;
-    if (survival < alive) siblings.push(born);
-    else lost++;
+    if (survival < alive) {
+      siblings.push(born);
+      names.add(born.name.toLocaleLowerCase());
+    } else lost++;
   }
   siblings.sort((a, b) => b.age - a.age);
   return { siblings: siblings.map((s, i) => ({ ...s, id: `sibling-${i + 1}` })), lost };
@@ -126,9 +142,14 @@ export function generateSiblings(
 /**
  * A younger sibling this year, if the mother is alive and in her fertile years: the yearly chance is
  * the birth rate of the mother's stream of births. None in the baby's own first year. Always draws
- * four numbers.
+ * four numbers. `reserved` holds the names of relatives the year has already added.
  */
-export function rollSiblingBirth(person: Person, country: Country, rng: Rng): Relationship | undefined {
+export function rollSiblingBirth(
+  person: Person,
+  country: Country,
+  rng: Rng,
+  reserved: readonly string[] = [],
+): Relationship | undefined {
   const roll = rng.next();
   const sexRoll = rng.next();
   const nameRoll = rng.next();
@@ -137,5 +158,13 @@ export function rollSiblingBirth(person: Person, country: Country, rng: Rng): Re
   if (person.age < 1 || !mother?.alive || mother.age < FERTILE_AGES[0] || mother.age >= FERTILE_AGES[1])
     return undefined;
   if (roll >= 1 - Math.exp(-birthRate(country))) return undefined;
-  return sibling(country, `sibling-born-${person.age}`, 0, sexRoll, nameRoll, closenessRoll);
+  return sibling(
+    country,
+    `sibling-born-${person.age}`,
+    0,
+    sexRoll,
+    nameRoll,
+    closenessRoll,
+    takenNames(person, reserved),
+  );
 }
