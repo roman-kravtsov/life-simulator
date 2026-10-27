@@ -24,7 +24,8 @@ npm run calibrate -- NGA JPN   # compare simulated life expectancy with the sour
 - `docs/analysis.md`: analysis of the reference game and data sources
 - `docs/design.md`: identity, data model and simulation engine
 - `docs/features.md`: feature inventory, the source of truth for all work
-- `docs/roadmap.md`: milestones
+- `ROADMAP.md`: the living plan: status, phases, priorities, open decisions
+- `docs/roadmap.md`: the original milestone map
 - `docs/mvp.md`: MVP definition
 
 ## Layout

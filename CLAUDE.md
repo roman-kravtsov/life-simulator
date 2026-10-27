@@ -87,8 +87,9 @@ e2e/                Playwright: full-loop tests at phone and desktop widths; key
 
 Read these docs before starting work:
 
+- `ROADMAP.md`: **the living plan**: status, the MVP boundary, phases, priorities, technical debt and open decisions. Read it first and check it against the code.
 - `docs/features.md`: **the source of truth.** Every change traces back to a feature ID (SIM-001, UI-004, ...).
-- `docs/roadmap.md`: milestones in dependency order. `docs/mvp.md`: what the MVP includes and how it is built.
+- `docs/roadmap.md`: the original milestone map of all features (M1 to M7 are history; `ROADMAP.md` regroups what is left). `docs/mvp.md`: what the MVP includes and how it is built.
 - `docs/agents.md`: the project subagents, where they came from and the rules for them.
 - `docs/design.md`: data model, engine rules and stack. `docs/analysis.md`: reference analysis and data sources with licences.
 
@@ -98,6 +99,7 @@ Read these docs before starting work:
 - **One PR per milestone** (M1, M2, ...). After MVP, one PR per feature, named by its feature ID. Roman reviews each PR before the next starts.
 - **Feature loop:** for "next" or a feature ID, restate the feature, list open questions, propose the approach in a few lines, then build it. If a feature is too vague, ask instead of guessing.
 - **New features** get the next free ID in their category. IDs never change and are never reused, even for dropped features.
+- **Keeping the roadmap current (Roman, 2026-10-26).** `ROADMAP.md` is the one active plan. In the same PR as any work that finishes, starts or drops something, changes the MVP scope, a priority or a decision, or adds a system, update its status markers, "Next up", "Open decisions", technical debt and change log. Before substantial work, check it against the code; if they disagree, reconcile them in that PR and say so in the change log, never follow an outdated roadmap. A significant scope change records what changed, why, what it affects and what follows. Per-feature status stays in `docs/features.md` (do not copy it into the roadmap); design decisions stay in `docs/design.md` section 7. Do not start implementation on the strength of the roadmap alone: Roman asks for it.
 - **Update `docs/features.md`** in the same PR: set the status (`in progress` or `done`) with the PR link. A feature is `done` only when its acceptance criteria are met; otherwise mark it `in progress` and say what is left.
 - Record decisions Roman makes in the relevant doc (design decisions in `docs/design.md`, section 7 decisions log).
 - **Agents and skills for the work** (`docs/agents.md`): `frontend-developer` for `src/ui`, `engine-developer` for `src/engine`, the `new-event` skill for events and decisions in `src/content`. When a phase is finished, use the `milestone-handoff` skill for the report to the coordinator.

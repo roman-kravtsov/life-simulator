@@ -4,7 +4,7 @@ This is the project's source of truth. Every piece of work traces back to a feat
 
 **Priority:** P0 (must have), P1 (should have), P2 (nice to have), P3 (later)
 **Complexity:** S, M, L, XL
-**Scope:** MVP, post-MVP. Phase 4 (`docs/mvp.md`) finalises the MVP line; the scope below is the proposal.
+**Scope:** MVP, post-MVP. The MVP line is set in `docs/mvp.md` (confirmed 2026-10-23). The order and priority of post-MVP work is in `ROADMAP.md`.
 **Status:** not started, in progress, done, dropped (with the PR link once one exists)
 
 IDs are a category prefix plus a three-digit number. They never change and are never reused, even when a feature is dropped. New features get the next free number in their category.
@@ -36,6 +36,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | CHAR-004 | Visible stats | Health, happiness, belonging and skills on a 0 to 100 scale (2.2). Done when they are clamped, recorded every year and shown on the life screen. | P0 | SIM-001 | S | MVP | done ([#5](https://github.com/roman-kravtsov/life-simulator/pull/5)) |
 | CHAR-005 | Trait reveal | Traits are revealed in words as the player sees them act ("You have always been quick to anger"). Done when each trait has reveal texts and a reveal is triggered by relevant events. | P2 | CHAR-003, EVENT-001 | M | post-MVP | not started |
 | CHAR-006 | Portrait | A simple, non-stereotyped abstract portrait or emblem per life. | P3 | UI-011 | M | post-MVP | not started |
+| CHAR-007 | Distinct names | Names of people in one life are distinct: a new friend, partner, sibling or child never takes the name of a living relative or of the person. Found in the 2026-10-26 audit (`ROADMAP.md` D-001): 55% of sampled lives had two living relatives with one name. Done when a batch test over many lives and countries finds no living relatives sharing a name or the person's name, and the change is handled for replay (`CONTENT_VERSION`). | P0 | CHAR-002, FAM-001, REL-002, REL-003, FAM-002, FAM-004 | S | MVP | not started |
 
 ## World/country (WORLD)
 
@@ -54,6 +55,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | WORLD-011 | Past eras | Births in earlier decades using historical WPP data and historical events. | P3 | WORLD-001 | XL | post-MVP | not started |
 | WORLD-012 | Future era | Births using WPP projections. | P3 | WORLD-001 | L | post-MVP | not started |
 | WORLD-013 | Data update process | Documented steps to bump a source version, regenerate data and review differences in a PR. | P2 | WORLD-001 | S | post-MVP | not started |
+| WORLD-014 | Method note | A "How this works" part of the sources screen that says which parts are published data and which are the game's own model, lists the authored assumptions (from `docs/design.md` section 7), and states how many births a year fall in the countries left out. Found in the 2026-10-26 audit (`ROADMAP.md` D-004). Done when the screen lists every authored assumption group, the data report gives the excluded countries' share of births, and the start screen's claim of "real odds" matches. | P0 | WORLD-007, WORLD-003 | S | MVP | not started |
 
 ## Family (FAM)
 
@@ -301,6 +303,7 @@ Design references like (3.3) point to sections of `docs/design.md`.
 | ADMIN-002 | Event preview | A debug page to fire any event against a chosen state. | P2 | EVENT-003 | M | post-MVP | not started |
 | ADMIN-003 | Balance report | A per-country report from the calibration harness (life expectancy, schooling, income, marriage, deaths by cause) published as a CI artifact. | P1 | SIM-007 | S | post-MVP | not started |
 | ADMIN-004 | Debug mode | Shows seed, streams and rolls during play, for testing. | P2 | RNG-002 | S | post-MVP | not started |
+| ADMIN-005 | Agency probe | A script and CI report that simulates batches of lives with different plans and decision choices and reports the effect of each focus area and choice on stats, income rank, health and the chance, choice and circumstance shares. Found in the 2026-10-26 audit (`ROADMAP.md` D-002). Done when the report runs from one command, its numbers are committed in `docs/`, and a balance pass can be judged against it. | P1 | SIM-007, DEC-003, SUM-004 | M | post-MVP | not started |
 
 ---
 
