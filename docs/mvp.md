@@ -1,5 +1,7 @@
 # Birthright: MVP definition
 
+> **Status (2026-10-26).** The MVP below is built (M1 to M7, 107 of 108 features done). [`ROADMAP.md`](../ROADMAP.md) adds a release gate on top of it (screen reader pass, honesty about authored numbers, no visible defects, Roman's read of the text). The content amounts in section 3 were targets; the game ships more (167 events, 23 reflection prompts, 14 conditions, 163 countries).
+
 The smallest version that still feels like a complete game: one real life, from a real birthplace, to its end, with choices that visibly matter, and a summary worth reading. Roman confirmed (2026-10-23) that the MVP keeps the full scope proposed in Phase 3 (roadmap M1 to M7, 108 features) and that we build it step by step, improving the workflow as we go.
 
 ---

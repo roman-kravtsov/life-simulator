@@ -26,5 +26,5 @@ Send the coordinator exactly these sections, in this order, each short. Write "n
 ## Rules
 
 - State facts you checked (CI status from the PR, the test output), not what you expect.
-- Do not edit the roadmap to reflect the next phase; the coordinator decides what comes next.
+- Update `ROADMAP.md` for the work you finished (status markers, "Next up", the change log, decisions you made), as `CLAUDE.md` requires. Do not re-plan the next phase in it; the coordinator decides what comes next.
 - After sending the report, stop. Do not begin the next phase.
