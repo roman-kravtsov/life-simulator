@@ -2,7 +2,7 @@
 import type { PendingEvent } from "./events";
 import type { Person } from "./types";
 
-const keyOf = (name: string) => name.toLocaleLowerCase();
+const keyOf = (name: string) => name.toLowerCase();
 
 /**
  * The name a roll points at in a list, or the next free one after it (wrapping) when that name is taken.
@@ -30,7 +30,11 @@ export function takenNames(
   return taken;
 }
 
-/** The names of the relatives that a year's events add, which are not in the person's relationships until the year ends. */
+/**
+ * The names of the relatives that a year's events add, which are not in the person's relationships until the year
+ * ends. A person met in a question (`ask.payload`) is not listed: that step offers one only when there is no
+ * living partner, and the only later step that could clash with them, a child, needs a partner.
+ */
 export const reservedNames = (pending: readonly PendingEvent[]): string[] =>
   pending.flatMap((p) =>
     p.effects.flatMap((e) => ("relationship" in e && e.relationship === "add" ? [e.relative.name] : [])),

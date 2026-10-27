@@ -1,14 +1,18 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { namesForRegion } from "../../src/content/names";
+import { NAME_LISTS, REGION_NAME_GROUP, namesForRegion } from "../../src/content/names";
 import { advance, advanceAuto, newLife } from "../../src/engine/life";
+import { rollSiblingBirth } from "../../src/engine/family";
 import { pickName, reservedNames, takenNames } from "../../src/engine/names";
+import { stepFertility, makePartner } from "../../src/engine/partnership";
+import { stepFriends } from "../../src/engine/relationships";
+import type { Rng } from "../../src/engine/rng";
 import type { Person, Relationship } from "../../src/engine/types";
 import type { Country } from "../../src/engine/world/types";
 
 const real = (iso3: string) => JSON.parse(readFileSync(`public/data/countries/${iso3}.json`, "utf8")) as Country;
 
-const key = (name: string) => name.toLocaleLowerCase();
+const key = (name: string) => name.toLowerCase();
 
 /** The names that must all differ: the person's own and every living relative's. */
 const livingNames = (person: Person, extra: readonly Relationship[] = []): string[] => [
@@ -70,9 +74,81 @@ describe("pickName (CHAR-007)", () => {
   });
 });
 
+/** A random source that gives the numbers it is given, in order, and then repeats the last. */
+const fixed = (...values: number[]): Rng => {
+  let i = 0;
+  const next = () => values[Math.min(i++, values.length - 1)]!;
+  return {
+    next,
+    int: (min, max) => min + Math.floor(next() * (max - min + 1)),
+    chance: (p) => next() < p,
+    weighted: (items) => items[0]!,
+  };
+};
+
+describe("names the year has already used (CHAR-007)", () => {
+  const country = real("NGA");
+  const base = newLife({ seed: "reserved", country }).person;
+  const mother = { ...base.relationships.find((r) => r.kind === "mother")!, age: 30 };
+  const listFor = (sex: "female" | "male") => namesForRegion(country.region)[sex];
+
+  it("a friend skips a name that a relative added the same year has", () => {
+    const person: Person = { ...base, age: 12 };
+    const rolls = [0, 0.1, 0, 0];
+    const free = stepFriends(person, country, fixed(...rolls));
+    const added = (free.events.find((e) => e.id === "friends.made")!.effects[0] as { relative: Relationship }).relative;
+    expect(added.name).toBe(listFor("female")[0]);
+    const taken = stepFriends(person, country, fixed(...rolls), [added.name]);
+    const second = (taken.events.find((e) => e.id === "friends.made")!.effects[0] as { relative: Relationship })
+      .relative;
+    expect(second.name).not.toBe(added.name);
+  });
+
+  it("a younger sibling skips a reserved name", () => {
+    const person: Person = {
+      ...base,
+      age: 5,
+      relationships: [mother, ...base.relationships.filter((r) => r.kind !== "mother")],
+    };
+    const rolls = [0, 0.99, 0, 0];
+    const born = rollSiblingBirth(person, country, fixed(...rolls));
+    expect(born?.name).toBe(listFor("female")[0]);
+    expect(rollSiblingBirth(person, country, fixed(...rolls), [born!.name])?.name).not.toBe(born!.name);
+  });
+
+  it("a person met skips a reserved name", () => {
+    const person: Person = { ...base, age: 25 };
+    const met = makePartner(person, country, fixed(0.5, 0.5, 0));
+    expect(makePartner(person, country, fixed(0.5, 0.5, 0), [met.name]).name).not.toBe(met.name);
+  });
+
+  it("a child skips a reserved name", () => {
+    const wife: Relationship = {
+      id: "p",
+      kind: "spouse",
+      name: "Wife",
+      sex: "female",
+      age: 28,
+      alive: true,
+      closeness: 70,
+    };
+    const person: Person = { ...base, sex: "male", age: 30, relationships: [wife] };
+    const rolls = [0, 0.99, 0, 0];
+    const first = stepFertility(person, country, fixed(...rolls));
+    const child = (first.events[0]!.effects[0] as { relative: Relationship }).relative;
+    expect(child.name).toBe(listFor("female")[0]);
+    const again = stepFertility(person, country, fixed(...rolls), [child.name]);
+    expect((again.events[0]!.effects[0] as { relative: Relationship }).relative.name).not.toBe(child.name);
+  });
+});
+
 describe("distinct names across a life (CHAR-007)", () => {
-  // One country for most name groups, so every list is used.
-  const ISO = ["NGA", "KEN", "EGY", "IND", "JPN", "IDN", "DEU", "BRA", "POL", "AUS", "KAZ", "ZAF"];
+  // At least one country for every name group.
+  const ISO = ["NGA", "KEN", "COD", "ZAF", "EGY", "IND", "KAZ", "JPN", "IDN", "DEU", "ITA", "POL", "BRA", "PNG", "AUS"];
+  it("covers every name group", () => {
+    const groups = new Set(ISO.map((iso3) => REGION_NAME_GROUP[real(iso3).region]));
+    expect([...groups].sort()).toEqual(Object.keys(NAME_LISTS).sort());
+  });
   const LIVES = 25;
 
   it("the newborn, parents and older siblings never share a name", () => {

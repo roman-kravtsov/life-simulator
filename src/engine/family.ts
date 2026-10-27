@@ -24,7 +24,7 @@ export function generateParents(
   const motherRoll = names.next();
   const fatherRoll = names.next();
   const mother = pickName(list.female, motherRoll, taken);
-  const father = pickName(list.male, fatherRoll, new Set([...taken, mother.toLocaleLowerCase()]));
+  const father = pickName(list.male, fatherRoll, new Set([...taken, mother.toLowerCase()]));
   const motherAge = clamp(Math.round(normal(family, country.demography.meanAgeAtBirth.value, MOTHER_AGE_SD)), 16, 46);
   const fatherAge = Math.max(
     17,
@@ -132,7 +132,7 @@ export function generateSiblings(
     for (let a = 0; a < age; a++) alive *= 1 - table[Math.min(a, table.length - 1)]!;
     if (survival < alive) {
       siblings.push(born);
-      names.add(born.name.toLocaleLowerCase());
+      names.add(born.name.toLowerCase());
     } else lost++;
   }
   siblings.sort((a, b) => b.age - a.age);
