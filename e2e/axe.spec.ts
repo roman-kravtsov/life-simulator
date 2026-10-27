@@ -27,11 +27,24 @@ async function useTheme(page: Page, theme: (typeof THEMES)[number]) {
   await page.addInitScript((chosen) => localStorage.setItem("birthright:theme", chosen), theme);
 }
 
-/** Runs axe on the page as it is now and fails, naming the screen and every offending element, on any violation. */
+/**
+ * Runs axe on the page as it is now and fails, naming the screen and every offending element, on any violation.
+ * Axe also lists "incomplete" checks it could not decide; they are not failures. On these screens they are
+ * color-contrast where a pseudo element, a dialog's overlap or an aria-hidden glyph hides the background, and
+ * label-content-name-mismatch on the plan's steppers. Contrast is checked on the style sheets themselves in
+ * `tests/ui/contrast.test.ts`; `AXE_DEBUG=1` prints the incomplete checks with their elements.
+ */
 async function expectNoViolations(page: Page, where: string, exclude: string[] = []) {
   const builder = new AxeBuilder({ page }).withTags(TAGS);
   for (const selector of exclude) builder.exclude(selector);
-  const { violations } = await builder.analyze();
+  const { violations, incomplete } = await builder.analyze();
+  if (process.env.AXE_DEBUG)
+    for (const r of incomplete)
+      console.log(
+        where,
+        r.id,
+        r.nodes.slice(0, 3).map((n) => n.target.join(" ") + " :: " + n.any.map((c) => c.message).join("|")),
+      );
   const report = violations.map(
     (violation) =>
       `${violation.id} (${violation.impact}): ${violation.help}\n` +
@@ -51,6 +64,7 @@ for (const theme of THEMES) {
     test("the start, settings, sources and past lives screens have no violations", async ({ page }) => {
       await page.goto("./");
       await expect(page.getByRole("heading", { level: 1 })).toContainText("Birthright");
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expectNoViolations(page, "start screen");
 
       await page.getByRole("button", { name: "Settings" }).click();
@@ -66,6 +80,21 @@ for (const theme of THEMES) {
       await page.getByRole("button", { name: "Past lives" }).click();
       await expect(page.getByRole("heading", { level: 1, name: "Past lives" })).toBeFocused();
       await expectNoViolations(page, "past lives screen (empty)");
+    });
+
+    test("the still reveal, shown while the country loads, has no violations", async ({ page }) => {
+      let release: () => void = () => {};
+      const held = new Promise<void>((resolve) => (release = resolve));
+      await page.route("**/data/countries/*.json", async (route) => {
+        await held;
+        await route.continue();
+      });
+      await page.goto("./");
+      await page.getByRole("button", { name: "Begin a life" }).click();
+      await expect(page.getByRole("status")).toHaveText("Opening your life…", { timeout: 15_000 });
+      await expect(page.getByRole("heading", { level: 1, name: "Where you are born" })).toBeAttached();
+      await expectNoViolations(page, "still reveal");
+      release();
     });
 
     test("the reveal, birth screen, every tab of the life screen, a decision, the settings dialog and the summary have no violations", async ({
@@ -105,6 +134,15 @@ for (const theme of THEMES) {
           const tab = tabs.nth(i);
           await tab.click();
           await expectNoViolations(page, `life screen, ${part.column}: ${(await tab.textContent())?.trim()}`);
+          if ((await tab.textContent())?.trim() === "Notes") {
+            // A line written in the journal lists it in a dialog, which is audited open.
+            await column.getByRole("textbox", { name: "A line for this year" }).fill("A line for the audit.");
+            await column.getByRole("button", { name: "Save" }).click();
+            await column.getByRole("button", { name: "Read the line in full" }).click();
+            await expect(page.getByRole("dialog")).toBeVisible();
+            await expectNoViolations(page, "journal lines dialog");
+            await page.keyboard.press("Escape");
+          }
         }
       }
       if (isNarrow(page)) await page.getByRole("tab", { name: "Story", exact: true }).click();
@@ -144,6 +182,7 @@ for (const theme of THEMES) {
         if (await another.isVisible()) break;
       }
       expect(auditedDecision, "the fixed life met no decision to audit").toBe(true);
+      expect(auditedPlan, "the fixed life never showed the plan to audit").toBe(true);
       await expect(another).toBeVisible();
       await expectNoViolations(page, "summary screen");
 
@@ -152,6 +191,10 @@ for (const theme of THEMES) {
       await page.getByRole("button", { name: "Past lives" }).click();
       await expect(page.getByRole("heading", { level: 1, name: "Past lives" })).toBeFocused();
       await expectNoViolations(page, "past lives screen (one life)");
+      await page.getByRole("button", { name: /^Delete(?! all)/ }).click();
+      await expect(page.getByRole("alertdialog")).toBeVisible();
+      await expectNoViolations(page, "delete-one-life confirmation");
+      await page.keyboard.press("Escape");
       await page.getByRole("button", { name: "Delete all local data" }).click();
       await expect(page.getByRole("alertdialog", { name: "Delete all local data?" })).toBeVisible();
       await expectNoViolations(page, "delete-all confirmation");
