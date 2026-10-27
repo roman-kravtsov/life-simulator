@@ -16,7 +16,7 @@ Last audited: 2026-10-26, against `main` at `263f66d` (PR #19, M7). The audit ev
 
 Birthright is a complete game loop that works end to end. A player begins a life, is born into one of 163 countries by the real odds of birth, plays year by year with a three-point focus plan, answers decisions (35 of the 167 events) with an odds lens, and sees the finished life as tree rings with a chance, choice and circumstance breakdown. Lives autosave and can be resumed, finished lives are archived, and any life replays exactly from its seed and logs. It is deployed to GitHub Pages (every merge to `main` ships; the last deploy, run 15, was green).
 
-Of the 108 original MVP features, 107 are `done` and one (A11Y-002, screen readers) is `in progress`. The audit added two release-gate features to the MVP, CHAR-007 (distinct names, built in Phase A) and WORLD-014 (`not started`). Lint, typecheck, 2127 unit tests and 29 Playwright tests passed at the audit.
+Of the 108 original MVP features, 107 are `done` and one (A11Y-002, screen readers) is `in progress`. The audit added two release-gate features to the MVP, CHAR-007 (distinct names, built in Phase A) and WORLD-014 (`not started`); A11Y-006 (axe check, done) was moved in from post-MVP later. Lint, typecheck, 2127 unit tests and 29 Playwright tests passed at the audit.
 
 The honest summary is that **the MVP is built but not yet proven by play.** Nobody has played it the way a player would, the authored text has not been read by Roman, the screen reader pass has not happened, and the audit found four things that would hurt a first-time player or the "real odds" promise (section 4). The next phase is about those, not about new features.
 
@@ -134,7 +134,7 @@ Phases are in dependency order and priority order together. A phase finishes bef
 
 ### Phase G: Reflection, replay and tools (P2) [rest of M10]
 
-- **Included.** [ ] SUM-006 the other shore, SUM-007 the road not taken, SUM-008 life charts, RNG-006 play a given seed, SHARE-003 seed link, DEC-006 auto mode, ADMIN-002 event preview, ADMIN-004 debug mode, ANLT-002 your lives in numbers, FAM-008 family tree, WORLD-006, WORLD-013, UI-014 installable and offline, A11Y-006 if not done.
+- **Included.** [ ] SUM-006 the other shore, SUM-007 the road not taken, SUM-008 life charts, RNG-006 play a given seed, SHARE-003 seed link, DEC-006 auto mode, ADMIN-002 event preview, ADMIN-004 debug mode, ANLT-002 your lives in numbers, FAM-008 family tree, WORLD-006, WORLD-013, UI-014 installable and offline.
 - **Why.** Replay is built (RNG-004), so these are views on top of it. The other shore and the road not taken are the best ways to show chance and choice, and they are strongest after Phase B.
 
 ### Phase H: Later (P3) [M11]
@@ -183,7 +183,7 @@ Phases are in dependency order and priority order together. A phase finishes bef
 
 ## 9. Backlog and deferred ideas
 
-**Backlog.** Everything in `docs/features.md` with status `not started`, grouped into the phases above: 58 features, which are WORLD-014 (Phase A, MVP), ADMIN-005 (Phase B) and the 56 post-MVP features of Phases C to H.
+**Backlog.** Everything in `docs/features.md` with status `not started`, grouped into the phases above: 57 features, which are WORLD-014 (Phase A, MVP), ADMIN-005 (Phase B) and the 55 post-MVP features of Phases C to H.
 
 **Deferred, and why they look attractive but should not start yet.**
 

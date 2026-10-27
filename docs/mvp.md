@@ -34,7 +34,7 @@ Every capability maps to at least one feature, so no new features were needed. A
 - **Conflict and war, migration, separation, domestic violence** (M9). They need extra data sources (UCDP, migrant stock) and careful writing. War deaths still appear through the cause-of-death mix.
 - **Auto mode, the other shore, the road not taken, sharing** (M10).
 - **Other languages, audio, past and future eras, collections, anything server-side** (M11).
-- **Polish:** motion, installable app, first-life hints, automated accessibility audit (M10).
+- **Polish:** motion, installable app, first-life hints, automated accessibility audit (M10; A11Y-006 was moved into the MVP later, see `ROADMAP.md`).
 
 ## 3. Content needed to feel complete without padding
 
