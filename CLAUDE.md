@@ -72,7 +72,7 @@ tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
 .github/            CI and deploy workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
-e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001)
+e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001); axe.spec.ts runs axe-core over every screen, side tab and dialog in both themes (A11Y-006)
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
@@ -128,6 +128,7 @@ Read these docs before starting work:
 - **No tracking, analytics or third-party requests** (fonts included). A guard test checks for common trackers.
 - **React:** function components, CSS Modules for component styles, design tokens in `src/styles.css`. Follow `.claude/skills/vercel-react-best-practices`, a client-only subset trimmed for this SPA: read its `SKILL.md` index and open only the rule files you need, never the whole `rules/` folder.
 - **The life screen scrolls as one page, and its side columns are sticky and must fit a window 640 px tall** (and 600 px) without scrolling in every tab; `e2e/loop.spec.ts` checks this at the default text size (at the larger text sizes a panel may scroll inside itself, design 7). Keep panels to short lines. The narrow layout (below 900 px) is one column with a bar of tabs; the smallest phone is about 390 px, so test at about 400 px; 360 px is not supported.
+- **A new screen, tab or dialog goes into `e2e/axe.spec.ts`** (A11Y-006), which must stay free of axe violations at both widths and in both themes. Axe finds what a machine can; it does not replace a screen reader pass.
 - **Accessibility is part of done:** keyboard play, visible focus, labelled controls, announcements for new events, colour never the only signal, reduced motion respected.
 - Match the surrounding code: naming, comment density and idiom.
 

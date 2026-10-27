@@ -67,6 +67,14 @@ describe("the reveal screen", () => {
     }
   });
 
+  it("has one level-one heading, in the reel and in the still state, that does not name a passing country (A11Y-006)", () => {
+    const { unmount } = renderReveal();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Where you are born");
+    unmount();
+    renderReveal({ view: { ...view, opening: true } });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Where you are born");
+  });
+
   it("announces that it is finding the place, then the place once the real name has settled", () => {
     const { container } = renderReveal();
     const status = screen.getByRole("status");

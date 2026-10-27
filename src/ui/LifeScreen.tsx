@@ -338,6 +338,8 @@ export function LifeScreen({
   return (
     <Page header={header} layout="wide">
       {live}
+      {/* The year's heading is in the story, out of sight while another part is shown: this stands in for it. */}
+      {narrow && view !== "story" && <h1 className="visually-hidden">{t("life.age", { age: person.age })}</h1>}
       {narrow ? (
         <Tabs
           label={t("life.nav.label")}

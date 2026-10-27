@@ -86,6 +86,7 @@ export function RevealScreen({ view, onEnd, onBack, display = displayStore }: Pr
           </Button>
         </div>
         <div className={styles.stage}>
+          <h1 className="visually-hidden">{t("reveal.title")}</h1>
           {status}
           <div className={styles.reel} data-reel aria-hidden="true">
             {view.stops.map((stop, i) => (
@@ -130,6 +131,7 @@ function Still({ place, caption, statusId, onBack }: StillProps) {
     <Page header={<SiteHeader />}>
       <div className={styles.screen}>
         <div className={styles.stage}>
+          <h1 className="visually-hidden">{t("reveal.title")}</h1>
           <p role="status" id={statusId} ref={status} tabIndex={-1} className={styles.status}>
             {caption}
           </p>

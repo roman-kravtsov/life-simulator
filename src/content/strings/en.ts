@@ -71,6 +71,7 @@ export const en: Readonly<Record<string, string>> = {
   "birth.continue": "Begin this life",
 
   // The birth reveal (UI-016): the names that pass are never read out, only these.
+  "reveal.title": "Where you are born",
   "reveal.finding": "Finding where you are born…",
   "reveal.result": "You are born in {country}",
   "reveal.skip": "Skip the reveal",
