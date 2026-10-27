@@ -493,11 +493,15 @@ describe("the narrow layout (UI-010)", () => {
   it("switches the column with the tab, by keyboard as well", async () => {
     windowIsNarrow(true);
     const { user } = renderLife({ age: 16 });
+    const ones = () => screen.getAllByRole("heading", { level: 1, hidden: true });
+    // The page has one h1 at a time (A11Y-006): the story's year heading, or, while another part is shown, a stand-in.
+    expect(ones()).toHaveLength(1);
     screen.getByRole("tab", { name: "Story" }).focus();
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("tab", { name: "You" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("complementary", { name: "About you" }).closest("[inert]")).toBeNull();
-    expect(screen.getByRole("heading", { level: 1, hidden: true }).closest("[inert]")).not.toBeNull();
+    expect(ones().filter((heading) => heading.closest("[inert]") === null)).toHaveLength(1);
+    expect(ones().filter((heading) => heading.closest("[inert]") !== null)).toHaveLength(1);
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("complementary", { name: "Around you" }).closest("[inert]")).toBeNull();
     expect(screen.getByRole("complementary", { name: "About you", hidden: true }).closest("[inert]")).not.toBeNull();

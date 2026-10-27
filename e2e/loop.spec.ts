@@ -701,7 +701,9 @@ test("on a phone the bar of tabs shows one of Story, You and Around you at a tim
   await beginLife(page);
 
   const bar = page.getByRole("tablist", { name: "Parts of this screen" });
-  const heading = page.getByRole("heading", { level: 1 });
+  // The story's own year heading; while another part is shown a visually hidden one stands in, so the page always has one (A11Y-006).
+  const heading = page.locator("h1:not(.visually-hidden)");
+  const standIn = page.getByRole("heading", { level: 1 });
   const you = page.getByRole("complementary", { name: "About you" });
   const around = page.getByRole("complementary", { name: "Around you" });
   const next = page.getByRole("button", { name: "Continue to the next year" });
@@ -719,6 +721,7 @@ test("on a phone the bar of tabs shows one of Story, You and Around you at a tim
   await bar.getByRole("tab", { name: "You", exact: true }).click();
   await expect(you).toBeVisible();
   await expect(heading).toBeHidden();
+  await expect(standIn).toHaveText("Age 0");
   await expect(around).toBeHidden();
   expect(await noHorizontalScroll(page)).toBe(true);
 
@@ -726,6 +729,7 @@ test("on a phone the bar of tabs shows one of Story, You and Around you at a tim
   await expect(around).toBeVisible();
   await expect(you).toBeHidden();
   await expect(heading).toBeHidden();
+  await expect(standIn).toHaveCount(1);
   expect(await noHorizontalScroll(page)).toBe(true);
 
   // Continue goes back to the story, where the new year is told.
