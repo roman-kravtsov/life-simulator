@@ -16,6 +16,7 @@
 // that follows the shape of age-specific fertility around the country's mean age at birth and is scaled
 // so that women who live through the fertile years have the country's total fertility rate.
 import { namesForRegion } from "../content/names";
+import { pickName, takenNames } from "./names";
 import { clamp, normal, normalCdf, normalQuantile } from "./dist";
 import { FOCUS_EFFECT } from "./focus";
 import type { PendingEvent } from "./events";
@@ -110,7 +111,12 @@ export const MEET_DECISION = "rel.meet_partner";
 export const YOUNG_MARRIAGE_DECISION = "rel.young_marriage";
 
 /** A possible partner: of the other sex, of the age the country's marriages suggest, a stranger become a friend of the heart. */
-export function makePartner(person: Person, country: Country, rolls: Rng): Relationship {
+export function makePartner(
+  person: Person,
+  country: Country,
+  rolls: Rng,
+  reserved: readonly string[] = [],
+): Relationship {
   const sex = oppositeSex(person.sex);
   const list = namesForRegion(country.region)[sex];
   const gap = country.family.meanAgeFirstMarriage.value[sex] - country.family.meanAgeFirstMarriage.value[person.sex];
@@ -119,7 +125,7 @@ export function makePartner(person: Person, country: Country, rolls: Rng): Relat
     // Unique by age, so a partner who died before the wedding does not keep a later one from being added.
     id: `partner-${person.age}`,
     kind: "partner",
-    name: list[Math.min(list.length - 1, Math.floor(rolls.next() * list.length))]!,
+    name: pickName(list, rolls.next(), takenNames(person, reserved)),
     sex,
     age,
     alive: true,
@@ -141,9 +147,9 @@ export function stepPartnership(
   person: Person,
   country: Country,
   rng: Rng,
-  { open = false }: { open?: boolean } = {},
+  { open = false, reserved = [] }: { open?: boolean; reserved?: readonly string[] } = {},
 ): PartnershipStep {
-  const candidate = makePartner(person, country, rng);
+  const candidate = makePartner(person, country, rng, reserved);
   const none: PartnershipStep = { person, events: [] };
   const wed = weddingAge(person, country);
   if (wed === null || person.flags.married === true || person.age < MIN_COURTING_AGE) return none;
@@ -289,9 +295,14 @@ export function birthChance(motherAge: number, country: Country): number {
 
 /**
  * A child this year, to the person if she is a partnered woman, or to the partner of a partnered man.
- * Always draws four numbers.
+ * Always draws four numbers. `reserved` holds the names of relatives the year has already added.
  */
-export function stepFertility(person: Person, country: Country, rng: Rng): PartnershipStep {
+export function stepFertility(
+  person: Person,
+  country: Country,
+  rng: Rng,
+  reserved: readonly string[] = [],
+): PartnershipStep {
   const roll = rng.next();
   const sexRoll = rng.next();
   const nameRoll = rng.next();
@@ -306,7 +317,7 @@ export function stepFertility(person: Person, country: Country, rng: Rng): Partn
   const child: Relationship = {
     id: `child-${person.age}`,
     kind: "child",
-    name: list[Math.min(list.length - 1, Math.floor(nameRoll * list.length))]!,
+    name: pickName(list, nameRoll, takenNames(person, reserved)),
     sex,
     age: 0,
     alive: true,

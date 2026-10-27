@@ -3,6 +3,7 @@ import { namesForRegion } from "../content/names";
 import { normal } from "./dist";
 import { healthNorm } from "./drift";
 import { generateParents, generateSiblings } from "./family";
+import { pickName, takenNames } from "./names";
 import { drawHouseholdPercentile } from "./money";
 import { stream } from "./rng";
 import { TRAIT_IDS, type Person, type Traits } from "./types";
@@ -31,9 +32,14 @@ export function generatePerson(seed: string, country: Country): Person {
 
   const names = stream(seed, "names", 0);
   const list = namesForRegion(country.region)[sex];
-  const name = list[names.int(0, list.length - 1)]!;
-  const parents = generateParents(stream(seed, "parents", 0), country, names);
-  const { siblings, lost } = generateSiblings(stream(seed, "siblings:birth", 0), country, parents[0].age);
+  const name = pickName(list, names.next(), new Set());
+  const parents = generateParents(stream(seed, "parents", 0), country, names, takenNames({ name, relationships: [] }));
+  const { siblings, lost } = generateSiblings(
+    stream(seed, "siblings:birth", 0),
+    country,
+    parents[0].age,
+    takenNames({ name, relationships: parents }),
+  );
   const parentCloseness = parents.reduce((sum, p) => sum + p.closeness, 0) / parents.length;
 
   const newborn: Person = {

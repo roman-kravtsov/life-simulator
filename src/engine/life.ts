@@ -21,6 +21,7 @@ import {
   type PendingEvent,
 } from "./events";
 import { ageRelatives, rollFamilyDeaths, rollSiblingBirth } from "./family";
+import { reservedNames } from "./names";
 import { FOCUS_EFFECT, PLAN_START_AGE, focusUnits, isValidChoice, resolvePlan } from "./focus";
 import { stepConditions } from "./health";
 import { stepMoney } from "./money";
@@ -230,7 +231,7 @@ function beginYear(state: LifeState, plan: Plan | undefined, country: Country, c
   });
   person = { ...person, relationships: relatives };
 
-  const baby = rollSiblingBirth(person, country, stream(seed, "siblings", year));
+  const baby = rollSiblingBirth(person, country, stream(seed, "siblings", year), reservedNames(pending));
   if (baby) {
     pending.push({
       id: "family.sibling_born",
@@ -274,9 +275,9 @@ function beginYear(state: LifeState, plan: Plan | undefined, country: Country, c
     () => stepMoney(person, country, stream(seed, "money", year), startedAtSchool),
     () => stepConditions(person, country, (id) => stream(seed, `condition:${id}`, year), conditionCatalog, { open }),
     () => stepCare(person, stream(seed, "care", year)),
-    () => stepFriends(person, country, stream(seed, "friends", year)),
-    () => stepPartnership(person, country, stream(seed, "romance", year), { open }),
-    () => stepFertility(person, country, stream(seed, "fertility", year)),
+    () => stepFriends(person, country, stream(seed, "friends", year), reservedNames(pending)),
+    () => stepPartnership(person, country, stream(seed, "romance", year), { open, reserved: reservedNames(pending) }),
+    () => stepFertility(person, country, stream(seed, "fertility", year), reservedNames(pending)),
   ]) {
     const result = step();
     person = result.person;

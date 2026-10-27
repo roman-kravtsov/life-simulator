@@ -132,7 +132,7 @@ describe("the content version (SAVE-004, RNG-004)", () => {
   // reminder, not a proof). When this fails: bump CONTENT_VERSION in src/content/version.ts, then update the pin.
   it("is bumped when the events or conditions change", () => {
     expect([CONTENT_VERSION, fingerprint(JSON.stringify([eventDefs, conditionDefs]))]).toEqual([
-      "2026.10.1",
+      "2026.10.2",
       "6c8fabef",
     ]);
   });
