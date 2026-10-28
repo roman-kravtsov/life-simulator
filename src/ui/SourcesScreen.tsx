@@ -46,8 +46,8 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
         {t("sources.title")}
       </h1>
       <p className="lead">{t("sources.intro")}</p>
-      <HowThisWorks index={state.status === "ready" ? state.index : undefined} />
       <div role="status">{state.status === "loading" && <p className="small">{t("sources.loading")}</p>}</div>
+      <HowThisWorks index={state.status === "ready" ? state.index : undefined} />
       {state.status === "error" && (
         <>
           <p role="alert">{t("sources.error")}</p>
@@ -82,7 +82,7 @@ function HowThisWorks({ index }: { index?: CountryIndex }) {
       </ul>
       <p>{t("sources.how.ours.close")}</p>
       <h3>{t("sources.how.left.title")}</h3>
-      {index && births && births.total > 0 && (
+      {index && births && births.excluded > 0 && births.largest.length > 0 && (
         <p>
           {t("sources.how.left.body", {
             excludedCount: formatNumber(index.excluded.length),

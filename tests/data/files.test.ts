@@ -36,7 +36,8 @@ describe("world data files", () => {
   });
 
   it("gives the births of every excluded country, in the year of the included ones (WORLD-014)", () => {
-    expect(index.birthsYear).toBe(2023);
+    const years = new Set(files.map((file) => read<Country>(join("countries", file)).demography.birthsPerYear.year));
+    expect([...years]).toEqual([index.birthsYear]);
     for (const e of index.excluded) expect(e.birthsPerYear, e.iso3).toBeGreaterThan(0);
   });
 

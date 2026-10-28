@@ -23,6 +23,11 @@ const props = (overrides: Partial<StartScreenProps> = {}): StartScreenProps => (
 });
 
 describe("the start screen (UI-002)", () => {
+  it("does not claim the real odds, which cover only the countries in the data (WORLD-014)", () => {
+    expect(en["start.intro"]).not.toMatch(/real odds/i);
+    expect(en["sources.intro"]).not.toMatch(/every value/i);
+  });
+
   it("puts focus on the title as usual, and leaves it on Begin when a failure comes while the screen is open", () => {
     const { rerender } = render(<StartScreen {...props()} />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
