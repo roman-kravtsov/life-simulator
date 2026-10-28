@@ -24,6 +24,7 @@ describe("WORLD-003: exclusion report", () => {
     const text = reportText(countries, index);
     expect(text).toContain("**2** countries are included and **1** are left out");
     expect(text).toContain("| CCC | Name CCC | health.causeMix |");
+    expect(text).toContain("Births in the excluded countries: 100,000 of 300,000 a year (33.3%) in 2023, UN WPP.");
     expect(text).toContain("| work.unemployment | 1 | 50% |");
   });
 });

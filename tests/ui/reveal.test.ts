@@ -27,6 +27,7 @@ const BIRTHS = [
 ];
 const index = (births: readonly number[] = BIRTHS): CountryIndex => ({
   dataVersion: "test",
+  birthsYear: 2023,
   countries: births.map((b, i) => entry(i, b)),
   excluded: [],
   sources: {},

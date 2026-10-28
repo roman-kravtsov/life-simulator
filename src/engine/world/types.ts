@@ -114,10 +114,14 @@ export interface ExcludedCountry {
   name: string;
   /** Core indicators the country has no data for. */
   missing: string[];
+  /** Births a year (same edition and year as `CountryIndex.birthsYear`), when the source has them. */
+  birthsPerYear?: number;
 }
 
 export interface CountryIndex {
   dataVersion: string;
+  /** The year of the births figures, included and excluded alike. */
+  birthsYear: number;
   countries: CountryIndexEntry[];
   excluded: ExcludedCountry[];
   sources: Record<SourceId, SourceInfo>;

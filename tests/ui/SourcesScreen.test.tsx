@@ -8,6 +8,7 @@ import { SourcesScreen } from "../../src/ui/SourcesScreen";
 // SYNTHETIC index for tests only.
 const index: CountryIndex = {
   dataVersion: "test.1",
+  birthsYear: 2023,
   countries: [
     { iso3: "AAA", iso2: "DE", name: "Testland", region: "R", incomeGroup: "high", birthsPerYear: 1, population: 1 },
   ],

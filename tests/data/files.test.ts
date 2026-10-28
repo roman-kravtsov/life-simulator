@@ -35,6 +35,11 @@ describe("world data files", () => {
     }
   });
 
+  it("gives the births of every excluded country, in the year of the included ones (WORLD-014)", () => {
+    expect(index.birthsYear).toBe(2023);
+    for (const e of index.excluded) expect(e.birthsPerYear, e.iso3).toBeGreaterThan(0);
+  });
+
   it.each(files)("%s validates, is under 15 KB gzipped and matches the index", (file) => {
     const text = readFileSync(join(DIR, "countries", file), "utf8");
     const country = JSON.parse(text) as Country;

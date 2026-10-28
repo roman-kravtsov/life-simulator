@@ -85,7 +85,16 @@ export function assemble(
   for (const raw of raws) {
     const missing: string[] = CORE.filter((path) => raw.indicators[path] === undefined);
     if (!raw.incomeGroup) missing.push("incomeGroup");
-    if (missing.length) excluded.push({ iso3: raw.iso3, iso2: raw.iso2, name: raw.name, missing });
+    if (missing.length) {
+      const births = raw.indicators["demography.birthsPerYear"] as Sourced<number> | undefined;
+      excluded.push({
+        iso3: raw.iso3,
+        iso2: raw.iso2,
+        name: raw.name,
+        missing,
+        ...(births && { birthsPerYear: births.value }),
+      });
+    }
     else included.push(raw);
   }
 
@@ -139,6 +148,7 @@ export function assemble(
     countries,
     index: {
       dataVersion,
+      birthsYear: countries.length ? Math.max(...countries.map((c) => c.demography.birthsPerYear.year)) : 0,
       countries: countries.map((c) => ({
         iso3: c.iso3,
         iso2: c.iso2,

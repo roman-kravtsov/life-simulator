@@ -6,6 +6,7 @@ import type { CountryIndex } from "../../src/engine/world/types";
 // SYNTHETIC index for tests only.
 const index: CountryIndex = {
   dataVersion: "test",
+  birthsYear: 2023,
   sources: {},
   excluded: [],
   countries: [
