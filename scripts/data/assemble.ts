@@ -94,8 +94,7 @@ export function assemble(
         missing,
         ...(births && { birthsPerYear: births.value }),
       });
-    }
-    else included.push(raw);
+    } else included.push(raw);
   }
 
   const population = (r: RawCountry) => (r.indicators["demography.population"] as Sourced<number>).value;

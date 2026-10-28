@@ -74,6 +74,8 @@ for (const theme of THEMES) {
 
       await page.getByRole("button", { name: "Where the numbers come from" }).click();
       await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+      await expect(page.getByRole("heading", { name: "How this works" })).toBeVisible();
+      await expect(page.getByText("of the world's births")).toBeVisible();
       await expectNoViolations(page, "sources screen");
       await page.getByRole("button", { name: "Back", exact: true }).click();
 

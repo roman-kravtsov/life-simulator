@@ -44,7 +44,7 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   seed.ts           readable seeds ("amber-river-4821")
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
-  world/            country schema (types.ts), validator, birth draw, data loader
+  world/            country schema (types.ts), validator, birth draw, data loader, excluded.ts (the births in the countries left out, for the sources screen and the data report)
 src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/death.ts, strings/summary.ts, strings/reflection.ts, strings/events/*.ts and strings/ui.ts),
                     version.ts (CONTENT_VERSION, saved with every life),
                     events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region),

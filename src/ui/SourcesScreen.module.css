@@ -43,3 +43,24 @@
 .excluded ul {
   padding-left: 1.25rem;
 }
+
+.how h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.ours {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  line-height: 1.5;
+}
+
+.ours li {
+  margin: 0 0 0.6rem;
+  padding-left: 0.25rem;
+}
+
+.ours li::marker {
+  color: var(--ink-soft);
+}

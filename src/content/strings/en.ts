@@ -32,7 +32,7 @@ export const en: Readonly<Record<string, string>> = {
   "app.skipToContent": "Skip to content",
 
   "start.intro":
-    "You will be born somewhere in the world, to a family you did not choose. Where, and to whom, follows the real odds of birth today. What you make of it is partly up to you.",
+    "You will be born somewhere in the world, to a family you did not choose. Where, and to whom, follows the odds of birth today, as far as public statistics reach. What you make of it is partly up to you.",
   "start.contentNote":
     "This game includes death, illness, poverty, violence and suicide, at the rates they happen in the real world. They are never shown in graphic detail.",
   "start.begin": "Begin a life",
@@ -311,7 +311,32 @@ export const en: Readonly<Record<string, string>> = {
 
   "sources.title": "Where the numbers come from",
   "sources.intro":
-    "Birthright draws its odds from public statistics. Each country's figures come from the publishers below, and every value in the game keeps its source and year.",
+    "Birthright draws its odds from public statistics. Each country's figures come from the publishers below, and every published value keeps its source and year. What the game adds itself is described first.",
+  "sources.how.title": "How this works",
+  "sources.how.lead":
+    "Birthright is a model of a life, not a measurement of one. Some of what happens to you comes straight from public statistics. The rest is our own reading of what those statistics leave open. This page says which is which.",
+  "sources.how.data.title": "What comes from the data",
+  "sources.how.data.body":
+    "Where you are born, how long people live there, what a household earns, what people of your age and sex die of, how many children finish school, how many adults work, how old people are when they marry, how many children a woman has. Each of these is a published figure from the sources listed below, with its year. The odds you are dealt at birth follow them, and so does the length of a life across many lives: when the game is played thousands of times over, the average life in each country we test comes within a year or two of the one the United Nations reports.",
+  "sources.how.ours.title": "What is ours",
+  "sources.how.ours.lead":
+    "Statistics say how many, not who, or why. Between the figures the game uses its own judgement, and none of it is a published statistic:",
+  "sources.how.ours.item1": "how much a year of your attention changes (the focus points, and how far each one goes);",
+  "sources.how.ours.item2": "how likely an illness is to begin, to worsen and to ease;",
+  "sources.how.ours.item3":
+    "the events and decisions themselves: what happens, how often, and how far each choice moves the odds;",
+  "sources.how.ours.item4": "how much of a year's income is spent, saved or borrowed;",
+  "sources.how.ours.item5": "how friendships, courtship and grief unfold;",
+  "sources.how.ours.item6": "how Health, Happiness, Belonging and Skills rise and fall from year to year;",
+  "sources.how.ours.item7":
+    "how the summary weighs a year, and how it divides a life into chance, choice and circumstance.",
+  "sources.how.ours.close":
+    "We set these so that the totals still match the data. The way from one figure to the next is a guess, and the path your life takes through it is ours. When the game says a choice changes your odds, it is showing our estimate of by how much. In life, the distance a choice can carry you may be shorter or longer than we have drawn it.",
+  "sources.how.left.title": "What is left out",
+  "sources.how.left.body":
+    "{excludedCount} of the {allCount} countries and areas in the UN's list are not in the game, because the sources lack a core figure for them, most often a recent national survey of household income. Together they account for {share} of the world's births in {year}, about {excluded} of {total} a year. The largest are {largest}. When you are born, the draw is made among the countries that are included, so those births are spread across the rest, and nobody is born in a country that is not in the game. The list is at the end of this page.",
+  "sources.how.left.missing":
+    "Also not in the game yet: war and displacement, and moving to another country. Partners are all of the other sex for now.",
   "sources.loading": "Loading the sources…",
   "sources.error": "The sources could not be loaded. Check your connection and try again.",
   "sources.retry": "Try again",
@@ -329,7 +354,7 @@ export const en: Readonly<Record<string, string>> = {
     "Health data from the World Health Organization are used for public health education, under WHO's data terms. Birthright is a free, non-commercial project and is not endorsed by WHO or by any other publisher listed here.",
   "sources.excluded.title": "Countries not in the game",
   "sources.excluded.body":
-    "{count} countries and areas are left out because the sources do not have every core figure for them. When you are born, the country is drawn from the included ones by their number of births each year, so the left-out countries' share is spread across the rest.",
+    "{count} countries and areas are left out because the sources do not have every core figure for them.",
   "sources.excluded.show": "Show the {count} countries and what is missing",
   "sources.excluded.item": "{country}: {missing}",
   "sources.missing.demography.lifeTable": "life table",
