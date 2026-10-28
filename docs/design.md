@@ -60,7 +60,9 @@ interface Sourced<T> { value: T; source: SourceId; year: number; estimated?: boo
 
 interface CountryIndex {
   dataVersion: string;              // e.g. "2026.10.1"
+  birthsYear: number;               // year of the births figures (WORLD-014)
   countries: { iso3: string; name: string; region: RegionId; birthsPerYear: number; population: number }[];
+  excluded: { iso3: string; name: string; missing: string[]; birthsPerYear?: number }[]; // left out, with their births when known (WORLD-014)
   sources: Record<SourceId, { title: string; publisher: string; url: string; licence: string; accessed: string }>;
 }
 

@@ -18,7 +18,7 @@ The visible stats are Health, Happiness, Belonging and Skills (ids `health`, `ha
 public/data/        baked country data (index.json + countries/<ISO3>.json), built by `npm run data`
 scripts/data/       data pipeline: lib/ (cache, csv), extract/ (one file per publisher), assemble.ts
                     (completeness filter and fallbacks), sources.ts (licences), build.ts, report.ts
-                    Downloads go to the git-ignored .cache/data; the exclusion report is docs/data-report.md
+                    Downloads go to the git-ignored .cache/data; the exclusion report, with the excluded countries' share of births, is docs/data-report.md
 src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   rng.ts            seeded PRNG and independent streams per subsystem and period
   life.ts           public API: newLife({seed, country, settings?}), advance(state, input, country) -> new state

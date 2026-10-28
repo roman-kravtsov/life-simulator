@@ -1,4 +1,4 @@
-// Writes docs/data-report.md: who was left out and why, and what was estimated (WORLD-003, WORLD-004).
+// Writes docs/data-report.md: who was left out and why, their share of births, and what was estimated (WORLD-003, WORLD-004, WORLD-014).
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { excludedBirths } from "../../src/engine/world/excluded";
