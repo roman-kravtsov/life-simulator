@@ -8,7 +8,7 @@ import { conditionCatalog } from "../content/healthConditions";
 import { healthPenalty } from "./health";
 import { FOCUS_EFFECT } from "./focus";
 import { debtStress } from "./money";
-import { jobHealthPenalty } from "./work";
+import { isWorking, jobHealthPenalty } from "./work";
 import type { Rng } from "./rng";
 import type { DriftRecord, Person, StatId, Stats } from "./types";
 import type { Country, IncomeGroup } from "./world/types";
@@ -123,6 +123,10 @@ export function skillGrowth(person: Person): number {
   gain *= 1 + 0.12 * person.traits.aptitude + 0.08 * person.traits.curiosity;
   // Points on Learn above the default plan add to what is picked up; fewer take away from it (DEC-003).
   gain *= Math.max(0.3, 1 + FOCUS_EFFECT.learn.skills * (person.focus?.learn ?? 0));
+  // Points on Earn above the default plan are the effort of a working adult: more is learnt on the job (DEC-003, CAREER-006).
+  if (age >= 18 && !person.education.inSchool && isWorking(person.work.status)) {
+    gain *= Math.max(0.3, 1 + FOCUS_EFFECT.earn.skills * (person.focus?.earn ?? 0));
+  }
   return gain * (1 - person.stats.skills / SKILL_CEILING);
 }
 

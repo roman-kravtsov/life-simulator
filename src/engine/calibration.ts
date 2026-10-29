@@ -11,6 +11,8 @@ import type { Country } from "./world/types";
 /** Simulated life expectancy may differ from the UN WPP value by at most this many years. */
 export const LE_TOLERANCE_YEARS = 2;
 
+const SEXES: readonly Sex[] = ["female", "male"];
+
 /** One whole life with no player input. */
 export function simulateLife(seed: string, country: Country): LifeState {
   let state = newLife({ seed, country, settings: { pace: "every-year" } });
@@ -45,6 +47,79 @@ export function calibrateLifeExpectancy(country: Country, lives: number, seedPre
   return { lives, expected, simulated, difference: simulated - expected };
 }
 
+/**
+ * The share of all deaths each cause should take, from the life table and the cause mix (ADMIN-003): the
+ * deaths at each age (the share still alive times the chance of dying) spread over the causes of the age
+ * band, for the sexes born in the country's ratio.
+ */
+export function expectedCauseShares(country: Country): Record<string, number> {
+  const ratio = country.demography.sexRatioAtBirth.value;
+  const male = ratio / (1 + ratio);
+  const mix = country.health.causeMix.value;
+  const totals: Record<string, number> = {};
+  for (const sex of SEXES) {
+    const weight = sex === "male" ? male : 1 - male;
+    let alive = 1;
+    country.demography.lifeTable.value[sex].forEach((q, age) => {
+      const deaths = alive * q * weight;
+      alive *= 1 - q;
+      let band = mix.bands.findIndex(([from, to]) => age >= from && age < to);
+      if (band === -1) band = mix.bands.length - 1;
+      for (const [cause, share] of Object.entries(mix[sex][band]!))
+        totals[cause] = (totals[cause] ?? 0) + deaths * share;
+    });
+  }
+  const sum = Object.values(totals).reduce((a, b) => a + b, 0);
+  return Object.fromEntries(Object.entries(totals).map(([cause, n]) => [cause, n / sum]));
+}
+
+/** The causes that make up the report: those that take at least this share of deaths in the source. */
+const CAUSE_REPORT_FROM = 0.03;
+
+/**
+ * Whole lives, headless, compared with the source on life expectancy and on how deaths divide among the
+ * causes that matter (each cause that takes 3% or more of deaths in the source, and the rest together).
+ */
+export function calibrateDeaths(
+  country: Country,
+  lives: number,
+  seedPrefix: string,
+): { lifeExpectancy: LifeExpectancyReport; causes: Comparison[] } {
+  const counts: Record<string, number> = {};
+  let years = 0;
+  for (let i = 0; i < lives; i++) {
+    const death = simulateLife(`${seedPrefix}-${i}`, country).death!;
+    years += death.age + (death.age === 0 ? 0.1 : 0.5);
+    counts[death.cause] = (counts[death.cause] ?? 0) + 1;
+  }
+  const expected = expectedCauseShares(country);
+  const named = Object.keys(expected)
+    .filter((cause) => expected[cause]! >= CAUSE_REPORT_FROM)
+    .sort((a, b) => expected[b]! - expected[a]!);
+  const causes: Comparison[] = named.map((cause) => ({
+    name: `deaths from ${cause}`,
+    expected: expected[cause]!,
+    simulated: (counts[cause] ?? 0) / lives,
+    tolerance: 0.05,
+  }));
+  const rest = (shares: (cause: string) => number) =>
+    [...new Set([...Object.keys(expected), ...Object.keys(counts)])]
+      .filter((cause) => !named.includes(cause))
+      .reduce((sum, cause) => sum + shares(cause), 0);
+  causes.push({
+    name: "deaths from all other causes",
+    expected: rest((cause) => expected[cause] ?? 0),
+    simulated: rest((cause) => (counts[cause] ?? 0) / lives),
+    tolerance: 0.05,
+  });
+  const simulated = years / lives;
+  const source = expectedLifeExpectancy(country);
+  return {
+    lifeExpectancy: { lives, expected: source, simulated, difference: simulated - source },
+    causes,
+  };
+}
+
 /** One figure the simulated lives are compared with, from the country's source data. */
 export interface Comparison {
   name: string;
@@ -54,7 +129,6 @@ export interface Comparison {
   tolerance: number;
 }
 
-const SEXES: readonly Sex[] = ["female", "male"];
 const LEVEL_RANK = { none: 0, primary: 1, "lower-secondary": 2, "upper-secondary": 3, tertiary: 4 } as const;
 
 /** Age at which attainment and literacy are read, and when the siblings and standing of adults are counted. */

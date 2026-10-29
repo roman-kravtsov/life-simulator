@@ -9,6 +9,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
     "Most of your health came down to chance: the illnesses that came, and the ones that did not.",
   "summary.shaped.health.mixed":
     "Your health was shaped by birth, by choice and by chance together, with no one of them in front.",
+  "summary.shaped.health.mixedChoice":
+    "Your health was shaped by birth and by chance, and what you did about it counted for a real part.",
   "summary.shaped.happiness.circumstance":
     "Most of your happiness was shaped by the circumstances you lived in: what was around you, and what you were spared.",
   "summary.shaped.happiness.choice":
@@ -17,6 +19,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
     "Most of your happiness rose and fell with chance: the news that came, and the days that simply went well or badly.",
   "summary.shaped.happiness.mixed":
     "Your happiness was shaped by birth, by choice and by chance together, with no one of them in front.",
+  "summary.shaped.happiness.mixedChoice":
+    "Your happiness was shaped by birth and by chance, and where you put your attention counted for a real part.",
   "summary.shaped.belonging.circumstance":
     "Most of your belonging came from circumstance: the family you were born into, and the place you lived.",
   "summary.shaped.belonging.choice":
@@ -25,6 +29,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
     "Most of your belonging came from chance: who happened to be there, and who was lost.",
   "summary.shaped.belonging.mixed":
     "Your belonging was shaped by birth, by choice and by chance together, with no one of them in front.",
+  "summary.shaped.belonging.mixedChoice":
+    "Your belonging was shaped by birth and by chance, and the time you gave the people around you counted for a real part.",
   "summary.shaped.skills.circumstance":
     "Most of what you learned came from circumstance: the schools within reach, and what the years around you taught.",
   "summary.shaped.skills.choice":
@@ -33,6 +39,8 @@ export const summaryStrings: Readonly<Record<string, string>> = {
     "Most of what you learned came from chance: the teacher you happened to have, and the opening that happened to come.",
   "summary.shaped.skills.mixed":
     "What you learned was shaped by birth, by choice and by chance together, with no one of them in front.",
+  "summary.shaped.skills.mixedChoice":
+    "What you learned was shaped by birth and by chance, and the time you gave to learning and to work counted for a real part.",
   "summary.shaped.overall":
     "Across your health, happiness, belonging and skills together, about {circumstance} came from circumstance, {choice} from choice and {chance} from chance.",
 

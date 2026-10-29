@@ -3,6 +3,7 @@ import { en } from "../../src/content/strings/en";
 import { advanceAuto, newLife, withEpitaph, EPITAPH_MAX_LENGTH } from "../../src/engine/life";
 import { MIN_THICKNESS, RING_THEMES, ringThickness, yearLived, yearTheme } from "../../src/engine/rings";
 import {
+  CHOICE_NOTABLE_SHARE,
   DOMINANT_SHARE,
   MOMENTS_MAX,
   MOMENTS_MIN,
@@ -260,8 +261,18 @@ describe("SUM-004: chance, choice and circumstance", () => {
   it("names the cause behind at least half as the main one, and says mixed otherwise", () => {
     expect(shaping([year(0, [], { drift: drift(8, 1, 1) })]).stats.health.dominant).toBe("circumstance");
     expect(shaping([year(0, [], { drift: drift(0, 8, 1) })]).stats.health.dominant).toBe("choice");
-    expect(shaping([year(0, [], { drift: drift(4, 3, 3) })]).stats.health.dominant).toBe("mixed");
+    expect(shaping([year(0, [], { drift: drift(4.5, 1, 4.5) })]).stats.health.dominant).toBe("mixed");
     expect(DOMINANT_SHARE).toBe(0.5);
+  });
+
+  it("says so when choice was a real part of a mixed life, though not the main one", () => {
+    // A plan only a little different from the default is a fifth to a third of a stat, not half.
+    expect(shaping([year(0, [], { drift: drift(4, 3, 3) })]).stats.health.dominant).toBe("mixedChoice");
+    expect(shaping([year(0, [], { drift: drift(4.2, 1.6, 4.2) })]).stats.health.dominant).toBe("mixedChoice");
+    expect(shaping([year(0, [], { drift: drift(4.6, 0.8, 4.6) })]).stats.health.dominant).toBe("mixed");
+    expect(CHOICE_NOTABLE_SHARE).toBe(0.15);
+    // Never when another cause had half of it.
+    expect(shaping([year(0, [], { drift: drift(6, 2, 2) })]).stats.health.dominant).toBe("circumstance");
   });
 
   it("counts effects on one stat toward that stat only", () => {

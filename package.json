@@ -16,7 +16,9 @@
     "format:check": "prettier --check .",
     "e2e": "playwright test",
     "data": "tsx scripts/data/build.ts",
-    "calibrate": "tsx scripts/calibrate.ts"
+    "calibrate": "tsx scripts/calibrate.ts",
+    "probe": "tsx scripts/probe.ts",
+    "balance-report": "tsx scripts/balance-report.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

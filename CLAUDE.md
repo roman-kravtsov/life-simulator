@@ -16,6 +16,7 @@ The visible stats are Health, Happiness, Belonging and Skills (ids `health`, `ha
 
 ```
 public/data/        baked country data (index.json + countries/<ISO3>.json), built by `npm run data`
+scripts/            calibrate.ts (`npm run calibrate`), probe.ts (`npm run probe` writes docs/agency-probe.md), balance-report.ts (`npm run balance-report` writes docs/balance-report.md)
 scripts/data/       data pipeline: lib/ (cache, csv), extract/ (one file per publisher), assemble.ts
                     (completeness filter and fallbacks), sources.ts (licences), build.ts, report.ts
                     Downloads go to the git-ignored .cache/data; the exclusion report, with the excluded countries' share of births, is docs/data-report.md
@@ -38,7 +39,8 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   reflection.ts     reflection prompts (a pure function of the years lived, from content/reflections.ts) and the journal lines (UI-007)
   save.ts, replay.ts   the save file, schema migrations, restoring a life (snapshot, or replay from seed and logs), replay (RNG-004)
   validate.ts       content validation (ADMIN-001): validateEvents, validateConditions, run over what ships in the tests
-  calibration.ts    headless harness comparing simulated life expectancy with the source (npm run calibrate)
+  calibration.ts    headless harness comparing simulated life expectancy, the school, work, family and income systems and the causes of death with the source (npm run calibrate)
+  probe.ts          the agency probe (ADMIN-005): plays lives under each plan and each answer to each decision, paired against the default course, and holds the balance targets (`balanceChecks`); probeReport.ts and balanceReport.ts render the Markdown reports
   dist.ts           small distribution helpers (normal, clamp)
   names.ts          distinct names (CHAR-007): `pickName` takes the rolled name or the next free one, `takenNames` and `reservedNames` say which are taken
   seed.ts           readable seeds ("amber-river-4821")
@@ -71,7 +73,7 @@ index.html          mounts the app on `<div id="root">` (the page owns its own `
 tests/              Vitest: engine, guard and component tests
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
-.github/            CI and deploy workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
+.github/            CI, deploy and balance (probe and balance report as an artifact) workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
 e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001); axe.spec.ts runs axe-core over every screen, side tab and dialog in both themes (A11Y-006)
 ```
 
@@ -114,6 +116,7 @@ Read these docs before starting work:
 - **One random stream per subsystem and year** (`birth`, `person`, `names`, `parents`, `siblings`, `siblings:birth`, `family`, `closeness`, `drift`, `labour`, `education`, `work`, `money`, `events`, `event:<id>`, `pool:major`, `pool:minor`, `condition:<id>`, `care`, `friends`, `romance`, `fertility`, `outcomes`, `mortality`, `cause`, `reveal`, `autoplay`); the `StreamName` type in `rng.ts` lists them. A new subsystem gets a new stream name.
 - **Events and decisions are content** (`src/content/events/<stage>.ts`, strings in `src/content/strings/events/`). `tests/engine/validate.test.ts` runs `validateEvents` over everything that ships: text, soft text, note, choice, outcome, lens and lock keys must exist, outcome probabilities must sum to 1, a choice with several outcomes needs a lens phrase for each, severe and difficult events need a `helpTopic` and a `softText`, `world` paths must resolve, and roles, follow-ups and illness ids must exist. A repeatable notable event needs `cooldownYears` of at least 6 unless it is `quiet` or `once` (`tests/engine/content.test.ts`, which also holds the size and pacing targets). Text may only name the event's roles (`{friend}`). One decision a year at most; the odds lens reads the engine's own probabilities, never a separate number.
 - **Names are distinct (CHAR-007).** Every new person in a life (a sibling, friend, partner or child) takes a name through `pickName(list, roll, takenNames(person, reservedNames(pending)))` in `src/engine/names.ts`: the one roll already drawn, skipping the person and the living relatives, never a second draw. `tests/engine/distinctNames.test.ts` checks it over many lives.
+- **Balance gate (ADMIN-005):** the targets in `balanceChecks` (`src/engine/probe.ts`) hold over 400 lives in `tests/engine/balance.test.ts`: each focus area pays in its own domain, Earn shows in the income rank, no single point beats another on every outcome, and the default course credits under 5% to choice while a deliberate plan credits 10% or more. After changing `FOCUS_EFFECT`, the money mix, drift, a summary share or the plan, run `npm run probe` and commit the regenerated `docs/agency-probe.md`; after changing mortality, conditions, education, work or family models, run `npm run balance-report` and commit `docs/balance-report.md`. A threshold is Roman's call: do not move one to get green.
 - **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, the share out of work, marriage ages, children per woman, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
 - **Reduced motion is one global rule set in `src/styles.css`** (the system's `prefers-reduced-motion` and the player's setting); a component or module must not write its own `prefers-reduced-motion` query (`tests/ui/styles.test.ts`). Colours must pass WCAG AA (`tests/ui/contrast.test.ts` reads every colour a style sheet sets for text).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).

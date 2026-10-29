@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   LE_TOLERANCE_YEARS,
+  calibrateDeaths,
   calibrateLifeExpectancy,
   calibrateSystems,
+  expectedCauseShares,
   expectedLifeExpectancy,
   simulateLife,
 } from "../../src/engine/calibration";
@@ -122,4 +124,29 @@ describe("the life systems against the source data (M4, M5)", () => {
     },
     60_000,
   );
+});
+
+describe("deaths by cause against the source (ADMIN-003)", () => {
+  it("spreads the expected deaths over the causes of the source, adding up to all of them", () => {
+    const shares = expectedCauseShares(load("JPN"));
+    expect(Object.values(shares).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 10);
+    // Old age dominates a rich country's deaths, so heart disease and cancer lead.
+    const [top] = Object.entries(shares).sort((a, b) => b[1] - a[1]);
+    expect(["cardiovascular", "cancer"]).toContain(top![0]);
+    // Infancy dominates a poor country's early deaths more than it does Japan's.
+    expect(expectedCauseShares(load("NGA")).neonatal ?? 0).toBeGreaterThan(shares.neonatal ?? 0);
+  });
+
+  it("compares the simulated deaths with them, every cause as a finite share and the rest together", () => {
+    const { lifeExpectancy, causes } = calibrateDeaths(makeCountry({ region: "Western Africa" }), 200, "causes");
+    expect(lifeExpectancy.lives).toBe(200);
+    expect(causes.at(-1)!.name).toBe("deaths from all other causes");
+    for (const c of causes) {
+      expect(Number.isFinite(c.expected)).toBe(true);
+      expect(Number.isFinite(c.simulated)).toBe(true);
+    }
+    // The causes named and the rest cover every death, in the source and in the lives.
+    expect(causes.reduce((sum, c) => sum + c.expected, 0)).toBeCloseTo(1, 6);
+    expect(causes.reduce((sum, c) => sum + c.simulated, 0)).toBeCloseTo(1, 6);
+  });
 });

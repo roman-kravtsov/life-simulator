@@ -1,0 +1,42 @@
+name: Balance
+
+# The agency probe (ADMIN-005) and the balance report (ADMIN-003), published as an artifact. They take a few
+# minutes, so they run when the engine, the content or the data change, and on demand.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/engine/**"
+      - "src/content/**"
+      - "public/data/**"
+      - "scripts/probe.ts"
+      - "scripts/balance-report.ts"
+  push:
+    branches: [main]
+    paths:
+      - "src/engine/**"
+      - "src/content/**"
+      - "public/data/**"
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: mkdir -p balance
+      # Fails when a balance target is not met; the report is published either way.
+      - run: npm run probe -- --lives 1000 --decision-lives 200 --out balance/agency-probe.md
+      - run: npm run balance-report -- --lives 1000 --out balance/balance-report.md
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: balance
+          path: balance/
+          retention-days: 30

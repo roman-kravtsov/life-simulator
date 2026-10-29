@@ -132,8 +132,12 @@ export type Shares = Record<Cause, number>;
 export interface StatShaping {
   /** How much of what moved the stat came from each cause; sums to 1. */
   shares: Shares;
-  /** The cause behind at least half of it, or "mixed" when none was. */
-  dominant: Cause | "mixed";
+  /**
+   * The cause behind at least half of it. Otherwise "mixed", or "mixedChoice" when no cause had half but
+   * choice was still a real part of it (`CHOICE_NOTABLE_SHARE`), so a plan only a little different from
+   * the default shows on the summary.
+   */
+  dominant: Cause | "mixed" | "mixedChoice";
 }
 
 export interface Shaping {
@@ -144,6 +148,13 @@ export interface Shaping {
 
 /** A cause counts as the main one when it is at least this share. */
 export const DOMINANT_SHARE = 0.5;
+
+/**
+ * Choice is worth saying aloud in a mixed life from this share. Authored from the probe (ADMIN-005): the
+ * default course leaves 0 to 5% of a stat to choice (12% at the 90th percentile for skills), a plan with
+ * one point moved leaves 15 to 32% of the stat it moves.
+ */
+export const CHOICE_NOTABLE_SHARE = 0.15;
 
 const CAUSES: readonly Cause[] = ["circumstance", "choice", "chance"];
 
@@ -186,7 +197,9 @@ export function shaping(history: readonly YearRecord[]): Shaping {
     STAT_IDS.map((id) => {
       const shares = causeShares(totals[id]);
       const [top, share] = (Object.entries(shares) as [Cause, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
-      return [id, { shares, dominant: share >= DOMINANT_SHARE ? top : "mixed" } satisfies StatShaping];
+      const moved = totals[id].circumstance + totals[id].choice + totals[id].chance > 0;
+      const mixed = moved && shares.choice >= CHOICE_NOTABLE_SHARE ? "mixedChoice" : "mixed";
+      return [id, { shares, dominant: share >= DOMINANT_SHARE ? top : mixed } satisfies StatShaping];
     }),
   ) as Record<StatId, StatShaping>;
   const mean = (cause: Cause) => STAT_IDS.reduce((sum, id) => sum + stats[id].shares[cause], 0) / STAT_IDS.length;
