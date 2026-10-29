@@ -201,14 +201,7 @@ export function LifeScreen({
       narrow={narrow}
       tray={
         plan && draft && !card ? (
-          <PlanWidget
-            plan={plan}
-            draft={draft}
-            onChange={(next) => {
-              hints.see("plan");
-              setEdit({ age: person.age, draft: next });
-            }}
-          />
+          <PlanWidget plan={plan} draft={draft} onChange={(next) => setEdit({ age: person.age, draft: next })} />
         ) : null
       }
     >
@@ -262,8 +255,8 @@ export function LifeScreen({
           keys={["hint.plan"]}
           onDismiss={() => {
             hints.see("plan");
-            // The note is leaving the page, so focus goes to the year's heading.
-            heading.current?.focus();
+            // The note is leaving the page, so focus goes to the year's heading, without a jump up the page.
+            heading.current?.focus({ preventScroll: true });
           }}
         />
       )}

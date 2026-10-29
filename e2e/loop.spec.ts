@@ -838,7 +838,7 @@ test("the plan hint shows once, is put away by keyboard, stays away after a relo
   const region = page.getByRole("region", { name: "Where your attention goes" });
   const hint = page.getByRole("note").filter({ hasText: "place a few points of attention" });
   const ageNow = async () => Number(/Age (\d+)/.exec((await heading.textContent()) ?? "")?.[1]);
-  // The decision hint is put away by answering a decision on the way.
+  // A decision on the way puts the decision hint away by being answered; the next test looks at it.
   for (let step = 0; step < 14 && (await ageNow()) < 6; step++) await liveStep(page);
   await expect(region).toBeVisible();
 
@@ -864,7 +864,52 @@ test("the plan hint shows once, is put away by keyboard, stays away after a relo
   await page.getByRole("dialog", { name: "Settings" }).getByRole("button", { name: "Back to start" }).click();
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("button", { name: "Show the hints again" }).click();
-  await expect(page.getByRole("button", { name: "Show the hints again" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Show the hints again" })).toBeFocused();
+  await expect(page.getByRole("status").filter({ hasText: "The hints will show again." })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("birthright:hints"))).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test("the decision and odds lens hints sit above the choices once, and are put away by keyboard (UI-015)", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await fixedRandom(page, 20261026);
+  await page.goto("./");
+  await beginLife(page);
+
+  const decision = page.getByRole("heading", { level: 2, name: "A decision" });
+  const hint = page.getByRole("note").filter({ hasText: "the year stops and asks you something" });
+  const next = page.getByRole("button", { name: "Continue to the next year" });
+  for (let step = 0; step < 60 && !(await decision.isVisible()); step++) {
+    if (!(await next.isVisible())) break;
+    await next.click();
+    await expect(continueReady(page).or(decision)).toBeVisible();
+  }
+  await expect(decision).toBeVisible();
+
+  // One note on the card, above the choices, that moves nothing sideways.
+  await expect(hint).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
+  const choices = page.getByRole("list", { name: "Your choices" });
+  const hintBox = await hint.boundingBox();
+  const choicesBox = await choices.boundingBox();
+  expect(hintBox && choicesBox && hintBox.y + hintBox.height <= choicesBox.y).toBe(true);
+  // The odds line appears when some choice on the card has odds to show.
+  const hasOdds = (await choices.getByText(/almost|about \d|\bin \d/).count()) > 0;
+  if (hasOdds) await expect(hint).toContainText("put in words under it");
+
+  await tabTo(page, hint.getByRole("button", { name: "Got it" }));
+  await page.keyboard.press("Enter");
+  await expect(hint).toBeHidden();
+  await expect(decision).toBeFocused();
+  expect(await page.evaluate(() => localStorage.getItem("birthright:hints"))).toContain("decision");
+
+  // After a reload the card is still waiting, and the note does not come back.
+  await page.reload();
+  await page.getByRole("region", { name: "Continue your life" }).getByRole("button", { name: "Continue" }).click();
+  await expect(decision).toBeVisible();
+  await expect(hint).toBeHidden();
   expect(errors).toEqual([]);
 });

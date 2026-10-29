@@ -1,5 +1,6 @@
 // First-life hints (UI-015): a few plain lines the first time the player meets the plan, a decision and the odds
-// lens. What has been seen belongs to the person at the screen and not to a life, so, like the display preferences, it
+// lens. A hint counts as seen once it has been put away or passed (the player placed a point, went on or answered),
+// not as read: it can go without having been on screen. What has been seen belongs to the person at the screen and not to a life, so, like the display preferences, it
 // is kept in this browser under its own key and is no part of any save; a second life starts with nothing to explain.
 
 export type HintId = "plan" | "decision" | "lens";

@@ -99,7 +99,7 @@ export function DecisionCardView({ card, sources, onChoose, hints = [], onHintDi
           onDismiss={() => {
             onHintDismiss?.();
             // The note is leaving the page, so focus goes to the heading of the card it was on.
-            heading.current?.focus();
+            heading.current?.focus({ preventScroll: true });
           }}
         />
       )}

@@ -1,7 +1,7 @@
 /* Quieter than a decision card or an event: a ruled box on the raised paper, in the interface face. */
 .hint {
   margin: 1rem 0;
-  padding: 0.6rem 0.9rem 0.75rem;
+  padding: 0.75rem;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--paper-raised);
@@ -14,6 +14,6 @@
 
 .line {
   margin: 0 0 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--ink-soft);
 }

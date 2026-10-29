@@ -86,12 +86,12 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "hint.decision":
     "Now and then the year stops and asks you something. It waits for as long as you like. A choice that is closed to you stays in view and says why.",
   "hint.lens":
-    "Under each choice the odds are put in words. A choice can tilt them, and it never decides which way things fall.",
+    "Where a choice has odds, they are put in words under it. A choice can tilt them, and it never decides which way things fall.",
   "hints.heading": "Hints",
   "hints.about":
-    "The first time you meet the plan, a decision or the odds, a short note explains it. You can put each away, and they come back here.",
+    "The first time you meet the plan, a decision or the odds, a short note explains it. A note goes when you put it away or act on it, and this brings them all back.",
   "hints.again": "Show the hints again",
-  "hints.none": "No hint has been put away yet.",
+  "hints.again.done": "The hints will show again.",
 
   // Help (UI-012).
   "help.talk": "Need to talk?",

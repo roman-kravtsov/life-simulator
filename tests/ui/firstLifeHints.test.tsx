@@ -24,7 +24,7 @@ beforeEach(() => {
 const hint = (text: RegExp) => screen.queryByText(text);
 const PLAN = /place a few points of attention/;
 const DECISION = /the year stops and asks you something/;
-const LENS = /the odds are put in words/;
+const LENS = /they are put in words under it/;
 
 describe("the plan hint", () => {
   const child = makePerson({ age: 8 });
@@ -49,12 +49,12 @@ describe("the plan hint", () => {
     expect(hints.getSnapshot()).toEqual(["plan"]);
   });
 
-  it("is put away by placing points", async () => {
+  it("stays while points are placed, so the plan does not move under the player's finger", async () => {
     const user = userEvent.setup();
     render(<LifeScreen {...props()} />);
     await user.click(screen.getByRole("button", { name: /Decrease Learn/ }));
-    expect(hint(PLAN)).not.toBeInTheDocument();
-    expect(hints.getSnapshot()).toEqual(["plan"]);
+    expect(hint(PLAN)).toBeInTheDocument();
+    expect(hints.getSnapshot()).toEqual([]);
   });
 
   it("is put away by going on to the next year", async () => {
@@ -117,6 +117,15 @@ describe("the decision and odds lens hints", () => {
     expect(hints.getSnapshot()).toEqual(["decision", "lens"]);
   });
 
+  it("are put away from the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<LifeScreen {...props()} />);
+    screen.getByRole("button", { name: "Got it" }).focus();
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(hints.getSnapshot()).toEqual(["decision", "lens"]);
+  });
+
   it("are put away by answering, and a card without odds leaves the lens hint for a card with some", async () => {
     const user = userEvent.setup();
     const bare = props(false);
@@ -147,11 +156,12 @@ describe("the hints in the app", () => {
     await user.click(screen.getByRole("button", { name: "Settings" }));
     await screen.findByRole("heading", { level: 1, name: "Settings" });
     const again = screen.getByRole("button", { name: "Show the hints again" });
-    expect(again).toBeEnabled();
     await user.click(again);
     expect(hints.getSnapshot()).toEqual([]);
-    expect(again).toBeDisabled();
-    expect(screen.getByText("No hint has been put away yet.")).toBeInTheDocument();
+    // The button keeps focus and stays available, and what it did is said in the status region.
+    expect(again).toHaveFocus();
+    expect(again).toBeEnabled();
+    expect(screen.getByText("The hints will show again.")).toBeInTheDocument();
   });
 
   it("count as something stored, so delete all is offered, and are forgotten by it", async () => {
