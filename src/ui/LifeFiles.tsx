@@ -47,12 +47,17 @@ interface ImportProps {
 /** "Load a life from a file", and the question when it would replace the life in progress. */
 export function ImportLife({ onImport, onNotice }: ImportProps) {
   // The text of a file that is waiting on the answer to "Replace the life in progress?", and whose life it is.
-  const [pending, setPending] = useState<{ text: string; name: string } | null>(null);
+  const [pending, setPending] = useState<{
+    text: string;
+    name: string;
+    replaces?: { name: string; age: number };
+  } | null>(null);
 
   async function run(text: string, replace: boolean) {
     const outcome = await onImport(text, replace ? { replace: true } : undefined);
-    if (!outcome.ok && outcome.reason === "inProgress") setPending({ text, name: outcome.name ?? "" });
-    else onNotice(outcomeWords(outcome));
+    if (!outcome.ok && outcome.reason === "inProgress") {
+      setPending({ text, name: outcome.name ?? "", ...(outcome.replaces ? { replaces: outcome.replaces } : {}) });
+    } else onNotice(outcomeWords(outcome));
   }
 
   async function chosen(file: File | null) {
@@ -77,21 +82,30 @@ export function ImportLife({ onImport, onNotice }: ImportProps) {
         cancelLabel={t("files.replace.no")}
         onConfirm={() => pending && void run(pending.text, true)}
       >
-        <p>{t("files.replace.body", { name: pending?.name ?? "" })}</p>
+        <p>
+          {pending?.replaces
+            ? t("files.replace.bodyOf", {
+                name: pending.name,
+                current: pending.replaces.name,
+                age: pending.replaces.age,
+              })
+            : t("files.replace.body", { name: pending?.name ?? "" })}
+        </p>
       </ConfirmDialog>
     </>
   );
 }
 
 interface ExportCurrentProps {
+  /** Whether a life in progress is stored: known from the start screen's offer, so rendering reads nothing. */
+  available: boolean;
   onExport: GameStore["exportCurrent"];
   onNotice: (text: string) => void;
   save?: SaveText;
 }
 
 /** "Save the life in progress to a file"; off, with the reason, when there is none. */
-export function ExportCurrent({ onExport, onNotice, save = downloadText }: ExportCurrentProps) {
-  const available = onExport() !== null;
+export function ExportCurrent({ available, onExport, onNotice, save = downloadText }: ExportCurrentProps) {
   function press() {
     const file = onExport();
     onNotice(
@@ -133,19 +147,20 @@ export function ExportPastLife({ life, onExport, onNotice, save = downloadText }
 }
 
 interface FilesProps {
+  canExportCurrent: boolean;
   onExportCurrent: GameStore["exportCurrent"];
   onImport: GameStore["importLife"];
   save?: SaveText;
 }
 
 /** The settings screen's part: the blurb, the two buttons and one status region. */
-export function LifeFiles({ onExportCurrent, onImport, save }: FilesProps) {
+export function LifeFiles({ canExportCurrent, onExportCurrent, onImport, save }: FilesProps) {
   const { region, say } = useNotice();
   return (
     <div className={styles.files}>
       <p className="small">{t("files.about")}</p>
       <div className={styles.buttons}>
-        <ExportCurrent onExport={onExportCurrent} onNotice={say} save={save} />
+        <ExportCurrent available={canExportCurrent} onExport={onExportCurrent} onNotice={say} save={save} />
         <ImportLife onImport={onImport} onNotice={say} />
       </div>
       {region}

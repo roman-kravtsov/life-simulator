@@ -61,7 +61,7 @@ describe("SAVE-006: the settings screen", () => {
   it("explains what a file holds, and has the save button off, with the reason, when no life is in progress", async () => {
     const view = openApp(fakePersistence());
     await openSettings(view);
-    expect(screen.getByText(/never sent anywhere/)).toBeInTheDocument();
+    expect(screen.getByText(/sends nothing anywhere/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save the life in progress to a file" })).toBeDisabled();
     expect(screen.getByText("There is no life in progress to save.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Load a life from a file" })).toBeEnabled();
@@ -75,7 +75,7 @@ describe("SAVE-006: the settings screen", () => {
     expect(view.downloads).toHaveLength(1);
     expect(view.downloads[0]!.fileName).toBe(fileName);
     expect((JSON.parse(view.downloads[0]!.text) as SaveFile).seed).toBe("river-1");
-    expect(screen.getByText(`Saved as ${fileName}.`)).toBeInTheDocument();
+    expect(screen.getByText(`Saved as ${fileName}, in your downloads.`)).toBeInTheDocument();
   });
 
   it("says when the browser would not save the file", async () => {
@@ -83,7 +83,9 @@ describe("SAVE-006: the settings screen", () => {
     const view = openApp(fake, testWorld(country), false);
     await openSettings(view);
     await view.user.click(screen.getByRole("button", { name: "Save the life in progress to a file" }));
-    expect(screen.getByText("Your browser would not save the file.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your browser would not save the file. Downloads may be blocked or turned off."),
+    ).toBeInTheDocument();
   });
 
   it("loads a life in progress into a clean browser, which then offers to continue it", async () => {
@@ -93,9 +95,7 @@ describe("SAVE-006: the settings screen", () => {
     await openSettings(view);
     await upload(view.user, text);
     expect(
-      await screen.findByText(
-        `${life.person.name}, ${life.person.age}, is now the life you can continue from the start screen.`,
-      ),
+      await screen.findByText(`You can now continue ${life.person.name}, ${life.person.age}, from the start screen.`),
     ).toBeInTheDocument();
     // The save button now has a life to save.
     expect(screen.getByRole("button", { name: "Save the life in progress to a file" })).toBeEnabled();
@@ -128,11 +128,11 @@ describe("SAVE-006: the settings screen", () => {
     expect(dialog).toHaveAccessibleDescription(
       /replaces it, and it cannot be brought back unless you have saved it to a file/,
     );
-    expect(within(dialog).getByRole("button", { name: "Keep mine" })).toHaveFocus();
+    expect(within(dialog).getByRole("button", { name: "Keep it" })).toHaveFocus();
     await view.user.keyboard("{Enter}");
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(fake.saved).toHaveLength(before);
-    expect(screen.queryByText(/is now the life you can continue/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/You can now continue/)).not.toBeInTheDocument();
   });
 
   it("replaces the life in progress when the player says so, by keyboard", async () => {
@@ -144,7 +144,7 @@ describe("SAVE-006: the settings screen", () => {
     await screen.findByRole("alertdialog", { name: "Replace the life in progress?" });
     await view.user.keyboard("{Tab}{Enter}");
     expect(
-      await screen.findByText(new RegExp(`^${life.person.name}, ${life.person.age}, is now the life`)),
+      await screen.findByText(new RegExp(`^You can now continue ${life.person.name}, ${life.person.age}`)),
     ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(fake.saved.at(-1)?.seed).toBe("incoming-2");
@@ -153,7 +153,7 @@ describe("SAVE-006: the settings screen", () => {
   it.each([
     ["not json", "That file could not be read as a life. It should be the .json file this game saved."],
     ["[]", "That file is not a life this game can read. It may be damaged, or it may not be from this game."],
-    [" ".repeat(IMPORT_MAX_LENGTH + 1), "That file is too big to be a life."],
+    [" ".repeat(IMPORT_MAX_LENGTH + 1), "That file is too large to be a saved life."],
   ])("says why a file of %.12s… is not a life, and keeps nothing", async (text, words) => {
     const fake = fakePersistence();
     const view = openApp(fake);
@@ -171,7 +171,7 @@ describe("SAVE-006: the settings screen", () => {
     Object.defineProperty(big, "size", { value: 9_000_000 });
     big.text = () => Promise.reject(new Error("must not be read"));
     await view.user.upload(fileInput(), big);
-    expect(await screen.findByText("That file is too big to be a life.")).toBeInTheDocument();
+    expect(await screen.findByText("That file is too large to be a saved life.")).toBeInTheDocument();
   });
 
   it("says when a life is from a newer game, from an unknown country and when the browser will not keep it", async () => {
@@ -193,6 +193,45 @@ describe("SAVE-006: the settings screen", () => {
   });
 });
 
+describe("SAVE-006: by keyboard", () => {
+  it("saves the life in progress with Enter, and the file chooser opens from the load button with Space", async () => {
+    const { fake } = await livingBrowser("key-1");
+    const view = openApp(fake);
+    await openSettings(view);
+    screen.getByRole("button", { name: "Save the life in progress to a file" }).focus();
+    await view.user.keyboard("{Enter}");
+    expect(view.downloads).toHaveLength(1);
+    // The chooser is the browser's own: pressing the button clicks the hidden file input.
+    const clicked = vi.fn();
+    fileInput().addEventListener("click", clicked);
+    await view.user.tab();
+    expect(screen.getByRole("button", { name: "Load a life from a file" })).toHaveFocus();
+    await view.user.keyboard(" ");
+    expect(clicked).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the life that would be replaced, so the question can be answered", async () => {
+    const { text } = await livingBrowser("incoming-3");
+    const { fake, life } = await livingBrowser("mine-3", 3);
+    const view = openApp(fake);
+    await openSettings(view);
+    await upload(view.user, text);
+    const dialog = await screen.findByRole("alertdialog", { name: "Replace the life in progress?" });
+    expect(dialog).toHaveAccessibleDescription(
+      new RegExp(`You have a life in progress: ${life.person.name}, ${life.person.age}\\.`),
+    );
+  });
+
+  it("will not load an earlier copy of a life that has since been lived to its end", async () => {
+    const { text } = await livingBrowser("river-end", 3);
+    const { past } = finishedLife("river-end", country);
+    const view = openApp(fakePersistence({ status: "none" }, [past]));
+    await openSettings(view);
+    await upload(view.user, text);
+    expect(await screen.findByText(/earlier copy of a life that was since lived to its end/)).toBeInTheDocument();
+  });
+});
+
 describe("SAVE-006: the past lives screen", () => {
   it("saves a finished life to a file from its card, and says so", async () => {
     const { past } = finishedLife("done-1", country, "Kept bees");
@@ -205,7 +244,9 @@ describe("SAVE-006: the past lives screen", () => {
     expect(view.downloads[0]!.fileName).toBe("birthright-done-1.json");
     expect(JSON.parse(view.downloads[0]!.text)).toEqual(JSON.parse(exportText(past.save)));
     expect(
-      await screen.findByText(`The life of ${past.summary.name} was saved as birthright-done-1.json.`),
+      await screen.findByText(
+        `The life of ${past.summary.name} was saved as birthright-done-1.json, in your downloads.`,
+      ),
     ).toBeInTheDocument();
   });
 
@@ -216,7 +257,9 @@ describe("SAVE-006: the past lives screen", () => {
     await view.user.click(
       await screen.findByRole("button", { name: `Save to file: the life of ${past.summary.name}` }),
     );
-    expect(await screen.findByText("Your browser would not save the file.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Your browser would not save the file. Downloads may be blocked or turned off."),
+    ).toBeInTheDocument();
   });
 
   it("loads a finished life into the list, and says when it was there already", async () => {
@@ -236,7 +279,7 @@ describe("SAVE-006: the past lives screen", () => {
     expect(
       await screen.findByText(
         new RegExp(
-          `^${life.person.name}'s life was already in your past lives, and the copy here is as new as the file\\.`,
+          `^${life.person.name}'s life was already in your past lives, with everything the file has, so nothing changed\\.`,
         ),
       ),
     ).toBeInTheDocument();

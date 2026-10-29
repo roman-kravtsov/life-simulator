@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { exportText, IMPORT_MAX_LENGTH, readSave, SCHEMA_VERSION, type SaveFile } from "../../src/engine/save";
-import { createGameStore, type GameStore } from "../../src/ui/store";
+import { createGameStore } from "../../src/ui/store";
 import { makeCountry, testWorld } from "../fixtures/country";
 import { fakePersistence, finishedLife, playYears, type Fake } from "./fakes";
 
@@ -80,9 +80,10 @@ describe("SAVE-006: importing a life in progress", () => {
     expect(resumed.screen).toBe("life");
     expect(resumed.restored).toBeNull();
     expect(resumed.life).toEqual(life);
-    original.continueYear();
-    if (!original.getSnapshot().card) store.continueYear();
-    if (!original.getSnapshot().card) expect(store.getSnapshot().life).toEqual(original.getSnapshot().life);
+    // Both play the next year the same way, answering a decision with the first open choice.
+    playYears(original, 1);
+    playYears(store, 1);
+    expect(store.getSnapshot().life).toEqual(original.getSnapshot().life);
   });
 
   it("does not replace a life in progress unless the player says so", async () => {
@@ -227,19 +228,117 @@ describe("SAVE-006: files that cannot be imported", () => {
   });
 });
 
+describe("SAVE-006: files that are not tidy", () => {
+  it("are damaged when the times are not times, so they cannot break the past lives screen", async () => {
+    const { past } = finishedLife("times-1", country);
+    const file = JSON.parse(exportText(past.save)) as Record<string, unknown>;
+    const fake = fakePersistence();
+    const store = storeFor(fake);
+    for (const bad of ["banana", "", 12]) {
+      expect(await store.importLife(JSON.stringify({ ...file, updatedAt: bad }))).toMatchObject({
+        ok: false,
+        reason: "damaged",
+      });
+      expect(await store.importLife(JSON.stringify({ ...file, createdAt: bad }))).toMatchObject({
+        ok: false,
+        reason: "damaged",
+      });
+    }
+    expect(fake.puts).toHaveLength(0);
+  });
+
+  it("are damaged when the logs inside the snapshot would not read back as a save", async () => {
+    const { store: original } = await livingAfter(4);
+    const file = JSON.parse(fileOf(original.exportCurrent())) as { snapshot: Record<string, unknown> };
+    const clean = fakePersistence();
+    const odd = { ...file, snapshot: { ...file.snapshot, settingsLog: { not: "a list" } } };
+    expect(await storeFor(clean).importLife(JSON.stringify(odd))).toMatchObject({ ok: false, reason: "damaged" });
+    expect(clean.saved).toHaveLength(0);
+  });
+
+  it("compare when a life was saved as times, not as text, and keep the date the life ended", async () => {
+    const { past } = finishedLife("times-2", country, "Kept bees", "2026-10-25T10:00:00.000Z");
+    const fake = fakePersistence({ status: "none" }, [past]);
+    const store = storeFor(fake);
+    const newer = { ...JSON.parse(exportText(past.save)), updatedAt: "2026-10-28T09:00:00+02:00" };
+    expect(await store.importLife(JSON.stringify(newer))).toMatchObject({ ok: true, added: true });
+    expect(fake.puts[0]).toMatchObject({ finishedAt: past.finishedAt });
+    expect(fake.puts[0]!.save.updatedAt).toBe("2026-10-28T09:00:00+02:00");
+    const older = { ...newer, updatedAt: "2026-10-28T08:00:00+02:00" };
+    expect(await store.importLife(JSON.stringify(older))).toMatchObject({ ok: true, added: false });
+  });
+});
+
+describe("SAVE-006: the life in progress and the archive", () => {
+  it("names the life that would be replaced", async () => {
+    const { store: original } = await livingAfter(5, "incoming");
+    const text = fileOf(original.exportCurrent());
+    const { fake, life: mine } = await livingAfter(3, "mine");
+    expect(await storeFor(fake).importLife(text)).toMatchObject({
+      ok: false,
+      reason: "inProgress",
+      replaces: { name: mine.person.name, age: mine.person.age },
+    });
+  });
+
+  it("will not bring back an earlier copy of a life that has since been lived to its end", async () => {
+    const { store: original } = await livingAfter(3, "ended");
+    const text = fileOf(original.exportCurrent());
+    const { past } = finishedLife("ended", country, "Kept bees");
+    const fake = fakePersistence({ status: "none" }, [past]);
+    expect(await storeFor(fake).importLife(text)).toMatchObject({ ok: false, reason: "finished" });
+    expect(fake.saved).toHaveLength(0);
+    expect(fake.puts).toHaveLength(0);
+  });
+});
+
 describe("TD-002: lives stored before a schema change", () => {
-  it("are read through the migrations when exported or given an epitaph", async () => {
+  // An invented version 2 in which a person's money has assets, as Phase D will; the store is given that format.
+  type Raw = Record<string, unknown>;
+  const addAssets = (save: Raw): Raw => {
+    const snapshot = save.snapshot as Raw;
+    const person = snapshot.person as Raw;
+    return {
+      ...save,
+      snapshot: { ...snapshot, person: { ...person, money: { ...(person.money as Raw), assets: [] } } },
+    };
+  };
+  const format = { migrations: { 1: addAssets }, current: SCHEMA_VERSION + 1 };
+  const withFormat = (fake: Fake) => {
+    const store = createGameStore(() => "s", testWorld(country), fake.persistence, clock, format);
+    store.init();
+    return store;
+  };
+  const moneyOf = (save: SaveFile) => (save.snapshot.person.money as unknown as Raw).assets;
+
+  it("go through the migrations when opened with an epitaph, so an old-shape snapshot is never written as a new one", async () => {
     const { past } = finishedLife("old-seed", country);
     const fake = fakePersistence({ status: "none" }, [past]);
-    const store: GameStore = storeFor(fake);
+    const store = withFormat(fake);
     await store.openPastLife("old-seed");
     store.writeEpitaph("Kept bees");
     await Promise.resolve();
-    const stored = fake.lives.get("old-seed");
-    expect(stored?.save).toMatchObject({
-      schemaVersion: SCHEMA_VERSION,
-      epitaph: "Kept bees",
-      contentVersion: past.save.contentVersion,
-    });
+    const stored = fake.lives.get("old-seed")!.save;
+    expect(stored).toMatchObject({ epitaph: "Kept bees", contentVersion: past.save.contentVersion });
+    expect(moneyOf(stored)).toEqual([]);
+  });
+
+  it("go through the migrations when exported", async () => {
+    const { past } = finishedLife("old-seed-2", country);
+    const store = withFormat(fakePersistence({ status: "none" }, [past]));
+    const exported = await store.exportPastLife("old-seed-2");
+    expect(moneyOf(JSON.parse(fileOf(exported)) as SaveFile)).toEqual([]);
+  });
+
+  it("tell the player when a life cannot be written again, instead of losing the epitaph quietly", async () => {
+    const { past } = finishedLife("future-seed", country);
+    const newer = { ...past, save: { ...past.save, schemaVersion: SCHEMA_VERSION + 1 } };
+    const fake = fakePersistence({ status: "none" }, [newer]);
+    const store = storeFor(fake);
+    await store.openPastLife("future-seed");
+    expect(store.getSnapshot().screen).toBe("summary");
+    store.writeEpitaph("Kept bees");
+    expect(store.getSnapshot().problem).toBe("archive");
+    expect(fake.puts).toHaveLength(0);
   });
 });

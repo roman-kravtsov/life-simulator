@@ -60,7 +60,7 @@ test("a life is saved to a file, the browser is emptied, and the file brings the
     page.getByRole("button", { name: "Save the life in progress to a file" }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/^birthright-[a-z]+-[a-z]+-\d+\.json$/);
-  await expect(page.getByText(`Saved as ${download.suggestedFilename()}.`)).toBeVisible();
+  await expect(page.getByText(`Saved as ${download.suggestedFilename()}, in your downloads.`)).toBeVisible();
   const file = testInfo.outputPath("life.json");
   await download.saveAs(file);
 
@@ -72,7 +72,7 @@ test("a life is saved to a file, the browser is emptied, and the file brings the
 
   await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("input[type=file]").setInputFiles(file);
-  await expect(page.getByText(/is now the life you can continue from the start screen\./)).toBeVisible();
+  await expect(page.getByText(/You can now continue .+ from the start screen\./)).toBeVisible();
   await page.getByRole("button", { name: "Back", exact: true }).click();
 
   const card = page.getByRole("region", { name: "Continue your life" });

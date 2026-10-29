@@ -10,6 +10,9 @@
 //    engine's rolls did not change; a change like the money rework does change them, so upgrade the snapshot in place.
 //  - A replay of a fixture is not tested here on purpose: it needs the content of the day it was written, and the
 //    fixture would fail on every content change. Replays are tested on lives made by the code under test (saveFile.test.ts).
+//    So the fixtures prove that the file reads, migrates and restores from its snapshot; they do not prove a replay.
+//  - The fixtures have no waiting decision (a later content change could drop one); that case is rehearsed on a fresh
+//    life, below. They must never be regenerated: they are the evidence of what version 1 wrote.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, advanceAuto, newLife } from "../../src/engine/life";
@@ -162,6 +165,24 @@ describe("TD-002: rehearsal of a migration from version 1 to a version 2", () =>
     const read = readSave(original, { 1: (save) => save }, REHEARSED);
     expect(read.ok && isSnapshotOf(read.save.snapshot, read.save)).toBe(true);
     expect(read.ok && (read.save.snapshot.person.money as unknown as Raw).assets).toBeUndefined();
+  });
+
+  it("a life waiting on a decision has a second person inside its snapshot, which the migration must reach too", () => {
+    let life = newLife({ seed: "rehearsal-turn", country, settings: { pace: "every-year" } });
+    for (let i = 0; i < 40 && !life.turn; i++) {
+      life = advance(life, { kind: "continue" }, country).state;
+      if (!life.person.alive)
+        life = newLife({ seed: `rehearsal-turn-${i}`, country, settings: { pace: "every-year" } });
+    }
+    expect(life.turn).toBeDefined();
+    const versions = { dataVersion: "d", contentVersion: "c", now: "2026-10-29T10:00:00.000Z" };
+    const file = freeze(JSON.parse(exportText(toSave(life, versions))) as Raw);
+    const read = readSave(file, rehearsal, REHEARSED);
+    if (!read.ok) throw new Error("rehearsal failed");
+    const turn = read.save.snapshot.turn as unknown as { person: { money: Raw } };
+    expect(turn.person.money.assets).toEqual([]);
+    expect(read.save.waiting).toBe(true);
+    expect(isSnapshotOf(read.save.snapshot, read.save)).toBe(true);
   });
 
   it("a migration that drops the snapshot gets the life back from the seed and the logs", () => {

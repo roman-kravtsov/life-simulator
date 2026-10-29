@@ -126,6 +126,7 @@ function CurrentScreen({ store, display, save }: { store: GameStore; display: Di
         // The past lives are unknown here until they have been looked at, so there may be some.
         canDeleteAll={pastLives === null || pastLives.length > 0 || resume !== null || preferencesStored}
         onDeleteAll={store.deleteAllData}
+        canExportCurrent={resume?.kind === "offer"}
         onExportCurrent={store.exportCurrent}
         onImport={store.importLife}
         onBack={store.closeSettings}

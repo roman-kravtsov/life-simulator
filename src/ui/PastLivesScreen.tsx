@@ -104,6 +104,8 @@ export function PastLivesScreen({
   const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
   const say = (text: string) => setNotice((was) => ({ text, n: (was?.n ?? 0) + 1 }));
   const clear = () => setNotice((was) => (was === null ? was : null));
+  // The buttons that cause a notice can be far below it: it is brought into view (where scrolling is possible at all).
+  const showNotice = (element: HTMLParagraphElement | null) => element?.scrollIntoView?.({ block: "nearest" });
   async function remove(life: PastLifeListing) {
     clear();
     say(t((await onDelete(life.id)) ? "past.deleted" : "past.deleteFailed", { name: life.name }));
@@ -128,7 +130,7 @@ export function PastLivesScreen({
           )}
           {lives === null && <p className="small">{t("past.loading")}</p>}
           {notice && (
-            <p key={notice.n} className="small">
+            <p key={notice.n} className="small" ref={showNotice}>
               {notice.text}
             </p>
           )}

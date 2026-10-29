@@ -176,6 +176,25 @@ describe("SAVE-006: a file is not trusted to be tidy", () => {
     expect(restored.ok && restored.life.journal).toEqual([{ age: 4, text: "y".repeat(JOURNAL_MAX_LENGTH) }]);
   });
 
+  it("keeps only what a journal line is made of, and no more lines than a life could hold", () => {
+    const base = { ...imported(saved(lifeAt(10))) } as unknown as Record<string, unknown>;
+    const lines = Array.from({ length: 700 }, (_, i) => ({ age: i % 80, text: "x", sneaked: "in" }));
+    const long = { age: 3, prompt: "p".repeat(JOURNAL_MAX_LENGTH + 40), text: "t" };
+    const restored = restoreLife({ ...base, journal: [long, ...lines] } as unknown as SaveFile, country, versions);
+    const journal = restored.ok ? (restored.life.journal ?? []) : [];
+    expect(journal).toHaveLength(500);
+    expect(journal[0]).toEqual({ age: 3, prompt: "p".repeat(JOURNAL_MAX_LENGTH), text: "t" });
+    expect(journal.every((line) => !("sneaked" in line))).toBe(true);
+  });
+
+  it("is damaged when the times a save was made at are not times", () => {
+    const file = JSON.parse(exportText(saved(lifeAt(6)))) as Record<string, unknown>;
+    for (const bad of ["banana", "", 12, null]) {
+      expect(parseImport(JSON.stringify({ ...file, updatedAt: bad }))).toEqual({ ok: false, reason: "damaged" });
+      expect(parseImport(JSON.stringify({ ...file, createdAt: bad }))).toEqual({ ok: false, reason: "damaged" });
+    }
+  });
+
   it("is damaged, not a crash, when the logs are nonsense and there is no snapshot to fall back on", () => {
     const base = imported(saved(lifeAt(10)));
     const save = { ...base, snapshot: null, decisions: [{ year: "x" }], years: 40 } as unknown as SaveFile;

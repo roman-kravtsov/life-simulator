@@ -23,6 +23,8 @@ export interface SettingsScreenProps {
   /** Resolves true only when everything was deleted; the store then shows the start screen, which says so. */
   onDeleteAll: GameStore["deleteAllData"];
   /** Lives as files (SAVE-006). */
+  /** Whether a life in progress is stored, to be saved to a file. */
+  canExportCurrent: boolean;
   onExportCurrent: GameStore["exportCurrent"];
   onImport: GameStore["importLife"];
   onBack: () => void;
@@ -37,6 +39,7 @@ export function SettingsScreen({
   onSettings,
   canDeleteAll,
   onDeleteAll,
+  canExportCurrent,
   onExportCurrent,
   onImport,
   onBack,
@@ -67,7 +70,12 @@ export function SettingsScreen({
           {t("settingsScreen.stored")}
         </h2>
         <p className="small">{t("settingsScreen.stored.about")}</p>
-        <LifeFiles onExportCurrent={onExportCurrent} onImport={onImport} save={save} />
+        <LifeFiles
+          canExportCurrent={canExportCurrent}
+          onExportCurrent={onExportCurrent}
+          onImport={onImport}
+          save={save}
+        />
         <DeleteAllData canDeleteAll={canDeleteAll} onConfirm={() => void removeAll()} />
         <div role="status">
           {failed > 0 && (

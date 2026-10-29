@@ -100,7 +100,7 @@ for (const theme of THEMES) {
         page.waitForEvent("download"),
         page.getByRole("button", { name: "Save the life in progress to a file" }).click(),
       ]);
-      await expect(page.getByText(`Saved as ${download.suggestedFilename()}.`)).toBeVisible();
+      await expect(page.getByText(`Saved as ${download.suggestedFilename()}, in your downloads.`)).toBeVisible();
       await expectNoViolations(page, "settings screen, a file saved");
       const file = testInfo.outputPath("life.json");
       await download.saveAs(file);

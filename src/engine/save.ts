@@ -87,6 +87,8 @@ const isObject = (value: unknown): value is Raw => typeof value === "object" && 
 const isArray = Array.isArray;
 const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
+const isTime = (value: unknown): value is string => typeof value === "string" && Number.isFinite(Date.parse(value));
+
 export type ReadResult = { ok: true; save: SaveFile } | { ok: false; reason: "unsupported" | "damaged" };
 
 /** The parts of a save a replay needs, which a damaged snapshot must not be able to take down. */
@@ -102,8 +104,8 @@ function hasLogs(save: Raw): boolean {
     isArray(save.planLog) &&
     Number.isInteger(save.years) &&
     typeof save.waiting === "boolean" &&
-    typeof save.createdAt === "string" &&
-    typeof save.updatedAt === "string"
+    isTime(save.createdAt) &&
+    isTime(save.updatedAt)
   );
 }
 
@@ -145,8 +147,16 @@ function soundJournal(journal: unknown): JournalEntry[] {
         typeof entry.text === "string" &&
         (entry.prompt === undefined || typeof entry.prompt === "string"),
     )
-    .map((entry) => ({ ...entry, text: Array.from(entry.text).slice(0, JOURNAL_MAX_LENGTH).join("") }));
+    .slice(0, JOURNAL_MAX_LINES)
+    .map(({ age, prompt, text }) => ({
+      age,
+      ...(prompt === undefined ? {} : { prompt: prompt.slice(0, JOURNAL_MAX_LENGTH) }),
+      text: Array.from(text).slice(0, JOURNAL_MAX_LENGTH).join(""),
+    }));
 }
+
+/** More lines than a life could hold are not a journal; a file is not trusted to stop at the right number. */
+const JOURNAL_MAX_LINES = 500;
 
 const STATS = ["health", "happiness", "belonging", "skills"];
 

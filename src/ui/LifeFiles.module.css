@@ -14,7 +14,8 @@
   margin-bottom: 0.75rem;
 }
 
-/* The explanation of a disabled button sits beside it when there is room and under it on a phone. */
+/* The explanation of a disabled button takes the row under both buttons, so they always sit together. */
 .buttons p {
+  flex-basis: 100%;
   margin: 0;
 }
