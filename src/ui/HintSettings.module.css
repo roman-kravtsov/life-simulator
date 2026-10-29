@@ -1,0 +1,19 @@
+.hints {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+}
+
+/* Like the heading of the display settings above it (DisplaySettings.module.css). */
+.heading {
+  margin: 1.25rem 0 -0.25rem;
+}
+
+.hints p {
+  margin: 0;
+}
+
+.none {
+  margin-top: 0.4rem;
+}

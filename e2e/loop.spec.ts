@@ -824,3 +824,47 @@ test("under reduced motion there is no reel: the birth screen opens at once and 
   ).toBeVisible();
   expect(await noHorizontalScroll(page)).toBe(true);
 });
+
+test("the plan hint shows once, is put away by keyboard, stays away after a reload and comes back from the settings (UI-015)", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await fixedRandom(page, 20261029);
+  await page.goto("./");
+  await beginLife(page);
+
+  const heading = page.getByRole("heading", { level: 1 });
+  const region = page.getByRole("region", { name: "Where your attention goes" });
+  const hint = page.getByRole("note").filter({ hasText: "place a few points of attention" });
+  const ageNow = async () => Number(/Age (\d+)/.exec((await heading.textContent()) ?? "")?.[1]);
+  // The decision hint is put away by answering a decision on the way.
+  for (let step = 0; step < 14 && (await ageNow()) < 6; step++) await liveStep(page);
+  await expect(region).toBeVisible();
+
+  // The note is in the page, not over it, and nothing about it moves focus or scrolls sideways.
+  await expect(hint).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
+  const gotIt = hint.getByRole("button", { name: "Got it" });
+  await expect(gotIt).not.toBeFocused();
+  await tabTo(page, gotIt);
+  await page.keyboard.press("Enter");
+  await expect(hint).toBeHidden();
+  await expect(heading).toBeFocused();
+  expect(await page.evaluate(() => localStorage.getItem("birthright:hints"))).toContain("plan");
+
+  // After a reload the same life goes on without it.
+  await page.reload();
+  await page.getByRole("region", { name: "Continue your life" }).getByRole("button", { name: "Continue" }).click();
+  await expect(region).toBeVisible();
+  await expect(hint).toBeHidden();
+
+  // The settings bring the hints back.
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("dialog", { name: "Settings" }).getByRole("button", { name: "Back to start" }).click();
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: "Show the hints again" }).click();
+  await expect(page.getByRole("button", { name: "Show the hints again" })).toBeDisabled();
+  expect(await page.evaluate(() => localStorage.getItem("birthright:hints"))).toBeNull();
+  expect(errors).toEqual([]);
+});

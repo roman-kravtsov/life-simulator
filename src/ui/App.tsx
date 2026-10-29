@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../i18n";
 import { BirthScreen } from "./BirthScreen";
 import { DEFAULT_DISPLAY, displayStore, type Display, type DisplayStore } from "./display";
+import { hintStore, type HintStore } from "./hints";
 import { LifeScreen } from "./LifeScreen";
 import type { SaveText } from "./LifeFiles";
 import { PastLivesScreen } from "./PastLivesScreen";
@@ -16,7 +17,17 @@ import type { GameStore } from "./store";
 const isDefaultDisplay = (display: Display) =>
   (Object.keys(DEFAULT_DISPLAY) as (keyof Display)[]).every((name) => display[name] === DEFAULT_DISPLAY[name]);
 
-function CurrentScreen({ store, display, save }: { store: GameStore; display: DisplayStore; save?: SaveText }) {
+function CurrentScreen({
+  store,
+  display,
+  hints,
+  save,
+}: {
+  store: GameStore;
+  display: DisplayStore;
+  hints: HintStore;
+  save?: SaveText;
+}) {
   const {
     screen,
     life,
@@ -40,7 +51,9 @@ function CurrentScreen({ store, display, save }: { store: GameStore; display: Di
     chanceNote,
   } = useSyncExternalStore(store.subscribe, store.getSnapshot);
   // A display preference the reader chose is kept in this browser too, so it is something "delete all" removes.
-  const preferencesStored = useSyncExternalStore(display.subscribe, () => !isDefaultDisplay(display.getSnapshot()));
+  const displayStored = useSyncExternalStore(display.subscribe, () => !isDefaultDisplay(display.getSnapshot()));
+  const hintsStored = useSyncExternalStore(hints.subscribe, () => hints.getSnapshot().length > 0);
+  const preferencesStored = displayStored || hintsStored;
   // The screens that show stored lives are guarded, so text a version no longer has cannot blank the app.
   const guarded = (element: ReactNode) => (
     <ScreenBoundary key={screen} onBack={store.backToStart}>
@@ -83,6 +96,7 @@ function CurrentScreen({ store, display, save }: { store: GameStore; display: Di
         onJournal={store.writeJournal}
         onSettings={store.setSettings}
         onBack={store.backToStart}
+        hints={hints}
       />,
     );
   }
@@ -131,6 +145,7 @@ function CurrentScreen({ store, display, save }: { store: GameStore; display: Di
         onImport={store.importLife}
         onBack={store.closeSettings}
         display={display}
+        hints={hints}
         save={save}
       />
     );
@@ -156,24 +171,29 @@ interface AppProps {
   store: GameStore;
   /** The reader's display preferences (UI-009); the page's own unless a test gives its own. */
   display?: DisplayStore;
+  /** What the player has been told in a first life (UI-015); the page's own unless a test gives its own. */
+  hints?: HintStore;
   /** Hands a saved life to the player as a file (SAVE-006); the browser's download unless a test gives its own. */
   save?: SaveText;
 }
 
-export function App({ store, display = displayStore, save }: AppProps) {
+export function App({ store, display = displayStore, hints = hintStore, save }: AppProps) {
   // "Delete all local data" removes the stored preferences with everything else; the page then goes back to the
   // defaults too. In one place, for every screen that offers it (past lives, settings).
   const deleted = useSyncExternalStore(store.subscribe, () => store.getSnapshot().deleted);
   useEffect(() => {
-    if (deleted) display.reset();
-  }, [deleted, display]);
+    if (deleted) {
+      display.reset();
+      hints.reset();
+    }
+  }, [deleted, display, hints]);
   // Every screen renders through Page: its header, then <main id="content">, where the skip link leads (UI-010).
   return (
     <>
       <a className="skip-link" href="#content">
         {t("app.skipToContent")}
       </a>
-      <CurrentScreen store={store} display={display} save={save} />
+      <CurrentScreen store={store} display={display} hints={hints} save={save} />
     </>
   );
 }

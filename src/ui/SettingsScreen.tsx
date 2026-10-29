@@ -1,11 +1,14 @@
 // The settings (UI-009), from the start screen: how you want to play (for the lives you begin from now), how the page
-// looks (theme, text size, motion: A11Y-004, A11Y-005) and what is stored on this device, which can all be deleted.
+// looks (theme, text size, motion: A11Y-004, A11Y-005), whether to bring back the first-life hints (UI-015) and what is
+// stored on this device, which can all be deleted.
 import { useId, useState } from "react";
 import type { Settings } from "../engine/types";
 import { t } from "../i18n";
 import { DeleteAllData } from "./DeleteAllData";
 import { displayStore, type DisplayStore } from "./display";
 import { DisplaySettings } from "./DisplaySettings";
+import { hintStore, type HintStore } from "./hints";
+import { HintSettings } from "./HintSettings";
 import { Button } from "./kit";
 import { LifeFiles, type SaveText } from "./LifeFiles";
 import { Page } from "./Page";
@@ -30,6 +33,8 @@ export interface SettingsScreenProps {
   onBack: () => void;
   /** Injected in tests; the page's own display preferences otherwise. */
   display?: DisplayStore;
+  /** Injected in tests; the page's own first-life hints otherwise (UI-015). */
+  hints?: HintStore;
   /** Injected in tests; the browser's download otherwise. */
   save?: SaveText;
 }
@@ -44,6 +49,7 @@ export function SettingsScreen({
   onImport,
   onBack,
   display = displayStore,
+  hints = hintStore,
   save,
 }: SettingsScreenProps) {
   const heading = useFocusOn<HTMLHeadingElement>();
@@ -64,6 +70,9 @@ export function SettingsScreen({
       </div>
       <div className={styles.part}>
         <DisplaySettings store={display} />
+      </div>
+      <div className={styles.part}>
+        <HintSettings store={hints} />
       </div>
       <section aria-labelledby={storedHeading} className={`${styles.part} ${styles.stored}`}>
         <h2 id={storedHeading} className={`eyebrow ${styles.heading}`}>

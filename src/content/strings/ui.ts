@@ -78,6 +78,21 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "display.motion.about":
     "Holds back movement, such as the growth rings drawing themselves. Until you change it, it follows this device.",
 
+  // First-life hints (UI-015).
+  "hint.label": "A hint",
+  "hint.dismiss": "Got it",
+  "hint.plan":
+    "Each year you place a few points of attention across five areas. They shift the odds of what the year brings and never settle them. Leave them be and they follow what suits your situation.",
+  "hint.decision":
+    "Now and then the year stops and asks you something. It waits for as long as you like. A choice that is closed to you stays in view and says why.",
+  "hint.lens":
+    "Under each choice the odds are put in words. A choice can tilt them, and it never decides which way things fall.",
+  "hints.heading": "Hints",
+  "hints.about":
+    "The first time you meet the plan, a decision or the odds, a short note explains it. You can put each away, and they come back here.",
+  "hints.again": "Show the hints again",
+  "hints.none": "No hint has been put away yet.",
+
   // Help (UI-012).
   "help.talk": "Need to talk?",
   "help.newTab": "Free helplines directory. Opens in a new tab.",
