@@ -1,6 +1,6 @@
 // The balance gate (ADMIN-005, ROADMAP.md Phase B): the agency probe's targets hold over lives born by the
 // odds of birth. A change to the focus effects, the money mix or the drift that breaks one of them fails
-// here; `npm run probe` has the full report and `docs/balance.md` the committed numbers.
+// here (the probe, with its larger sample, is the authority: a target near its threshold can differ); `npm run probe` has the full report and `docs/agency-probe.md` the committed numbers.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createRng } from "../../src/engine/rng";

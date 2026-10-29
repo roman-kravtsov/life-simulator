@@ -12,7 +12,7 @@ The first balance pass's targets (`balanceChecks` in `src/engine/probe.ts`), rea
 | --- | ---: | ---: |
 | The default course credits under 5% of a life to choice | met | 2.7% |
 | A deliberate plan credits at least 10% to choice, and at least three times the default | met | 16.0% against 2.7% |
-| The summary names choice for 0.75 of the four stats of a deliberate life, on average, and hardly ever for the default course | met | 0.98 stats against 0.02 of 4 |
+| On average the summary names choice in at least 0.75 of the four stats for a deliberate life, and in under 0.2 for the default course | met | 0.98 stats against 0.02 of 4 |
 | One point on Learn raises skills at 35 by at least 2 points | met | 4.7 |
 | One point on Earn raises savings at 45 by at least 0.2 years of income and cuts time out of work by at least 0.5 points | met | 0.82 years of income, -1.0 pp |
 | One point on Earn raises the income rank at 35 by at least 1.5 | met | 2.6 |
@@ -80,40 +80,40 @@ The first time each decision came up in 300 default-course lives, the life was f
 | Decision | Choice | Lives | Years lived | Income rank at 35 | Happiness, 20 to 59 | Belonging, 20 to 59 | Net savings at 45 | Share credited to choice |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | adolescence.first_love | silent (default) | 174 | — | — | — | — | — | — |
-| adolescence.first_love | speak | 174 | 0.0 | 0.0 | **0.0** | **0.0** | 0.00 | **−0.1 pp** |
+| adolescence.first_love | speak | 174 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **−0.1 pp** |
 | adolescence.friend_secret | keep (default) | 32 | — | — | — | — | — | — |
 | adolescence.friend_secret | tell | 32 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | adolescence.pressure_to_join | refuse (default) | 11 | — | — | — | — | — | — |
 | adolescence.pressure_to_join | join | 11 | 0.0 | 0.0 | 0.0 | **+0.1** | 0.00 | **−0.2 pp** |
 | adolescence.sibling_needs_you | help (default) | 35 | — | — | — | — | — | — |
-| adolescence.sibling_needs_you | own_work | 35 | 0.0 | **+0.6** | **+0.1** | **0.0** | **+0.08** | **+1.3 pp** |
+| adolescence.sibling_needs_you | own_work | 35 | 0.0 | **+0.6** | **+0.1** | 0.0 | **+0.08** | **+1.3 pp** |
 | adolescence.skip_school | stay (default) | 25 | — | — | — | — | — | — |
-| adolescence.skip_school | go | 25 | 0.0 | **−1.5** | **−0.3** | **0.0** | **−0.27** | **−1.5 pp** |
+| adolescence.skip_school | go | 25 | 0.0 | **−1.5** | **−0.3** | 0.0 | **−0.27** | **−1.5 pp** |
 | adolescence.trade_offer | decline (default) | 35 | — | — | — | — | — | — |
 | adolescence.trade_offer | accept | 35 | 0.0 | **+1.9** | **+0.4** | 0.0 | **+0.28** | **−0.3 pp** |
 | adulthood.career_change | stay (default) | 178 | — | — | — | — | — | — |
-| adulthood.career_change | retrain | 178 | 0.0 | 0.0 | **+0.2** | **0.0** | 0.01 | **−0.2 pp** |
+| adulthood.career_change | retrain | 178 | 0.0 | 0.0 | **+0.2** | 0.0 | 0.01 | **−0.2 pp** |
 | adulthood.neighbour_dispute | negotiate (default) | 72 | — | — | — | — | — | — |
-| adulthood.neighbour_dispute | press | 72 | 0.0 | 0.0 | **−0.1** | **−0.3** | 0.00 | **0.0 pp** |
-| adulthood.neighbour_dispute | yield | 72 | 0.0 | 0.0 | **0.0** | **−0.1** | 0.00 | **+0.1 pp** |
+| adulthood.neighbour_dispute | press | 72 | 0.0 | 0.0 | **−0.1** | **−0.3** | 0.00 | 0.0 pp |
+| adulthood.neighbour_dispute | yield | 72 | 0.0 | 0.0 | 0.0 | **−0.1** | 0.00 | **+0.1 pp** |
 | adulthood.parent_needs_care | support (default) | 209 | — | — | — | — | — | — |
-| adulthood.parent_needs_care | take_in | 209 | 0.0 | 0.0 | **0.0** | **+0.2** | **0.03** | **+0.4 pp** |
-| adulthood.parent_needs_care | leave_to_others | 209 | 0.0 | 0.0 | **−0.1** | **0.0** | **+0.08** | **+0.1 pp** |
+| adulthood.parent_needs_care | take_in | 209 | 0.0 | 0.0 | 0.0 | **+0.2** | **0.03** | **+0.4 pp** |
+| adulthood.parent_needs_care | leave_to_others | 209 | 0.0 | 0.0 | **−0.1** | 0.0 | **+0.08** | **+0.1 pp** |
 | adulthood.partner_argument | talk (default) | 81 | — | — | — | — | — | — |
-| adulthood.partner_argument | leave_it | 81 | 0.0 | 0.0 | **−0.1** | **0.0** | 0.00 | **+0.1 pp** |
+| adulthood.partner_argument | leave_it | 81 | 0.0 | 0.0 | **−0.1** | 0.0 | 0.00 | **+0.1 pp** |
 | adulthood.school_fees | pay (default) | 68 | — | — | — | — | — | — |
 | adulthood.school_fees | work | 68 | 0.0 | 0.0 | **−0.2** | 0.0 | **+0.24** | 0.0 pp |
 | adulthood.second_job | decline (default) | 79 | — | — | — | — | — | — |
 | adulthood.second_job | take | 79 | 0.0 | 0.0 | **−0.1** | 0.0 | **+0.15** | **+0.3 pp** |
 | childhood.bully | tell (default) | 57 | — | — | — | — | — | — |
-| childhood.bully | stand_up | 57 | 0.0 | 0.0 | **0.0** | **0.0** | 0.00 | **0.0 pp** |
-| childhood.bully | avoid | 57 | 0.0 | 0.0 | **0.0** | **0.0** | 0.00 | **+0.3 pp** |
+| childhood.bully | stand_up | 57 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
+| childhood.bully | avoid | 57 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.3 pp** |
 | childhood.found_coin | hand_in (default) | 99 | — | — | — | — | — | — |
-| childhood.found_coin | keep | 99 | 0.0 | 0.0 | **0.0** | **0.0** | 0.00 | **+0.3 pp** |
+| childhood.found_coin | keep | 99 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.3 pp** |
 | childhood.friend_in_trouble | stay_out (default) | 44 | — | — | — | — | — | — |
-| childhood.friend_in_trouble | stand_by | 44 | 0.0 | 0.0 | **0.0** | **0.0** | 0.00 | **−0.3 pp** |
+| childhood.friend_in_trouble | stand_by | 44 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **−0.3 pp** |
 | childhood.parent_asks | help (default) | 92 | — | — | — | — | — | — |
-| childhood.parent_asks | play | 92 | 0.0 | **−0.6** | **−0.1** | **0.0** | **−0.10** | **−2.3 pp** |
+| childhood.parent_asks | play | 92 | 0.0 | **−0.6** | **−0.1** | 0.0 | **−0.10** | **−2.3 pp** |
 | childhood.teacher_extra | decline (default) | 20 | — | — | — | — | — | — |
 | childhood.teacher_extra | accept | 20 | 0.0 | **+2.1** | **+0.2** | 0.0 | **+0.33** | **+5.9 pp** |
 | childhood.test_day | study (default) | 36 | — | — | — | — | — | — |
@@ -135,11 +135,11 @@ The first time each decision came up in 300 default-course lives, the life was f
 | elder.write_it_down | write | 78 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | health.seek_care | usual (default) | 200 | — | — | — | — | — | — |
 | health.seek_care | best | 128 | **+0.4** | 0.0 | **−0.1** | 0.0 | **−0.08** | 0.0 pp |
-| health.seek_care | wait | 200 | **−0.3** | 0.0 | **0.0** | **0.0** | **+0.10** | **+0.1 pp** |
+| health.seek_care | wait | 200 | **−0.3** | 0.0 | 0.0 | 0.0 | **+0.10** | **+0.1 pp** |
 | midlife.health_check | ignore (default) | 194 | — | — | — | — | — | — |
-| midlife.health_check | go | 194 | 0.0 | 0.0 | **0.0** | 0.0 | 0.00 | 0.0 pp |
+| midlife.health_check | go | 194 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | midlife.old_dream | not_now (default) | 103 | — | — | — | — | — | — |
-| midlife.old_dream | follow | 103 | 0.0 | 0.0 | **+0.1** | 0.0 | 0.00 | **0.0 pp** |
+| midlife.old_dream | follow | 103 | 0.0 | 0.0 | **+0.1** | 0.0 | 0.00 | 0.0 pp |
 | midlife.reach_out_sibling | let_be (default) | 49 | — | — | — | — | — | — |
 | midlife.reach_out_sibling | reach_out | 49 | 0.0 | 0.0 | **+0.1** | **+0.1** | 0.00 | **−0.1 pp** |
 | midlife.slow_down | keep_going (default) | 52 | — | — | — | — | — | — |

@@ -409,7 +409,8 @@ export function probeDecisions(
     for (const row of rows) {
       const base = rows.find((r) => r.eventId === row.eventId && r.isDefault);
       if (!base) continue;
-      const key = `${row.eventId}\u0000${row.choiceId}`;
+      // A choice can be the default in some lives and not in others (the marked default may be locked), so the flag is part of the key.
+      const key = `${row.eventId}\u0000${row.choiceId}\u0000${row.isDefault}`;
       const entry = byKey.get(key) ?? {
         eventId: row.eventId,
         choiceId: row.choiceId,
@@ -453,7 +454,11 @@ const BETTER: Partial<Record<Metric, 1 | -1>> = {
   outOfWork: -1,
 };
 
-/** True when plan `a` is at least as good as `b` on every outcome (within noise) and clearly better on one. */
+/**
+ * True when plan `a` is at least as good as `b` on every outcome (within noise) and clearly better on one.
+ * The noise treats the two differences from the default as independent though they share its lives, so
+ * the margin is a little off in both directions; it is a guard against a gross imbalance, not a test.
+ */
 export function dominates(a: StrategyReport, b: StrategyReport): boolean {
   let clearlyBetter = false;
   for (const [id, direction] of Object.entries(BETTER) as [Metric, 1 | -1][]) {

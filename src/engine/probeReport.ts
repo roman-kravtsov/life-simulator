@@ -1,4 +1,4 @@
-// The agency probe's report as Markdown (ADMIN-005): written to docs/balance.md by `npm run probe`
+// The agency probe's report as Markdown (ADMIN-005): written to docs/agency-probe.md by `npm run probe`
 // and published by CI. A pure function of the probe's numbers, so a test can check it.
 import {
   METRICS,
@@ -34,7 +34,8 @@ function formatDelta(metric: Metric, e: Estimate): string {
   const value = share ? e.mean * 100 : e.mean;
   const digits = metric === "wealth45" ? 2 : share ? 1 : 1;
   const text = `${sign(Math.abs(value) < 0.05 ? 0 : value)}${Math.abs(value).toFixed(digits)}${share ? " pp" : ""}`;
-  return isClear(e) ? `**${text}**` : text;
+  // A difference that shows as zero is never bold, whatever its standard error.
+  return isClear(e) && /[1-9]/.test(text) ? `**${text}**` : text;
 }
 
 function formatMean(metric: Metric, mean: number): string {

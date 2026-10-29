@@ -10,7 +10,7 @@ export const summaryStrings: Readonly<Record<string, string>> = {
   "summary.shaped.health.mixed":
     "Your health was shaped by birth, by choice and by chance together, with no one of them in front.",
   "summary.shaped.health.mixedChoice":
-    "Your health was shaped by birth and by chance, and what you did about it counted for a real part.",
+    "Your health was shaped by birth and by chance, and what you gave your attention to counted for a real part.",
   "summary.shaped.happiness.circumstance":
     "Most of your happiness was shaped by the circumstances you lived in: what was around you, and what you were spared.",
   "summary.shaped.happiness.choice":

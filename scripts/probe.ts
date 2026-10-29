@@ -1,6 +1,6 @@
 // Runs the agency probe (ADMIN-005) and writes its report: what each focus area and each decision's
 // choices change in a life, measured over lives born by the odds of birth.
-// Usage: npm run probe -- [--lives 1000] [--decision-lives 300] [--seed probe] [--out docs/agency-probe.md]
+// Usage: npm run probe -- [--lives 1500] [--decision-lives 300] [--seed probe] [--out docs/agency-probe.md]
 import { readFileSync, writeFileSync } from "node:fs";
 import { CONTENT_VERSION } from "../src/content/version";
 import { createRng } from "../src/engine/rng";
@@ -14,7 +14,7 @@ const option = (name: string, fallback: string): string => {
   const at = args.indexOf(`--${name}`);
   return at === -1 ? fallback : (args[at + 1] ?? fallback);
 };
-const lives = Number(option("lives", "1000"));
+const lives = Number(option("lives", "1500"));
 const decisionLives = Number(option("decision-lives", "300"));
 const seed = option("seed", "probe");
 const out = option("out", "docs/agency-probe.md");

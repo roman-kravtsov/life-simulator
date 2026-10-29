@@ -48,8 +48,10 @@ export function calibrateLifeExpectancy(country: Country, lives: number, seedPre
 }
 
 /**
- * The share of all deaths each cause should take, from the life table and the cause mix (ADMIN-003): the
- * deaths at each age (the share still alive times the chance of dying) spread over the causes of the age
+ * The share of all deaths each cause should take, from the life table and the cause mix (ADMIN-003). It
+ * leaves out what `drawCause` adds (the nudge from conditions, no self-harm before 12), so it is the
+ * source's shape, not a prediction of the engine's: the 5-point tolerance absorbs the small part of the gap
+ * that is design. The deaths at each age (the share still alive times the chance of dying) spread over the causes of the age
  * band, for the sexes born in the country's ratio.
  */
 export function expectedCauseShares(country: Country): Record<string, number> {
