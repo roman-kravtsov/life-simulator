@@ -485,7 +485,7 @@ export interface ExportedLife {
   text: string;
 }
 
-/** Why a file could not be imported: the file itself, its country, the browser's storage, or the life already in progress. */
+/** Why a file could not be imported: the file itself, its country, the browser's storage, the life already in progress, or a life since lived to its end. */
 export type ImportFailure =
   Extract<ImportResult, { ok: false }>["reason"] | "country" | "storage" | "inProgress" | "finished";
 

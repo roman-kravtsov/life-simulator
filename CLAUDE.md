@@ -68,14 +68,14 @@ src/ui/             React 19 components and the game store
   LifeScreen.tsx    the life screen (UI-004, UI-010), composed of LifeHeader.tsx (sticky header, strip, settings dialog, Continue), Ledger.tsx (the years) with PlanWidget.tsx (the plan tray),
                     Journal.tsx (the reflection prompt, the Notes tab and the notes on the summary), YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
                     useNarrow.ts (matchMedia: below 900 px one column and a bar of tabs); the store derives lifeStrip, lifeRings, statBand, countryFacts
-  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs, RadioGroup)
+  kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, FileButton, TextField, Tabs, RadioGroup)
 src/styles.css      design tokens (light and dark), shared base styles, and the one global rule set for reduced motion and text size
 index.html          mounts the app on `<div id="root">` (the page owns its own `<main>`)
 tests/              Vitest: engine, guard and component tests; tests/fixtures/saves holds two frozen schema 1 save files that must keep loading (TD-002)
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
 .github/            CI, deploy and balance (probe and balance report as an artifact) workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
-e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001); axe.spec.ts runs axe-core over every screen, side tab and dialog in both themes (A11Y-006)
+e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001); axe.spec.ts runs axe-core over every screen, side tab and dialog in both themes (A11Y-006); files.spec.ts saves a life to a file, empties the browser and loads it back (SAVE-006)
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.
