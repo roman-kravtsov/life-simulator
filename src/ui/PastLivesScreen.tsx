@@ -2,7 +2,7 @@
 // name, where and how long it was lived, its epitaph and when it ended. Each can be opened or deleted after a
 // confirmation, and everything the game keeps in the browser can be deleted at once. Wide windows set the cards two
 // across; phones one under another.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PastLifeListing } from "../save";
 import { countryName, formatDay } from "../format";
 import { t } from "../i18n";
@@ -104,8 +104,12 @@ export function PastLivesScreen({
   const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
   const say = (text: string) => setNotice((was) => ({ text, n: (was?.n ?? 0) + 1 }));
   const clear = () => setNotice((was) => (was === null ? was : null));
-  // The buttons that cause a notice can be far below it: it is brought into view (where scrolling is possible at all).
-  const showNotice = (element: HTMLParagraphElement | null) => element?.scrollIntoView?.({ block: "nearest" });
+  // The buttons that cause a notice can be far below it: it is brought into view (where scrolling is possible at all),
+  // once per notice and not again when the screen renders for another reason.
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    noticeRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [notice?.n]);
   async function remove(life: PastLifeListing) {
     clear();
     say(t((await onDelete(life.id)) ? "past.deleted" : "past.deleteFailed", { name: life.name }));
@@ -130,7 +134,7 @@ export function PastLivesScreen({
           )}
           {lives === null && <p className="small">{t("past.loading")}</p>}
           {notice && (
-            <p key={notice.n} className="small" ref={showNotice}>
+            <p key={notice.n} className="small" ref={noticeRef}>
               {notice.text}
             </p>
           )}

@@ -1047,7 +1047,7 @@ export function createGameStore(
       if (summary) {
         let added = true;
         try {
-          if (have && Date.parse(have.save.updatedAt) >= Date.parse(stored.updatedAt)) added = false;
+          if (have && Date.parse(have.save?.updatedAt) >= Date.parse(stored.updatedAt)) added = false;
           else {
             const finishedAt = have?.finishedAt ?? stored.updatedAt;
             await persistence.archive.put({ id: life.seed, finishedAt, summary, save: stored });
