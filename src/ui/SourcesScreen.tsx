@@ -62,7 +62,7 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
   );
 }
 
-const OURS_ITEMS = [1, 2, 3, 4, 5, 6, 7];
+const OURS_ITEMS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 /** WORLD-014: the static parts always show; the figures on the left-out countries need the loaded index. */
 function HowThisWorks({ index }: { index?: CountryIndex }) {

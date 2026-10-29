@@ -114,7 +114,7 @@ describe("WORLD-014: how this works", () => {
       expect(screen.getByRole("heading", { level: 3, name })).toBeInTheDocument();
     }
     const ours = screen.getByRole("heading", { level: 3, name: "What is ours" }).parentElement!;
-    expect(within(ours).getAllByRole("listitem")).toHaveLength(7);
+    expect(within(ours).getAllByRole("listitem")).toHaveLength(8);
     expect(screen.getByText(/Also not in the game yet: war and displacement/)).toBeInTheDocument();
   });
 
@@ -122,7 +122,7 @@ describe("WORLD-014: how this works", () => {
     render(<SourcesScreen onBack={() => {}} load={() => new Promise(() => {})} />);
     expect(screen.getByRole("heading", { level: 2, name: "How this works" })).toBeInTheDocument();
     expect(screen.getByText(/Birthright is a model of a life/)).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem")).toHaveLength(7);
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
     expect(screen.getByText(/Also not in the game yet/)).toBeInTheDocument();
     expect(screen.queryByText(leftOut)).not.toBeInTheDocument();
   });
@@ -131,7 +131,7 @@ describe("WORLD-014: how this works", () => {
     render(<SourcesScreen onBack={() => {}} load={() => Promise.reject(new Error("offline"))} />);
     await screen.findByRole("alert");
     expect(screen.getByRole("heading", { level: 3, name: "What comes from the data" })).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem")).toHaveLength(7);
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
     expect(screen.queryByText(leftOut)).not.toBeInTheDocument();
   });
 

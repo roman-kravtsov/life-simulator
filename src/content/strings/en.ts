@@ -317,7 +317,7 @@ export const en: Readonly<Record<string, string>> = {
     "Birthright is a model of a life, not a measurement of one. Some of what happens to you comes straight from public statistics. The rest is our own reading of what those statistics leave open. This page says which is which.",
   "sources.how.data.title": "What comes from the data",
   "sources.how.data.body":
-    "Where you are born, how long people live there, what a household earns, what people of your age and sex die of, how many children finish school, how many adults work, how old people are when they marry, how many children a woman has. Each of these is a published figure from the sources listed below, with its year. The odds you are dealt at birth follow them, and so does the length of a life across many lives: when the game is played thousands of times over, the average life in each country we test comes within a year or two of the one the United Nations reports.",
+    "Where you are born, how long people live there, what a household earns, what people of your age and sex die of, how many children finish school, how many adults work, how old people are when they marry, how many children a woman has. Most of these are published figures from the sources listed below, with their year; where a country has none, the average of its region stands in, and it is labelled as an estimate. The odds you are dealt at birth follow them, and so does the length of a life across many lives: when the game is played thousands of times over, the average life in each country we test comes within a year or two of the one the United Nations reports.",
   "sources.how.ours.title": "What is ours",
   "sources.how.ours.lead":
     "Statistics say how many, not who, or why. Between the figures the game uses its own judgement, and none of it is a published statistic:",
@@ -328,10 +328,11 @@ export const en: Readonly<Record<string, string>> = {
   "sources.how.ours.item4": "how much of a year's income is spent, saved or borrowed;",
   "sources.how.ours.item5": "how friendships, courtship and grief unfold;",
   "sources.how.ours.item6": "how Health, Happiness, Belonging and Skills rise and fall from year to year;",
-  "sources.how.ours.item7":
+  "sources.how.ours.item7": "how school, work and income paths are put together from the figures;",
+  "sources.how.ours.item8":
     "how the summary weighs a year, and how it divides a life into chance, choice and circumstance.",
   "sources.how.ours.close":
-    "We set these so that the totals still match the data. The way from one figure to the next is a guess, and the path your life takes through it is ours. When the game says a choice changes your odds, it is showing our estimate of by how much. In life, the distance a choice can carry you may be shorter or longer than we have drawn it.",
+    "Where the data has a total to hit, such as how long people live, we set these so that it still holds. The way from one figure to the next is a guess, and the path your life takes through it is ours. When the game says a choice changes your odds, it is showing our estimate of by how much. In life, the distance a choice can carry you may be shorter or longer than we have drawn it.",
   "sources.how.left.title": "What is left out",
   "sources.how.left.body":
     "{excludedCount} of the {allCount} countries and areas in the UN's list are not in the game, because the sources lack a core figure for them, most often a recent national survey of household income. Together they account for {share} of the world's births in {year}, about {excluded} of {total} a year. The largest are {largest}. When you are born, the draw is made among the countries that are included, so those births are spread across the rest, and nobody is born in a country that is not in the game. The list is at the end of this page.",
