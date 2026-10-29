@@ -211,16 +211,18 @@ function beginYear(state: LifeState, plan: Plan | undefined, country: Country, c
   }
   let person: Person = state.person;
   let points: Plan | undefined;
+  let planned: { points: Plan; default: Plan } | undefined;
   if (person.age >= PLAN_START_AGE) {
     const view = resolvePlan(person, stored);
     points = view.points;
+    planned = { points: view.points, default: view.default };
     person = { ...person, focus: focusUnits(view) };
   } else {
     person = withoutKeys(person, "focus");
   }
 
   // 3. Baseline drift, and what moved the stats in it for the summary (SUM-004).
-  const drift = driftBreakdown(person, country, stream(seed, "drift", year));
+  const drift = driftBreakdown(person, country, stream(seed, "drift", year), planned);
   person = { ...person, stats: driftStats(person, country, stream(seed, "drift", year)) };
 
   // 4. Statistical checks: family deaths and births, child labour, then school, work, money,

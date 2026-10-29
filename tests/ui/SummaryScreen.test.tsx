@@ -249,6 +249,15 @@ describe("SUM-004: what shaped the life", () => {
     ).toBeInTheDocument();
   });
 
+  it("says when choice was a real part of a mixed life, though not the main one", () => {
+    render(
+      <SummaryScreen {...props(view({ shaping: shaping(["mixedChoice", "mixed", "mixedChoice", "mixedChoice"]) }))} />,
+    );
+    expect(screen.getByText(en["summary.shaped.health.mixedChoice"]!)).toBeInTheDocument();
+    expect(screen.getByText(en["summary.shaped.happiness.mixed"]!)).toBeInTheDocument();
+    expect(screen.getByText(en["summary.shaped.skills.mixedChoice"]!)).toBeInTheDocument();
+  });
+
   it("makes the percentages add up to 100", () => {
     const third = 1 / 3;
     const even = shaping(["mixed", "mixed", "mixed", "mixed"]);

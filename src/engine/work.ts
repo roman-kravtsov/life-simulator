@@ -241,7 +241,7 @@ export function jobHealthPenalty(person: Person): number {
   return risk + (formal === false ? 1 : 0);
 }
 
-const isWorking = (status: WorkStatus) => status === "employed" || status === "informal";
+export const isWorking = (status: WorkStatus) => status === "employed" || status === "informal";
 
 /** What the person is doing this year: at school, at work, at home or retired. */
 export function workStatusFor(person: Person, country: Country): WorkStatus {

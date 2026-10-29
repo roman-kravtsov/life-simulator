@@ -6,11 +6,11 @@ import { clamp } from "./dist";
 import { SCHOOL_START_AGE, levelAtAge } from "./education";
 import { conditionCatalog } from "../content/healthConditions";
 import { healthPenalty } from "./health";
-import { FOCUS_EFFECT } from "./focus";
+import { FOCUS_AREAS, FOCUS_EFFECT, focusValue, planCredit } from "./focus";
 import { debtStress } from "./money";
-import { jobHealthPenalty } from "./work";
+import { isWorking, jobHealthPenalty } from "./work";
 import type { Rng } from "./rng";
-import type { DriftRecord, Person, StatId, Stats } from "./types";
+import type { DriftRecord, Person, Plan, StatId, Stats } from "./types";
 import type { Country, IncomeGroup } from "./world/types";
 
 /** Health the average person in good circumstances sits at, by age: [age, value], linear in between. */
@@ -123,6 +123,10 @@ export function skillGrowth(person: Person): number {
   gain *= 1 + 0.12 * person.traits.aptitude + 0.08 * person.traits.curiosity;
   // Points on Learn above the default plan add to what is picked up; fewer take away from it (DEC-003).
   gain *= Math.max(0.3, 1 + FOCUS_EFFECT.learn.skills * (person.focus?.learn ?? 0));
+  // Points on Earn above the default plan are the effort of a working adult: more is learnt on the job (DEC-003, CAREER-006).
+  if (age >= 18 && !person.education.inSchool && isWorking(person.work.status)) {
+    gain *= Math.max(0.3, 1 + FOCUS_EFFECT.earn.skills * (person.focus?.earn ?? 0));
+  }
   return gain * (1 - person.stats.skills / SKILL_CEILING);
 }
 
@@ -211,11 +215,19 @@ function neutralOf(person: Person): Person {
  * Splits the year's drift for the summary (SUM-004), in the units of each stat's norm. The norm a stat
  * drifts toward differs from the neutral person's norm because of what the person was dealt
  * (circumstance: traits, household, place, income group, child labour, job, debt), because of the plan
- * the player lived by (choice), and because of conditions (chance). The year's random swing is chance too.
- * Draws the same numbers as `driftStats`, so give it a fresh stream of the same name and year.
- * Rounded to two places.
+ * the plan the player lived by (choice), and because of conditions (chance). The year's random swing is chance
+ * too. The plan counts twice over: its points above or below the default plan are wholly choice, and what the
+ * default plan's own points do is shared between choice and circumstance by `planCredit`, since accepting the
+ * default is a choice too and moving points makes more of it the player's; with no plan, before it begins,
+ * nothing is credited. Draws the same numbers as `driftStats`, so give it a fresh stream of the same name and
+ * year. Rounded to two places.
  */
-export function driftBreakdown(person: Person, country: Country, rng: Rng): DriftRecord {
+export function driftBreakdown(
+  person: Person,
+  country: Country,
+  rng: Rng,
+  plan?: { points: Plan; default: Plan },
+): DriftRecord {
   const noise = driftNoise(person, rng);
   const unplanned: Person = { ...person };
   delete unplanned.focus;
@@ -223,6 +235,20 @@ export function driftBreakdown(person: Person, country: Country, rng: Rng): Drif
   const withoutPlan = normsOf(unplanned, country);
   const healthy = normsOf({ ...unplanned, conditions: [] }, country);
   const neutral = normsOf(neutralOf(person), { ...country, incomeGroup: "upper-middle" });
+  // What the default plan's points are worth on each norm, set against a life with no plan at all.
+  const credit = plan ? planCredit(plan.points, plan.default) : 0;
+  const defaultWorth: Stats = plan
+    ? (() => {
+        const units = Object.fromEntries(FOCUS_AREAS.map((area) => [area, focusValue(plan.default[area])]));
+        const withDefault = normsOf({ ...unplanned, focus: units }, country);
+        return {
+          health: withDefault.health - withoutPlan.health,
+          happiness: withDefault.happiness - withoutPlan.happiness,
+          belonging: withDefault.belonging - withoutPlan.belonging,
+          skills: withDefault.skills - withoutPlan.skills,
+        };
+      })()
+    : { health: 0, happiness: 0, belonging: 0, skills: 0 };
   const each = (make: (id: StatId) => number): Stats => ({
     health: round2(make("health")),
     happiness: round2(make("happiness")),
@@ -231,8 +257,8 @@ export function driftBreakdown(person: Person, country: Country, rng: Rng): Drif
   });
   return {
     norm: {
-      circumstance: each((id) => healthy[id] - neutral[id]),
-      choice: each((id) => withPlan[id] - withoutPlan[id]),
+      circumstance: each((id) => healthy[id] - neutral[id] + (1 - credit) * defaultWorth[id]),
+      choice: each((id) => withPlan[id] - withoutPlan[id] + credit * defaultWorth[id]),
       chance: each((id) => withoutPlan[id] - healthy[id]),
     },
     noise: each((id) => (id === "skills" ? 0 : noise[id])),
