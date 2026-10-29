@@ -39,8 +39,11 @@ export function Dialog({ trigger, title, closeLabel, children }: DialogProps) {
 }
 
 export interface ConfirmDialogProps {
-  /** The element that opens the dialog, usually a Button. */
-  trigger: ReactNode;
+  /** The element that opens the dialog, usually a Button. Leave it out when the caller opens it with `isOpen`. */
+  trigger?: ReactNode;
+  /** Open from outside, with `onOpenChange` to hear that it closed (Escape, a click outside, either button). */
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   /** What will happen, said plainly. */
   children: ReactNode;
@@ -51,11 +54,20 @@ export interface ConfirmDialogProps {
 }
 
 /** A modal that asks before something that cannot be undone (UI-009, SAVE-007). Confirming acts, then closes. */
-export function ConfirmDialog({ trigger, title, children, confirmLabel, cancelLabel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({
+  trigger,
+  isOpen,
+  onOpenChange,
+  title,
+  children,
+  confirmLabel,
+  cancelLabel,
+  onConfirm,
+}: ConfirmDialogProps) {
   // The body is the description of the dialog, so a screen reader reads what will happen when it opens.
   const bodyId = useId();
   return (
-    <DialogTrigger>
+    <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
       {trigger}
       <ModalOverlay className={styles.overlay} isDismissable>
         <Modal className={styles.modal}>

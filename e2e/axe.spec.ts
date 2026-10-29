@@ -84,6 +84,42 @@ for (const theme of THEMES) {
       await expectNoViolations(page, "past lives screen (empty)");
     });
 
+    test("lives as files: the settings screen with a life in progress, and the question before it is replaced, have no violations (SAVE-006)", async ({
+      page,
+    }, testInfo) => {
+      await fixedRandom(page, 20261029);
+      await page.goto("./");
+      await page.getByRole("button", { name: "Begin a life" }).click();
+      await page.getByRole("button", { name: "Skip the reveal" }).click();
+      await page.getByRole("button", { name: "Begin this life" }).click();
+      await page.getByRole("button", { name: "Settings" }).click();
+      await page.getByRole("dialog", { name: "Settings" }).getByRole("button", { name: "Back to start" }).click();
+      await page.getByRole("button", { name: "Settings" }).click();
+      await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeFocused();
+      const [download] = await Promise.all([
+        page.waitForEvent("download"),
+        page.getByRole("button", { name: "Save the life in progress to a file" }).click(),
+      ]);
+      await expect(page.getByText(`Saved as ${download.suggestedFilename()}.`)).toBeVisible();
+      await expectNoViolations(page, "settings screen, a file saved");
+      const file = testInfo.outputPath("life.json");
+      await download.saveAs(file);
+      await page.locator("input[type=file]").setInputFiles(file);
+      await expect(page.getByRole("alertdialog", { name: "Replace the life in progress?" })).toBeVisible();
+      await expectNoViolations(page, "replace the life in progress");
+      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Back", exact: true }).click();
+      await page.getByRole("button", { name: "Past lives" }).click();
+      await expect(page.getByRole("heading", { level: 1, name: "Past lives" })).toBeFocused();
+      await page.locator("input[type=file]").setInputFiles({
+        name: "not-a-life.json",
+        mimeType: "application/json",
+        buffer: Buffer.from("[]"),
+      });
+      await expect(page.getByText(/is not a life this game can read/)).toBeVisible();
+      await expectNoViolations(page, "past lives screen, a file refused");
+    });
+
     test("the still reveal, shown while the country loads, has no violations", async ({ page }) => {
       let release: () => void = () => {};
       const held = new Promise<void>((resolve) => (release = resolve));

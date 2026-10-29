@@ -37,7 +37,7 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   death.ts          the death record, cause groups, closing passage keys and the comparison with life expectancy (DEATH-001 to 003)
   summary.ts, rings.ts   the finished life as data: facts, growth rings and their themes, key moments, chance/choice/circumstance shares
   reflection.ts     reflection prompts (a pure function of the years lived, from content/reflections.ts) and the journal lines (UI-007)
-  save.ts, replay.ts   the save file, schema migrations, restoring a life (snapshot, or replay from seed and logs), replay (RNG-004)
+  save.ts, replay.ts   the save file, schema migrations, restoring a life (snapshot, or replay from seed and logs), replay (RNG-004), the export file and its import (`exportText`, `parseImport`, `resave`, SAVE-006)
   validate.ts       content validation (ADMIN-001): validateEvents, validateConditions, run over what ships in the tests
   calibration.ts    headless harness comparing simulated life expectancy, the school, work, family and income systems and the causes of death with the source (npm run calibrate)
   probe.ts          the agency probe (ADMIN-005): plays lives under each plan and each answer to each decision, paired against the default course, and holds the balance targets (`balanceChecks`); probeReport.ts and balanceReport.ts render the Markdown reports
@@ -52,17 +52,18 @@ src/content/        game content as data: strings (en.ts merges strings/systems.
                     events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region),
                     reflections.ts (the reflection prompts and what triggers each)
 src/data.ts         loads the baked country files in the browser (fetch), outside the engine
-src/save/           browser storage outside the engine: current.ts (the life in progress, localStorage `birthright:current`), archive.ts (finished lives, IndexedDB via idb),
+src/save/           browser storage outside the engine: current.ts (the life in progress, localStorage `birthright:current`), archive.ts (finished lives, IndexedDB via idb), file.ts (a life as a file the player downloads or loads, SAVE-006),
                     index.ts (the Persistence interface the store uses, browserPersistence, noPersistence)
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
 src/ui/             React 19 components and the game store
-  store.ts          holds engine state and the loaded country, exposes actions (begin, endReveal, startLife, continueYear, choose, setSettings, toggleUsPrices, writeJournal, openSettings, plus resume, epitaph and past lives);
+  store.ts          holds engine state and the loaded country, exposes actions (begin, endReveal, startLife, continueYear, choose, setSettings, toggleUsPrices, writeJournal, openSettings, plus resume, epitaph, past lives, and exportCurrent, exportPastLife and importLife for saving a life to a file and loading one, SAVE-006);
                     autosaves after every turn and archives a life when it ends;
                     React reads it via useSyncExternalStore. World data is injected (WorldLoader), not imported
   App.tsx           switches screens by game state (no router)
   reveal.ts, RevealScreen.tsx   the birth reveal (UI-016) between Begin and the birth screen: `reveal.ts` is pure (the passing countries drawn by births from the `reveal` stream, the pace, the "1 in N"), the screen is timed in CSS alone (no timers: each name has an `animation-delay`, the last, invisible animation ends it), `aria-hidden` reel, Skip (reads Continue if the reel ends while focus is in the header) and Escape, no reel under reduced motion (the birth screen adds a line about chance), and a still name with Back to start while the country is still loading
   Page.tsx          the shell every screen renders through: the header outside `<main id="content">`, `data-layout` reading or wide; SiteHeader.tsx is the header of every screen but the life screen
+  LifeFiles.tsx     saving a life to a file and loading one (SAVE-006), on the settings and past lives screens
   SettingsScreen.tsx, DisplaySettings.tsx, DeleteAllData.tsx   the settings screen (UI-009); display.ts keeps theme, text size and reduced motion on `<html>` (`birthright:theme`, `birthright:text-size`, `birthright:motion`), outside any save
   LifeScreen.tsx    the life screen (UI-004, UI-010), composed of LifeHeader.tsx (sticky header, strip, settings dialog, Continue), Ledger.tsx (the years) with PlanWidget.tsx (the plan tray),
                     Journal.tsx (the reflection prompt, the Notes tab and the notes on the summary), YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
@@ -70,7 +71,7 @@ src/ui/             React 19 components and the game store
   kit/              styled wrappers around React Aria Components (Button, Switch, Stepper, Slider, Tooltip, Dialog, ConfirmDialog, TextField, Tabs, RadioGroup)
 src/styles.css      design tokens (light and dark), shared base styles, and the one global rule set for reduced motion and text size
 index.html          mounts the app on `<div id="root">` (the page owns its own `<main>`)
-tests/              Vitest: engine, guard and component tests
+tests/              Vitest: engine, guard and component tests; tests/fixtures/saves holds two frozen schema 1 save files that must keep loading (TD-002)
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
 .github/            CI, deploy and balance (probe and balance report as an artifact) workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
@@ -120,7 +121,7 @@ Read these docs before starting work:
 - **Life expectancy gate:** simulated life expectancy must stay within 2 years of the source for sampled countries (`tests/engine/calibration.test.ts`). After changing mortality, hazard, drift or conditions, run `npm run calibrate -- NGA JPN IND` and keep the hazard terms centred (`HAZARD_OFFSET` in `src/engine/mortality.ts`; conditions are centred by `expectedHazardFactor`). The same command also compares school completion, literacy, labour participation, sector and informal shares, the share out of work, marriage ages, children per woman, siblings and schooling persistence with the source (`calibrateSystems`, gated in `tests/engine/calibration.test.ts`).
 - **Reduced motion is one global rule set in `src/styles.css`** (the system's `prefers-reduced-motion` and the player's setting); a component or module must not write its own `prefers-reduced-motion` query (`tests/ui/styles.test.ts`). Colours must pass WCAG AA (`tests/ui/contrast.test.ts` reads every colour a style sheet sets for text).
 - **No timers drive the game** (`setTimeout`, `setInterval`, `requestAnimationFrame` are banned in `src/`, guard test): every year waits for the player (TIME-001).
-- **Bump `CONTENT_VERSION`** (`src/content/version.ts`) when a change to events or conditions could make a logged life play differently; a test pins a fingerprint of the catalog and fails until you do. A new `LifeState` or `SaveFile` field needs `readSave`/`MIGRATIONS` thought: a save of the old shape must still load (a test pins the shape of `LifeState` and `SaveFile` and fails until you update it).
+- **Bump `CONTENT_VERSION`** (`src/content/version.ts`) when a change to events or conditions could make a logged life play differently; a test pins a fingerprint of the catalog and fails until you do. A new `LifeState` or `SaveFile` field needs `readSave`/`MIGRATIONS` thought: a save of the old shape must still load (a test pins the shape of `LifeState` and `SaveFile` and fails until you update it). Follow "Changing the schema" in `docs/design.md` 2.4: bump `SCHEMA_VERSION`, write a pure migration that upgrades the snapshot in place, and keep the frozen files in `tests/fixtures/saves` unchanged; add one written by the previous version. Exported files are saves, so they carry the same promise.
 - **Browser storage:** every localStorage key starts with `birthright:` (a guard test), so "delete all local data" can find it. Storage can be missing or full: never let a read or write throw into the UI.
 - **Never change the pinned RNG golden values** (`tests/engine/rng.test.ts`): that would change every saved life.
 - **Engine state is immutable:** functions return new state and never mutate their inputs.

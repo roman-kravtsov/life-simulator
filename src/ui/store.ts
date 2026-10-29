@@ -8,7 +8,19 @@ import { advance, decisionCard, EPITAPH_MAX_LENGTH, newLife, withEpitaph, withSe
 import { lifeExpectancy } from "../engine/mortality";
 import { currentPercentile, dailyIncome, householdBand, INDEPENDENCE_AGE, yearlyIncome } from "../engine/money";
 import { buildRings, RING_THEMES, type Ring } from "../engine/rings";
-import { isSnapshotOf, readSave, restoreLife, toSave, type SaveFile } from "../engine/save";
+import {
+  exportFileName,
+  exportText,
+  IMPORT_MAX_LENGTH,
+  isSnapshotOf,
+  parseImport,
+  readSave,
+  restoreLife,
+  resave,
+  toSave,
+  type ImportResult,
+  type SaveFile,
+} from "../engine/save";
 import { JOURNAL_MAX_LENGTH, journalLine, reflectionPrompt, withJournalEntry } from "../engine/reflection";
 import { readableSeed } from "../engine/seed";
 import { stream } from "../engine/rng";
@@ -39,7 +51,7 @@ import { noPersistence, type PastLife, type PastLifeListing, type Persistence } 
 import { revealView, type RevealView } from "./reveal";
 
 // Screens read these through the store, so they never import the engine for a value.
-export { EPITAPH_MAX_LENGTH, JOURNAL_MAX_LENGTH, RING_THEMES };
+export { EPITAPH_MAX_LENGTH, IMPORT_MAX_LENGTH, JOURNAL_MAX_LENGTH, RING_THEMES };
 
 /**
  * The string key of a reflection prompt's words, for a journal line that answered it (UI-007, SUM-005); undefined
@@ -464,6 +476,26 @@ export function countryFacts(sex: Sex, country: Country): CountryFacts {
   return facts;
 }
 
+/** A life as a file to give the player (SAVE-006): the name to save it under and its JSON text. */
+export interface ExportedLife {
+  fileName: string;
+  text: string;
+}
+
+/** Why a file could not be imported: the file itself, its country, the browser's storage, or the life already in progress. */
+export type ImportFailure = Extract<ImportResult, { ok: false }>["reason"] | "country" | "storage" | "inProgress";
+
+/**
+ * What importing a file did (SAVE-006). A finished life goes to the past lives (`added` is false when a copy at
+ * least as new was already there); a life in progress becomes the life to continue. `inexact` says the file was
+ * saved with other data or content than this version has, so the life may play out a little differently from here.
+ * `inProgress` is a life in progress that was not replaced: ask, then import again with `replace`.
+ */
+export type ImportOutcome =
+  | { ok: true; kind: "current"; name: string; age: number; inexact: boolean }
+  | { ok: true; kind: "past"; name: string; age: number; inexact: boolean; added: boolean }
+  | { ok: false; reason: ImportFailure; name?: string };
+
 export interface WorldLoader {
   loadIndex(): Promise<CountryIndex>;
   loadCountry(iso3: string): Promise<Country>;
@@ -517,6 +549,15 @@ export interface GameStore {
   deletePastLife(id: string): Promise<boolean>;
   /** Removes every life and preference from this browser and starts over (SAVE-007). Resolves false if it failed. */
   deleteAllData(): Promise<boolean>;
+  /** The life in progress as a file (SAVE-006); null when there is none, or it cannot be read. */
+  exportCurrent(): ExportedLife | null;
+  /** A finished life from the archive as a file (SAVE-006); null when it is not there or cannot be read. */
+  exportPastLife(id: string): Promise<ExportedLife | null>;
+  /**
+   * Imports the text of a file made by `exportCurrent` or `exportPastLife` (SAVE-006), possibly from another browser.
+   * Never throws. A life in progress is not replaced unless `replace` is set; a finished life never touches it.
+   */
+  importLife(text: string, options?: { replace?: boolean }): Promise<ImportOutcome>;
 }
 
 const START: GameSnapshot = {
@@ -540,6 +581,12 @@ const START: GameSnapshot = {
   deleted: false,
   reveal: null,
   chanceNote: false,
+};
+
+/** The life in an archived save, brought up to the current schema when it can be (TD-002). */
+const savedLife = (past: PastLife): LifeState => {
+  const read = readSave(past.save);
+  return read.ok ? read.save.snapshot : past.save.snapshot;
 };
 
 const lastYearOf = (life: { history?: readonly { events?: EventRecord[] }[] }): EventRecord[] =>
@@ -878,8 +925,11 @@ export function createGameStore(
     },
     writeEpitaph(text) {
       if (!shown) return;
-      const life = withEpitaph(shown.save.snapshot, text);
-      const { dataVersion: savedWith, contentVersion, createdAt: first } = shown.save;
+      // An archived life is read through the migrations, like any stored save, before it is written again (TD-002).
+      const read = readSave(shown.save);
+      if (!read.ok) return;
+      const life = withEpitaph(read.save.snapshot, text);
+      const { dataVersion: savedWith, contentVersion, createdAt: first } = read.save;
       const summary: LifeSummary = { ...shown.summary };
       if (life.epitaph) summary.epitaph = life.epitaph;
       else delete summary.epitaph;
@@ -909,7 +959,7 @@ export function createGameStore(
           ...fresh(),
           screen: "summary",
           sources: index?.sources ?? {},
-          summary: { summary: past.summary, lastYear: lastYearOf(past.save.snapshot), archived: true },
+          summary: { summary: past.summary, lastYear: lastYearOf(savedLife(past)), archived: true },
         });
       } catch {
         if (mine === attempt) set({ ...snapshot, problem: "archive" });
@@ -925,6 +975,88 @@ export function createGameStore(
       }
       await refreshPast(mine);
       return true;
+    },
+    exportCurrent() {
+      try {
+        const found = persistence.loadCurrent();
+        const read = found.status === "found" ? readSave(found.raw) : undefined;
+        return read?.ok ? { fileName: exportFileName(read.save), text: exportText(read.save) } : null;
+      } catch {
+        return null;
+      }
+    },
+    async exportPastLife(id) {
+      try {
+        const past = await persistence.archive.get(id);
+        const read = past ? readSave(past.save) : undefined;
+        return read?.ok ? { fileName: exportFileName(read.save), text: exportText(read.save) } : null;
+      } catch {
+        return null;
+      }
+    },
+    async importLife(text, options) {
+      const read = parseImport(text);
+      if (!read.ok) return { ok: false, reason: read.reason };
+      const { save } = read;
+      let index: CountryIndex;
+      let country: Country;
+      try {
+        index = await world.loadIndex();
+        if (!index.countries.some((entry) => entry.iso3 === save.countryIso3)) return { ok: false, reason: "country" };
+        country = await world.loadCountry(save.countryIso3);
+      } catch {
+        return { ok: false, reason: "country" };
+      }
+      let life: LifeState;
+      let stored: SaveFile;
+      let inexact: boolean;
+      let summary: LifeSummary | undefined;
+      try {
+        const restored = restoreLife(save, country, {
+          dataVersion: index.dataVersion,
+          contentVersion: CONTENT_VERSION,
+        });
+        if (!restored.ok) return { ok: false, reason: "damaged" };
+        life = restored.life;
+        inexact = !restored.exact;
+        // What is kept is the life as it now is, in the current shape, never the file as it came.
+        stored = resave(life, save);
+        if (life.death) summary = summarize(life, country);
+      } catch {
+        return { ok: false, reason: "damaged" };
+      }
+      const who = { name: life.person.name, age: life.person.age, inexact };
+      countries = index.countries;
+      if (summary) {
+        const mine = attempt;
+        let added = true;
+        try {
+          const have = await persistence.archive.get(life.seed);
+          if (have && have.save.updatedAt >= stored.updatedAt) added = false;
+          else await persistence.archive.put({ id: life.seed, finishedAt: stored.updatedAt, summary, save: stored });
+        } catch {
+          return { ok: false, reason: "storage" };
+        }
+        await refreshPast(mine);
+        return { ok: true, kind: "past", ...who, added };
+      }
+      const occupied = (() => {
+        try {
+          return persistence.loadCurrent().status !== "none";
+        } catch {
+          return true;
+        }
+      })();
+      if (occupied && !options?.replace) return { ok: false, reason: "inProgress", name: who.name };
+      let ok = false;
+      try {
+        ok = persistence.saveCurrent(stored);
+      } catch {
+        // Storage that cannot even be reached is a save the browser refused.
+      }
+      if (!ok) return { ok: false, reason: "storage" };
+      set({ ...snapshot, resume: readResume(), problem: wrote(true, "current") });
+      return { ok: true, kind: "current", ...who };
     },
     async deleteAllData() {
       attempt++;
