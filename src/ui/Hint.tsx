@@ -1,6 +1,6 @@
 // A first-life hint (UI-015): a short note in the page, where the thing it explains is, with one button to put it away.
 // It never moves focus, speaks or times itself out (TIME-001, A11Y-004): it is plain text the player reads when they
-// like, and it stays until they say they have it, or until they do what it describes.
+// like, and it stays until they say they have it, or until they pass it.
 import { t } from "../i18n";
 import styles from "./Hint.module.css";
 import { Button } from "./kit";

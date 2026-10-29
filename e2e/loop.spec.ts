@@ -899,6 +899,7 @@ test("the decision and odds lens hints sit above the choices once, and are put a
   // The odds line appears when some choice on the card has odds to show.
   const hasOdds = (await choices.getByText(/almost|about \d|\bin \d/).count()) > 0;
   if (hasOdds) await expect(hint).toContainText("put in words under it");
+  else await expect(hint).not.toContainText("put in words under it");
 
   await tabTo(page, hint.getByRole("button", { name: "Got it" }));
   await page.keyboard.press("Enter");
