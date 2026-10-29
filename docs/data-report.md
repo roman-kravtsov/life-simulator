@@ -8,6 +8,8 @@ Data version **2026.10.1**. **163** countries are included and **74** are left o
 
 A country is left out when it lacks a core indicator: a UN WPP life table, births, World Bank PIP income percentiles, a WHO cause-of-death mix, or an income group. The birth draw weights the included countries by births, so the excluded countries' share of births is redistributed.
 
+Births in the excluded countries: 5,089,805 of 132,110,261 a year (3.9%) in 2023, UN WPP.
+
 | Code | Country | Missing |
 | --- | --- | --- |
 | ABW | Aruba | money.percentiles, money.welfareType, health.causeMix |

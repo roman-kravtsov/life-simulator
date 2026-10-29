@@ -88,6 +88,7 @@ export const testSources: CountryIndex["sources"] = {
 export function testWorld(country: Country = makeCountry({ region: "Western Africa" })) {
   const index: CountryIndex = {
     dataVersion: "test",
+    birthsYear: 2023,
     countries: [
       {
         iso3: country.iso3,
@@ -127,6 +128,7 @@ export function testWorldOfMany(count = 8) {
   );
   const index: CountryIndex = {
     dataVersion: "test",
+    birthsYear: 2023,
     countries: countries.map((c) => ({
       iso3: c.iso3,
       iso2: c.iso2,

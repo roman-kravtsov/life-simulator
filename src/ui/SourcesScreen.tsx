@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { loadIndex } from "../data";
+import { excludedBirths } from "../engine/world/excluded";
 import type { CountryIndex } from "../engine/world/types";
-import { countryName, formatDate, formatNumber } from "../format";
-import { t } from "../i18n";
+import { countryName, formatCompactNumber, formatDate, formatList, formatNumber, formatPercent } from "../format";
+import { DEFAULT_LOCALE, t } from "../i18n";
 import { Page } from "./Page";
 import { SiteHeader } from "./SiteHeader";
 import { Button } from "./kit";
@@ -17,7 +18,7 @@ interface Props {
   load?: () => Promise<CountryIndex>;
 }
 
-/** WORLD-007: every source with publisher, licence, edition and access date, plus the note on excluded countries. */
+/** WORLD-007: every source with publisher, licence, edition and access date, plus the note on excluded countries. WORLD-014: what is data, what is ours, what is left out. */
 export function SourcesScreen({ onBack, load = loadIndex }: Props) {
   const heading = useFocusOn<HTMLHeadingElement>();
   const [state, setState] = useState<Load>({ status: "loading" });
@@ -46,6 +47,7 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
       </h1>
       <p className="lead">{t("sources.intro")}</p>
       <div role="status">{state.status === "loading" && <p className="small">{t("sources.loading")}</p>}</div>
+      <HowThisWorks index={state.status === "ready" ? state.index : undefined} />
       {state.status === "error" && (
         <>
           <p role="alert">{t("sources.error")}</p>
@@ -57,6 +59,44 @@ export function SourcesScreen({ onBack, load = loadIndex }: Props) {
       {state.status === "ready" && <SourceList index={state.index} />}
       <Button onPress={onBack}>{t("sources.back")}</Button>
     </Page>
+  );
+}
+
+const OURS_ITEMS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+/** WORLD-014: the static parts always show; the figures on the left-out countries need the loaded index. */
+function HowThisWorks({ index }: { index?: CountryIndex }) {
+  const births = index && index.excluded.length > 0 ? excludedBirths(index) : undefined;
+  return (
+    <section className={styles.how}>
+      <h2>{t("sources.how.title")}</h2>
+      <p>{t("sources.how.lead")}</p>
+      <h3>{t("sources.how.data.title")}</h3>
+      <p>{t("sources.how.data.body")}</p>
+      <h3>{t("sources.how.ours.title")}</h3>
+      <p>{t("sources.how.ours.lead")}</p>
+      <ul className={styles.ours}>
+        {OURS_ITEMS.map((n) => (
+          <li key={n}>{t(`sources.how.ours.item${n}`)}</li>
+        ))}
+      </ul>
+      <p>{t("sources.how.ours.close")}</p>
+      <h3>{t("sources.how.left.title")}</h3>
+      {index && births && births.excluded > 0 && births.largest.length > 0 && (
+        <p>
+          {t("sources.how.left.body", {
+            excludedCount: formatNumber(index.excluded.length),
+            allCount: formatNumber(index.countries.length + index.excluded.length),
+            share: formatPercent(births.share, DEFAULT_LOCALE, 1),
+            year: String(births.year),
+            excluded: formatCompactNumber(births.excluded),
+            total: formatCompactNumber(births.total),
+            largest: formatList(births.largest.map((country) => countryName(country))),
+          })}
+        </p>
+      )}
+      <p>{t("sources.how.left.missing")}</p>
+    </section>
   );
 }
 

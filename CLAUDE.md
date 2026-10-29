@@ -2,7 +2,7 @@
 
 ## The game
 
-Birthright is a browser game in which the player lives one person's life from birth to death. The birthplace, family and household wealth are drawn by the real odds of birth today, using public statistics from the UN, World Bank, WHO and others. Each year the player spends a few focus points (Learn, Earn, Health, Belonging, Rest) and faces events and decisions, and the outcomes are shaped by real data on schooling, work, income, marriage, illness and death in that country. Choices shift the odds but never escape them, and an "odds lens" shows by how much. The tone is reflective and literary, hard topics are handled honestly but never graphically, and at the end the life is shown as tree rings with a summary of what came from chance, choice and circumstance. It is free, non-commercial, runs entirely in the browser and saves locally.
+Birthright is a browser game in which the player lives one person's life from birth to death. The birthplace, family and household wealth are drawn by the odds of birth today, as far as public statistics reach, using public statistics from the UN, World Bank, WHO and others. Each year the player spends a few focus points (Learn, Earn, Health, Belonging, Rest) and faces events and decisions, and the outcomes are shaped by real data on schooling, work, income, marriage, illness and death in that country. Choices shift the odds but never escape them, and an "odds lens" shows by how much. The tone is reflective and literary, hard topics are handled honestly but never graphically, and at the end the life is shown as tree rings with a summary of what came from chance, choice and circumstance. It is free, non-commercial, runs entirely in the browser and saves locally.
 
 The visible stats are Health, Happiness, Belonging and Skills (ids `health`, `happiness`, `belonging`, `skills`). The yearly focus areas are Learn, Earn, Health, Belonging and Rest (ids `learn`, `earn`, `health`, `belonging`, `rest`, Roman 2026-10-24). Belonging is both a stat and a focus area: the Belonging focus raises the Belonging stat, and the context says which is meant. Never call the focus area "Bond" (nor stat or focus "bonds"): Belonging is the domain name. Use these names everywhere.
 
@@ -18,7 +18,7 @@ The visible stats are Health, Happiness, Belonging and Skills (ids `health`, `ha
 public/data/        baked country data (index.json + countries/<ISO3>.json), built by `npm run data`
 scripts/data/       data pipeline: lib/ (cache, csv), extract/ (one file per publisher), assemble.ts
                     (completeness filter and fallbacks), sources.ts (licences), build.ts, report.ts
-                    Downloads go to the git-ignored .cache/data; the exclusion report is docs/data-report.md
+                    Downloads go to the git-ignored .cache/data; the exclusion report, with the excluded countries' share of births, is docs/data-report.md
 src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   rng.ts            seeded PRNG and independent streams per subsystem and period
   life.ts           public API: newLife({seed, country, settings?}), advance(state, input, country) -> new state
@@ -44,7 +44,7 @@ src/engine/         pure TypeScript simulation: no React, no DOM, no I/O
   seed.ts           readable seeds ("amber-river-4821")
   effects.ts        effects with circumstance/choice/chance tags
   stages.ts, types.ts
-  world/            country schema (types.ts), validator, birth draw, data loader
+  world/            country schema (types.ts), validator, birth draw, data loader, excluded.ts (the births in the countries left out, for the sources screen and the data report)
 src/content/        game content as data: strings (en.ts merges strings/systems.ts, strings/death.ts, strings/summary.ts, strings/reflection.ts, strings/events/*.ts and strings/ui.ts),
                     version.ts (CONTENT_VERSION, saved with every life),
                     events/ (typed event defs, one file per life stage, helpers.ts), healthConditions.ts, names.ts (name lists by region),

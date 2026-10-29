@@ -31,9 +31,16 @@ describe("assemble", () => {
     (path) => {
       const { countries, index } = assemble([raw({}, [path])], sources, "v");
       expect(countries).toEqual([]);
-      expect(index.excluded).toEqual([{ iso3: "AAA", iso2: "AA", name: "Testland", missing: [path] }]);
+      const births = path === "demography.birthsPerYear" ? {} : { birthsPerYear: 100_000 };
+      expect(index.excluded).toEqual([{ iso3: "AAA", iso2: "AA", name: "Testland", missing: [path], ...births }]);
     },
   );
+
+  it("keeps the births of an excluded country and the year of the figures (WORLD-014)", () => {
+    const { index } = assemble([raw({ iso3: "AAA" }), raw({ iso3: "BBB" }, ["health.causeMix"])], sources, "v");
+    expect(index.excluded[0]).toMatchObject({ iso3: "BBB", birthsPerYear: 100_000 });
+    expect(index.birthsYear).toBe(2023);
+  });
 
   it("excludes a country with no income group", () => {
     const r = raw();

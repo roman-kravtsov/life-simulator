@@ -1,6 +1,6 @@
 # Birthright: a life simulation
 
-Be born somewhere in the world, by the real odds of birth today, and live one life to its end. A browser game built on public statistics (UN, World Bank, WHO and others). Free and non-commercial.
+Be born somewhere in the world, by the odds of birth today, as far as public statistics reach, and live one life to its end. A browser game built on public statistics (UN, World Bank, WHO and others). Free and non-commercial.
 
 ## Play
 

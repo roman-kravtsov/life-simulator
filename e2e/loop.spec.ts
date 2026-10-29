@@ -335,6 +335,8 @@ test("sources screen lists the real sources without horizontal scroll", async ({
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Where the numbers come from");
   await expect(page.getByRole("link", { name: /World Population Prospects 2024/ })).toBeVisible();
   await expect(page.getByText("CC BY 3.0 IGO")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "How this works" })).toBeVisible();
+  await expect(page.getByText(/of the world's births in \d{4}/)).toBeVisible();
   await page.getByText(/countries and what is missing/).click();
   await expect(page.getByText(/^Afghanistan: /)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);

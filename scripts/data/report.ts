@@ -1,6 +1,7 @@
-// Writes docs/data-report.md: who was left out and why, and what was estimated (WORLD-003, WORLD-004).
+// Writes docs/data-report.md: who was left out and why, their share of births, and what was estimated (WORLD-003, WORLD-004, WORLD-014).
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { excludedBirths } from "../../src/engine/world/excluded";
 import type { Country, CountryIndex } from "../../src/engine/world/types";
 
 export function reportText(countries: Country[], index: CountryIndex): string {
@@ -17,6 +18,11 @@ export function reportText(countries: Country[], index: CountryIndex): string {
     "",
   ];
   if (index.excluded.length) {
+    const births = excludedBirths(index);
+    lines.push(
+      `Births in the excluded countries: ${births.excluded.toLocaleString("en-US")} of ${births.total.toLocaleString("en-US")} a year (${(births.share * 100).toFixed(1)}%) in ${births.year}, UN WPP.`,
+      "",
+    );
     lines.push("| Code | Country | Missing |", "| --- | --- | --- |");
     for (const e of index.excluded) lines.push(`| ${e.iso3} | ${e.name} | ${e.missing.join(", ")} |`);
   } else lines.push("None.");
