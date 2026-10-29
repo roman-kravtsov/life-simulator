@@ -123,7 +123,7 @@ export function renderProbeReport(input: ProbeReportInput): string {
     "",
     "## What shaped the life (summary shares)",
     "",
-    "The shares the summary screen reports (SUM-004), averaged over the lives of each plan.",
+    "The shares the summary screen reports (SUM-004), averaged over the lives of each plan. Accepting the default plan counts part as choice, and the more points a player moves away from it the more of it is theirs; a plan with all its points in one area is worth little more than the default in the stat it neglects, so it can show less choice than a plan with one point moved.",
     "",
     sharesTable(strategies.strategies),
     "",

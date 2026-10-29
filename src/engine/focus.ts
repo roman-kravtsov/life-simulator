@@ -20,6 +20,20 @@ export const PLAN_START_AGE = 6;
 /** Circumstance never takes more than this many points, so the player always has at least one to place. */
 export const MAX_FORCED = FOCUS_BUDGET - 1;
 
+/**
+ * The share of what the default plan's points do that the summary credits to the player's choice (Roman,
+ * 2026-10-29): a player who lets the default stand still chose to. The rest is circumstance, which is what
+ * set the default. Authored. A player who moves points away from the default owns more of it, up to all of it
+ * when every point is moved (`planCredit`).
+ */
+export const DEFAULT_PLAN_CREDIT = 0.35;
+
+/** How much of the default plan's worth the player's choice gets this year: more the more points they moved. */
+export function planCredit(points: Plan, reference: Plan): number {
+  const moved = FOCUS_AREAS.reduce((sum, area) => sum + Math.max(0, points[area] - reference[area]), 0);
+  return DEFAULT_PLAN_CREDIT + ((1 - DEFAULT_PLAN_CREDIT) * Math.min(moved, FOCUS_BUDGET)) / FOCUS_BUDGET;
+}
+
 /** Each extra point in an area is worth this much of the one before it. */
 const RETURN_RATIO = 0.6;
 

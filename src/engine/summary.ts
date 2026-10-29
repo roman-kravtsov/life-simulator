@@ -150,9 +150,9 @@ export interface Shaping {
 export const DOMINANT_SHARE = 0.5;
 
 /**
- * Choice is worth saying aloud in a mixed life from this share. Authored from the probe (ADMIN-005): the
- * default course leaves 0 to 5% of a stat to choice (12% at the 90th percentile for skills), a plan with
- * one point moved leaves 15 to 32% of the stat it moves.
+ * Choice is worth saying aloud in a mixed life from this share. Authored from the probe (ADMIN-005): with
+ * part of the default plan credited to choice, the summary names it in about 0.8 of four stats for the
+ * default course and 1.25 for a deliberate plan.
  */
 export const CHOICE_NOTABLE_SHARE = 0.15;
 

@@ -10,9 +10,9 @@ The first balance pass's targets (`balanceChecks` in `src/engine/probe.ts`), rea
 
 | Target | Result | Measured |
 | --- | ---: | ---: |
-| The default course credits under 5% of a life to choice | met | 2.7% |
-| A deliberate plan credits at least 10% to choice, and at least three times the default | met | 16.0% against 2.7% |
-| On average the summary names choice in at least 0.75 of the four stats for a deliberate life, and in under 0.2 for the default course | met | 0.98 stats against 0.02 of 4 |
+| The default course credits 10% to 15% of a life to choice (accepting it is a choice, Roman 2026-10-29) | met | 13.4% |
+| A deliberate plan credits clearly more to choice than the default course, at least 3 points more | met | 19.4% against 13.4% |
+| The summary names choice in clearly more stats for a deliberate life than for the default course, at least 0.25 more of the four | met | 1.25 stats against 0.79 of 4 |
 | One point on Learn raises skills at 35 by at least 2 points | met | 4.7 |
 | One point on Earn raises savings at 45 by at least 0.2 years of income and cuts time out of work by at least 0.5 points | met | 0.82 years of income, -1.0 pp |
 | One point on Earn raises the income rank at 35 by at least 1.5 | met | 2.6 |
@@ -28,34 +28,34 @@ Differences from the default course. Points of the stat, years, or percentage po
 
 | Plan | Years lived | Skills at 35 | Income rank at 35 | Net savings at 45 | Health at 45 | Happiness, 20 to 59 | Belonging, 20 to 59 | Out of work, 20 to 59 | Choice share | Stats naming choice |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| All points on learn | **−1.1** | **+1.8** | **+2.2** | **−0.92** | **−3.0** | **−0.4** | **−3.2** | **+3.0 pp** | **+17.5 pp** | **+1.5** |
-| All points on earn | **−0.7** | **+3.1** | **+2.3** | **+0.96** | **−2.3** | **+0.7** | **−3.3** | **−1.4 pp** | **+14.2 pp** | **+1.2** |
-| All points on health | **+0.7** | **−10.4** | **−9.9** | **−2.66** | **+1.5** | **−2.2** | **−3.3** | **+3.0 pp** | **+22.1 pp** | **+1.9** |
-| All points on belonging | **−1.7** | **−10.5** | **−10.0** | **−2.92** | **−4.4** | **−2.0** | **+3.7** | **+3.0 pp** | **+21.6 pp** | **+1.8** |
-| All points on rest | **−1.7** | **−10.5** | **−9.9** | **−2.93** | **−4.4** | **+4.1** | **−3.2** | **+3.0 pp** | **+28.5 pp** | **+2.6** |
-| One point moved to learn | +0.1 | **+4.7** | **+4.5** | **+0.50** | 0.0 | **+0.5** | **−3.2** | **+0.1 pp** | **+14.0 pp** | **+1.2** |
-| One point moved to earn | 0.0 | **+3.0** | **+2.6** | **+0.82** | 0.0 | **+0.6** | **−3.3** | **−1.0 pp** | **+10.0 pp** | **+0.8** |
-| One point moved to health | **+0.9** | **−0.1** | **−0.1** | 0.01 | **+1.7** | **−0.1** | **−3.2** | **+0.1 pp** | **+9.4 pp** | **+0.8** |
-| One point moved to rest | **−0.1** | **−0.2** | **−0.1** | **−0.09** | **−0.6** | **+3.4** | **−3.2** | **+0.1 pp** | **+11.1 pp** | **+1.2** |
-| Deliberate plan for each stage | +0.1 | **+4.5** | **+4.3** | **+0.75** | 0.0 | **+0.7** | **−2.1** | **−0.6 pp** | **+13.3 pp** | **+1.0** |
+| All points on learn | **−1.1** | **+1.8** | **+2.2** | **−0.92** | **−3.0** | **−0.4** | **−3.2** | **+3.0 pp** | **+2.9 pp** | **+0.1** |
+| All points on earn | **−0.7** | **+3.1** | **+2.3** | **+0.96** | **−2.3** | **+0.7** | **−3.3** | **−1.4 pp** | **+2.5 pp** | 0.0 |
+| All points on health | **+0.7** | **−10.4** | **−9.9** | **−2.66** | **+1.5** | **−2.2** | **−3.3** | **+3.0 pp** | **+1.7 pp** | **+0.1** |
+| All points on belonging | **−1.7** | **−10.5** | **−10.0** | **−2.92** | **−4.4** | **−2.0** | **+3.7** | **+3.0 pp** | **+2.1 pp** | **+0.3** |
+| All points on rest | **−1.7** | **−10.5** | **−9.9** | **−2.93** | **−4.4** | **+4.1** | **−3.2** | **+3.0 pp** | **−0.2 pp** | **+0.1** |
+| One point moved to learn | +0.1 | **+4.7** | **+4.5** | **+0.50** | 0.0 | **+0.5** | **−3.2** | **+0.1 pp** | **+6.3 pp** | **+0.5** |
+| One point moved to earn | 0.0 | **+3.0** | **+2.6** | **+0.82** | 0.0 | **+0.6** | **−3.3** | **−1.0 pp** | **+3.6 pp** | **+0.3** |
+| One point moved to health | **+0.9** | **−0.1** | **−0.1** | 0.01 | **+1.7** | **−0.1** | **−3.2** | **+0.1 pp** | **+5.7 pp** | **+0.7** |
+| One point moved to rest | **−0.1** | **−0.2** | **−0.1** | **−0.09** | **−0.6** | **+3.4** | **−3.2** | **+0.1 pp** | **+7.4 pp** | **+0.9** |
+| Deliberate plan for each stage | +0.1 | **+4.5** | **+4.3** | **+0.75** | 0.0 | **+0.7** | **−2.1** | **−0.6 pp** | **+6.0 pp** | **+0.5** |
 
 ## What shaped the life (summary shares)
 
-The shares the summary screen reports (SUM-004), averaged over the lives of each plan.
+The shares the summary screen reports (SUM-004), averaged over the lives of each plan. Accepting the default plan counts part as choice, and the more points a player moves away from it the more of it is theirs; a plan with all its points in one area is worth little more than the default in the stat it neglects, so it can show less choice than a plan with one point moved.
 
 | Plan | Circumstance | Choice | Chance | Stats where the summary names choice (of 4) |
 | --- | ---: | ---: | ---: | ---: |
-| Default course | 48.3% | 2.7% | 49.0% | 0.02 |
-| All points on learn | 40.6% | 20.3% | 39.2% | 1.56 |
-| All points on earn | 41.5% | 16.9% | 41.6% | 1.21 |
-| All points on health | 40.6% | 24.8% | 34.6% | 1.88 |
-| All points on belonging | 39.6% | 24.4% | 36.0% | 1.85 |
-| All points on rest | 37.4% | 31.3% | 31.3% | 2.65 |
-| One point moved to learn | 41.7% | 16.8% | 41.5% | 1.22 |
-| One point moved to earn | 43.7% | 12.7% | 43.6% | 0.87 |
-| One point moved to health | 44.5% | 12.1% | 43.4% | 0.84 |
-| One point moved to rest | 44.0% | 13.8% | 42.2% | 1.18 |
-| Deliberate plan for each stage | 41.7% | 16.0% | 42.2% | 0.98 |
+| Default course | 44.9% | 13.4% | 41.7% | 0.79 |
+| All points on learn | 42.9% | 16.3% | 40.8% | 0.88 |
+| All points on earn | 43.0% | 15.8% | 41.2% | 0.78 |
+| All points on health | 45.8% | 15.1% | 39.1% | 0.90 |
+| All points on belonging | 44.6% | 15.5% | 39.9% | 1.07 |
+| All points on rest | 46.7% | 13.2% | 40.1% | 0.89 |
+| One point moved to learn | 40.9% | 19.7% | 39.4% | 1.32 |
+| One point moved to earn | 42.8% | 16.9% | 40.3% | 1.07 |
+| One point moved to health | 42.0% | 19.1% | 38.9% | 1.47 |
+| One point moved to rest | 41.5% | 20.8% | 37.7% | 1.67 |
+| Deliberate plan for each stage | 40.9% | 19.4% | 39.7% | 1.25 |
 
 ## Mean outcomes
 
@@ -84,83 +84,83 @@ The first time each decision came up in 300 default-course lives, the life was f
 | adolescence.friend_secret | keep (default) | 32 | — | — | — | — | — | — |
 | adolescence.friend_secret | tell | 32 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | adolescence.pressure_to_join | refuse (default) | 11 | — | — | — | — | — | — |
-| adolescence.pressure_to_join | join | 11 | 0.0 | 0.0 | 0.0 | **+0.1** | 0.00 | **−0.2 pp** |
+| adolescence.pressure_to_join | join | 11 | 0.0 | 0.0 | 0.0 | **+0.1** | 0.00 | **+0.1 pp** |
 | adolescence.sibling_needs_you | help (default) | 35 | — | — | — | — | — | — |
-| adolescence.sibling_needs_you | own_work | 35 | 0.0 | **+0.6** | **+0.1** | 0.0 | **+0.08** | **+1.3 pp** |
+| adolescence.sibling_needs_you | own_work | 35 | 0.0 | **+0.6** | **+0.1** | 0.0 | **+0.08** | **+0.6 pp** |
 | adolescence.skip_school | stay (default) | 25 | — | — | — | — | — | — |
-| adolescence.skip_school | go | 25 | 0.0 | **−1.5** | **−0.3** | 0.0 | **−0.27** | **−1.5 pp** |
+| adolescence.skip_school | go | 25 | 0.0 | **−1.5** | **−0.3** | 0.0 | **−0.27** | **−0.3 pp** |
 | adolescence.trade_offer | decline (default) | 35 | — | — | — | — | — | — |
-| adolescence.trade_offer | accept | 35 | 0.0 | **+1.9** | **+0.4** | 0.0 | **+0.28** | **−0.3 pp** |
+| adolescence.trade_offer | accept | 35 | 0.0 | **+1.9** | **+0.4** | 0.0 | **+0.28** | **−1.3 pp** |
 | adulthood.career_change | stay (default) | 178 | — | — | — | — | — | — |
-| adulthood.career_change | retrain | 178 | 0.0 | 0.0 | **+0.2** | 0.0 | 0.01 | **−0.2 pp** |
+| adulthood.career_change | retrain | 178 | 0.0 | 0.0 | **+0.2** | 0.0 | 0.01 | **−0.6 pp** |
 | adulthood.neighbour_dispute | negotiate (default) | 72 | — | — | — | — | — | — |
 | adulthood.neighbour_dispute | press | 72 | 0.0 | 0.0 | **−0.1** | **−0.3** | 0.00 | 0.0 pp |
 | adulthood.neighbour_dispute | yield | 72 | 0.0 | 0.0 | 0.0 | **−0.1** | 0.00 | **+0.1 pp** |
 | adulthood.parent_needs_care | support (default) | 209 | — | — | — | — | — | — |
-| adulthood.parent_needs_care | take_in | 209 | 0.0 | 0.0 | 0.0 | **+0.2** | **0.03** | **+0.4 pp** |
+| adulthood.parent_needs_care | take_in | 209 | 0.0 | 0.0 | 0.0 | **+0.2** | **0.03** | **+0.3 pp** |
 | adulthood.parent_needs_care | leave_to_others | 209 | 0.0 | 0.0 | **−0.1** | 0.0 | **+0.08** | **+0.1 pp** |
 | adulthood.partner_argument | talk (default) | 81 | — | — | — | — | — | — |
 | adulthood.partner_argument | leave_it | 81 | 0.0 | 0.0 | **−0.1** | 0.0 | 0.00 | **+0.1 pp** |
 | adulthood.school_fees | pay (default) | 68 | — | — | — | — | — | — |
 | adulthood.school_fees | work | 68 | 0.0 | 0.0 | **−0.2** | 0.0 | **+0.24** | 0.0 pp |
 | adulthood.second_job | decline (default) | 79 | — | — | — | — | — | — |
-| adulthood.second_job | take | 79 | 0.0 | 0.0 | **−0.1** | 0.0 | **+0.15** | **+0.3 pp** |
+| adulthood.second_job | take | 79 | 0.0 | 0.0 | **−0.1** | 0.0 | **+0.15** | 0.0 pp |
 | childhood.bully | tell (default) | 57 | — | — | — | — | — | — |
 | childhood.bully | stand_up | 57 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
-| childhood.bully | avoid | 57 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.3 pp** |
+| childhood.bully | avoid | 57 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | childhood.found_coin | hand_in (default) | 99 | — | — | — | — | — | — |
-| childhood.found_coin | keep | 99 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.3 pp** |
+| childhood.found_coin | keep | 99 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.2 pp** |
 | childhood.friend_in_trouble | stay_out (default) | 44 | — | — | — | — | — | — |
-| childhood.friend_in_trouble | stand_by | 44 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **−0.3 pp** |
+| childhood.friend_in_trouble | stand_by | 44 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.1 pp** |
 | childhood.parent_asks | help (default) | 92 | — | — | — | — | — | — |
-| childhood.parent_asks | play | 92 | 0.0 | **−0.6** | **−0.1** | 0.0 | **−0.10** | **−2.3 pp** |
+| childhood.parent_asks | play | 92 | 0.0 | **−0.6** | **−0.1** | 0.0 | **−0.10** | **−1.0 pp** |
 | childhood.teacher_extra | decline (default) | 20 | — | — | — | — | — | — |
-| childhood.teacher_extra | accept | 20 | 0.0 | **+2.1** | **+0.2** | 0.0 | **+0.33** | **+5.9 pp** |
+| childhood.teacher_extra | accept | 20 | 0.0 | **+2.1** | **+0.2** | 0.0 | **+0.33** | **+2.9 pp** |
 | childhood.test_day | study (default) | 36 | — | — | — | — | — | — |
-| childhood.test_day | rest | 36 | −0.1 | **−0.8** | **−0.1** | 0.0 | **−0.13** | **+0.2 pp** |
+| childhood.test_day | rest | 36 | −0.1 | **−0.8** | **−0.1** | 0.0 | **−0.13** | **+0.8 pp** |
 | edu.higher_education | try (default) | 146 | — | — | — | — | — | — |
-| edu.higher_education | work | 146 | −0.1 | **−11.7** | **+1.4** | **−0.1** | **+2.16** | 0.0 pp |
-| edu.higher_education | scholarship | 14 | −0.2 | **−10.8** | **+1.5** | 0.0 | **+1.64** | +0.1 pp |
+| edu.higher_education | work | 146 | −0.1 | **−11.7** | **+1.4** | **−0.1** | **+2.16** | **+0.3 pp** |
+| edu.higher_education | scholarship | 14 | −0.2 | **−10.8** | **+1.5** | 0.0 | **+1.64** | +0.3 pp |
 | edu.leave_school_for_work | leave (default) | 124 | — | — | — | — | — | — |
-| edu.leave_school_for_work | stay | 124 | **+0.3** | **+8.2** | **+0.6** | 0.0 | +0.06 | **−0.2 pp** |
+| edu.leave_school_for_work | stay | 124 | **+0.3** | **+8.2** | **+0.6** | 0.0 | +0.06 | **−0.4 pp** |
 | elder.keep_working | rest (default) | 67 | — | — | — | — | — | — |
 | elder.keep_working | work | 67 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | elder.live_with_family | stay (default) | 86 | — | — | — | — | — | — |
 | elder.live_with_family | move_in | 86 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.2 pp** |
 | elder.make_amends | let_be (default) | 101 | — | — | — | — | — | — |
-| elder.make_amends | visit | 101 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **−0.1 pp** |
+| elder.make_amends | visit | 101 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | elder.share_what_you_have | keep (default) | 40 | — | — | — | — | — | — |
-| elder.share_what_you_have | give_now | 40 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.3 pp** |
+| elder.share_what_you_have | give_now | 40 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | **+0.2 pp** |
 | elder.write_it_down | leave (default) | 78 | — | — | — | — | — | — |
 | elder.write_it_down | write | 78 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | health.seek_care | usual (default) | 200 | — | — | — | — | — | — |
 | health.seek_care | best | 128 | **+0.4** | 0.0 | **−0.1** | 0.0 | **−0.08** | 0.0 pp |
-| health.seek_care | wait | 200 | **−0.3** | 0.0 | 0.0 | 0.0 | **+0.10** | **+0.1 pp** |
+| health.seek_care | wait | 200 | **−0.3** | 0.0 | 0.0 | 0.0 | **+0.10** | 0.0 pp |
 | midlife.health_check | ignore (default) | 194 | — | — | — | — | — | — |
 | midlife.health_check | go | 194 | 0.0 | 0.0 | 0.0 | 0.0 | 0.00 | 0.0 pp |
 | midlife.old_dream | not_now (default) | 103 | — | — | — | — | — | — |
-| midlife.old_dream | follow | 103 | 0.0 | 0.0 | **+0.1** | 0.0 | 0.00 | 0.0 pp |
+| midlife.old_dream | follow | 103 | 0.0 | 0.0 | **+0.1** | 0.0 | 0.00 | **−0.2 pp** |
 | midlife.reach_out_sibling | let_be (default) | 49 | — | — | — | — | — | — |
 | midlife.reach_out_sibling | reach_out | 49 | 0.0 | 0.0 | **+0.1** | **+0.1** | 0.00 | **−0.1 pp** |
 | midlife.slow_down | keep_going (default) | 52 | — | — | — | — | — | — |
-| midlife.slow_down | slow_down | 52 | 0.0 | 0.0 | **+0.1** | 0.0 | 0.00 | **+0.3 pp** |
+| midlife.slow_down | slow_down | 52 | 0.0 | 0.0 | **+0.1** | 0.0 | 0.00 | **+0.5 pp** |
 | midlife.take_in_grandchild | cannot (default) | 49 | — | — | — | — | — | — |
-| midlife.take_in_grandchild | take_in | 49 | 0.0 | 0.0 | **+0.1** | **+0.1** | 0.00 | **+0.2 pp** |
+| midlife.take_in_grandchild | take_in | 49 | 0.0 | 0.0 | **+0.1** | **+0.1** | 0.00 | 0.0 pp |
 | rel.meet_partner | pursue (default) | 224 | — | — | — | — | — | — |
 | rel.meet_partner | decline | 224 | 0.0 | +0.1 | 0.0 | 0.0 | **0.02** | 0.0 pp |
 | rel.young_marriage | accept (default) | 35 | — | — | — | — | — | — |
-| rel.young_marriage | wait | 35 | 0.0 | 0.0 | **+0.2** | **+0.2** | 0.00 | **−0.3 pp** |
+| rel.young_marriage | wait | 35 | 0.0 | 0.0 | **+0.2** | **+0.2** | 0.00 | **−0.4 pp** |
 | youth.business_idea | keep_saving (default) | 163 | — | — | — | — | — | — |
-| youth.business_idea | start | 163 | 0.0 | **+1.4** | +0.1 | 0.0 | **+0.09** | **−0.1 pp** |
+| youth.business_idea | start | 163 | 0.0 | **+1.4** | +0.1 | 0.0 | **+0.09** | **−0.6 pp** |
 | youth.lend_money | refuse (default) | 36 | — | — | — | — | — | — |
-| youth.lend_money | lend | 36 | 0.0 | +0.1 | −0.1 | **+0.2** | **−0.10** | 0.0 pp |
+| youth.lend_money | lend | 36 | 0.0 | +0.1 | −0.1 | **+0.2** | **−0.10** | **+0.1 pp** |
 | youth.migrate_for_work | stay (default) | 108 | — | — | — | — | — | — |
-| youth.migrate_for_work | go | 108 | +0.9 | **+1.6** | **+0.3** | **−0.5** | **+0.17** | **−0.5 pp** |
+| youth.migrate_for_work | go | 108 | +0.9 | **+1.6** | **+0.3** | **−0.5** | **+0.17** | **−1.0 pp** |
 | youth.send_money_home | send (default) | 44 | — | — | — | — | — | — |
-| youth.send_money_home | keep | 44 | 0.0 | 0.0 | **+0.1** | **−0.2** | **+0.17** | **−0.2 pp** |
+| youth.send_money_home | keep | 44 | 0.0 | 0.0 | **+0.1** | **−0.2** | **+0.17** | **−0.1 pp** |
 | youth.shady_offer | decline (default) | 45 | — | — | — | — | — | — |
 | youth.shady_offer | take | 45 | 0.0 | 0.0 | **−0.2** | **−0.1** | −0.07 | **−0.1 pp** |
 | youth.study_evenings | rest (default) | 41 | — | — | — | — | — | — |
-| youth.study_evenings | enrol | 41 | +0.1 | **+3.1** | +0.2 | 0.0 | **+0.19** | **−0.2 pp** |
+| youth.study_evenings | enrol | 41 | +0.1 | **+3.1** | +0.2 | 0.0 | **+0.19** | **−1.3 pp** |
 | youth.volunteer | pass (default) | 62 | — | — | — | — | — | — |
 | youth.volunteer | join | 62 | 0.0 | 0.0 | **+0.1** | **+0.2** | 0.00 | **−0.1 pp** |

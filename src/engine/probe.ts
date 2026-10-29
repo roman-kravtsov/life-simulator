@@ -502,24 +502,26 @@ export function balanceChecks(report: AreaReport): BalanceCheck[] {
 
   const base = get("default").means.choiceShare;
   const deliberate = get("deliberate").means.choiceShare;
+  const lead = get("deliberate").versusDefault.choiceShare;
   add(
-    "default-is-circumstance",
-    "The default course credits under 5% of a life to choice",
-    base < 0.05,
+    "default-counts-some",
+    "The default course credits 10% to 15% of a life to choice (accepting it is a choice, Roman 2026-10-29)",
+    base >= 0.1 && base <= 0.15,
     `${(base * 100).toFixed(1)}%`,
   );
   add(
     "deliberate-shows",
-    "A deliberate plan credits at least 10% to choice, and at least three times the default",
-    deliberate >= 0.1 && deliberate >= 3 * base,
+    "A deliberate plan credits clearly more to choice than the default course, at least 3 points more",
+    isClear(lead) && lead.mean >= 0.03,
     `${(deliberate * 100).toFixed(1)}% against ${(base * 100).toFixed(1)}%`,
   );
   const named = get("deliberate").means.choiceNamed;
   const namedBase = get("default").means.choiceNamed;
+  const namedLead = get("deliberate").versusDefault.choiceNamed;
   add(
     "choice-shows",
-    "On average the summary names choice in at least 0.75 of the four stats for a deliberate life, and in under 0.2 for the default course",
-    named >= 0.75 && namedBase < 0.2,
+    "The summary names choice in clearly more stats for a deliberate life than for the default course, at least 0.25 more of the four",
+    isClear(namedLead) && namedLead.mean >= 0.25,
     `${named.toFixed(2)} stats against ${namedBase.toFixed(2)} of 4`,
   );
   const learn = gain("shift-learn", "skills35", 2);

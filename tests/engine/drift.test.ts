@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { driftStats, happinessNorm, healthNorm, skillGrowth } from "../../src/engine/drift";
+import { driftBreakdown, driftStats, happinessNorm, healthNorm, skillGrowth } from "../../src/engine/drift";
+import { DEFAULT_PLAN_CREDIT, FOCUS_EFFECT, planCredit } from "../../src/engine/focus";
 import { createRng } from "../../src/engine/rng";
 import { stageForAge } from "../../src/engine/stages";
 import type { Person, TraitId } from "../../src/engine/types";
@@ -165,5 +166,61 @@ describe("traits shape drift (CHAR-003)", () => {
       return xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length;
     };
     expect(spread(2)).toBeGreaterThan(spread(-2) * 1.5);
+  });
+});
+
+describe("what the default plan counts for in the summary (SUM-004, Roman 2026-10-29)", () => {
+  const pupil = at(10, { education: { level: "primary", inSchool: true, years: 4 } });
+  // The default plan of a pupil: Learn, Health, Belonging, a point each, and no deviation from it.
+  const reference = { learn: 1, earn: 0, health: 1, belonging: 1, rest: 0 };
+  const breakdown = (kept?: boolean, focus: Person["focus"] = {}) =>
+    driftBreakdown(
+      { ...pupil, focus },
+      country,
+      createRng("breakdown"),
+      kept ? { points: reference, default: reference } : undefined,
+    );
+
+  it("credits part of what the default plan's points do to choice, and the rest to circumstance", () => {
+    const without = breakdown();
+    const withDefault = breakdown(true);
+    // Health holds one point in the default plan, worth FOCUS_EFFECT.health.norm on the norm.
+    const worth = FOCUS_EFFECT.health.norm;
+    expect(withDefault.norm.choice.health - without.norm.choice.health).toBeCloseTo(DEFAULT_PLAN_CREDIT * worth, 1);
+    expect(withDefault.norm.circumstance.health - without.norm.circumstance.health).toBeCloseTo(
+      (1 - DEFAULT_PLAN_CREDIT) * worth,
+      1,
+    );
+    // Rest has no point in the default plan, so happiness gains nothing from it.
+    expect(withDefault.norm.choice.happiness).toBe(without.norm.choice.happiness);
+  });
+  it("leaves the whole of the default plan's worth in the split, whatever share is credited", () => {
+    const without = breakdown();
+    const withDefault = breakdown(true);
+    for (const id of ["health", "belonging", "skills"] as const) {
+      const added =
+        withDefault.norm.choice[id] -
+        without.norm.choice[id] +
+        (withDefault.norm.circumstance[id] - without.norm.circumstance[id]);
+      expect(added).toBeGreaterThan(0);
+    }
+  });
+  it("counts a departure from the default plan on top of it, wholly as choice", () => {
+    const kept = breakdown(true);
+    const moved = breakdown(true, { learn: 0.6 });
+    expect(moved.norm.choice.skills).toBeGreaterThan(kept.norm.choice.skills);
+    expect(moved.norm.circumstance.skills).toBe(kept.norm.circumstance.skills);
+  });
+  it("credits nothing before the plan begins, when there is no reference plan", () => {
+    const young = driftBreakdown(at(3), country, createRng("breakdown"));
+    expect(young.norm.choice).toEqual({ health: 0, happiness: 0, belonging: 0, skills: 0 });
+  });
+  it("gives the player more of the default's worth the more points they move", () => {
+    const one = { learn: 0, earn: 1, health: 1, belonging: 1, rest: 0 };
+    const all = { learn: 0, earn: 3, health: 0, belonging: 0, rest: 0 };
+    expect(planCredit(reference, reference)).toBe(DEFAULT_PLAN_CREDIT);
+    expect(planCredit(one, reference)).toBeGreaterThan(DEFAULT_PLAN_CREDIT);
+    expect(planCredit(one, reference)).toBeLessThan(planCredit(all, reference));
+    expect(planCredit(all, reference)).toBe(1);
   });
 });
