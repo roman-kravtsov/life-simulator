@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import {
   Button,
   ConfirmDialog,
+  FileButton,
   Dialog,
   RadioGroup,
   Slider,
@@ -406,5 +407,68 @@ describe("kit", () => {
       expect(screen.getByText("Story").closest("[inert]")).toBeNull();
       expect(screen.getAllByRole("tabpanel")).toHaveLength(1);
     });
+  });
+});
+
+describe("kit: files and a dialog the caller opens", () => {
+  it("FileButton shows as a button, takes the first file that is chosen and says null when there is none", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const { container } = render(<FileButton onSelect={onSelect}>Load a file</FileButton>);
+    expect(screen.getByRole("button", { name: "Load a file" })).toBeInTheDocument();
+    const input = container.querySelector("input[type=file]") as HTMLInputElement;
+    expect(input).toHaveAttribute("accept", ".json,application/json");
+    const life = new File(["{}"], "life.json", { type: "application/json" });
+    await user.upload(input, life);
+    expect(onSelect).toHaveBeenCalledWith(life);
+  });
+
+  it("FileButton can be disabled", () => {
+    render(
+      <FileButton onSelect={() => undefined} isDisabled>
+        Load a file
+      </FileButton>,
+    );
+    expect(screen.getByRole("button", { name: "Load a file" })).toBeDisabled();
+  });
+
+  it("ConfirmDialog opens and closes from outside, with no trigger of its own, and still asks first", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onOpenChange = vi.fn();
+    function Held() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <Button onPress={() => setOpen(true)}>Ask</Button>
+          <ConfirmDialog
+            isOpen={open}
+            onOpenChange={(next) => {
+              onOpenChange(next);
+              setOpen(next);
+            }}
+            title="Replace it?"
+            confirmLabel="Replace"
+            cancelLabel="Keep"
+            onConfirm={onConfirm}
+          >
+            <p>It goes.</p>
+          </ConfirmDialog>
+        </>
+      );
+    }
+    render(<Held />);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ask" }));
+    expect(screen.getByRole("alertdialog", { name: "Replace it?" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keep" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+    expect(onConfirm).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Ask" }));
+    await user.keyboard("{Tab}{Enter}");
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 });

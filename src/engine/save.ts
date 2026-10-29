@@ -2,7 +2,8 @@
 // brought up to date, and how a life is restored from it. Pure: the browser adapters in src/save write and
 // read the JSON, and the caller loads the country.
 import { catalog as contentCatalog } from "../content/events";
-import { decisionCard } from "./life";
+import { decisionCard, withEpitaph } from "./life";
+import { JOURNAL_MAX_LENGTH } from "./reflection";
 import type { EventCatalog } from "./events";
 import { replay, ReplayError } from "./replay";
 import type { DecisionLogEntry, JournalEntry, LifeState, PlanLogEntry, Settings, SettingsLogEntry } from "./types";
@@ -86,6 +87,8 @@ const isObject = (value: unknown): value is Raw => typeof value === "object" && 
 const isArray = Array.isArray;
 const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
+const isTime = (value: unknown): value is string => typeof value === "string" && Number.isFinite(Date.parse(value));
+
 export type ReadResult = { ok: true; save: SaveFile } | { ok: false; reason: "unsupported" | "damaged" };
 
 /** The parts of a save a replay needs, which a damaged snapshot must not be able to take down. */
@@ -101,8 +104,8 @@ function hasLogs(save: Raw): boolean {
     isArray(save.planLog) &&
     Number.isInteger(save.years) &&
     typeof save.waiting === "boolean" &&
-    typeof save.createdAt === "string" &&
-    typeof save.updatedAt === "string"
+    isTime(save.createdAt) &&
+    isTime(save.updatedAt)
   );
 }
 
@@ -130,17 +133,30 @@ export function readSave(raw: unknown, migrations: Migrations = MIGRATIONS, curr
   return hasLogs(save) ? { ok: true, save: save as unknown as SaveFile } : { ok: false, reason: "damaged" };
 }
 
-/** The lines of a stored journal that have the shape of one: damaged storage must not take a life down with it. */
+/**
+ * The lines of a stored journal that have the shape of one, each no longer than a line may be: damaged storage, or
+ * a file that was edited by hand, must not take a life down with it.
+ */
 function soundJournal(journal: unknown): JournalEntry[] {
   if (!isArray(journal)) return [];
-  return journal.filter(
-    (entry): entry is JournalEntry =>
-      isObject(entry) &&
-      Number.isInteger(entry.age) &&
-      typeof entry.text === "string" &&
-      (entry.prompt === undefined || typeof entry.prompt === "string"),
-  );
+  return journal
+    .filter(
+      (entry): entry is JournalEntry =>
+        isObject(entry) &&
+        Number.isInteger(entry.age) &&
+        typeof entry.text === "string" &&
+        (entry.prompt === undefined || typeof entry.prompt === "string"),
+    )
+    .slice(0, JOURNAL_MAX_LINES)
+    .map(({ age, prompt, text }) => ({
+      age,
+      ...(prompt === undefined ? {} : { prompt: prompt.slice(0, JOURNAL_MAX_LENGTH) }),
+      text: Array.from(text).slice(0, JOURNAL_MAX_LENGTH).join(""),
+    }));
 }
+
+/** More lines than a life could hold are not a journal; a file is not trusted to stop at the right number. */
+const JOURNAL_MAX_LINES = 500;
 
 const STATS = ["health", "happiness", "belonging", "skills"];
 
@@ -213,7 +229,9 @@ export function restoreLife(
     // What the player wrote is not part of what a replay lives again, so it is put back from the save.
     // Only the sound lines are kept, from the save's own copy and else from the snapshot's, whichever way the life came back.
     const journal = soundJournal(isArray(save.journal) ? save.journal : life.journal);
-    const kept: LifeState = { ...life, ...(save.epitaph ? { epitaph: save.epitaph } : {}) };
+    // The epitaph is the save's own words, else the snapshot's, and only if it is text, no longer than an epitaph may be.
+    const words: unknown = typeof save.epitaph === "string" && save.epitaph ? save.epitaph : life.epitaph;
+    const kept = withEpitaph({ ...life }, typeof words === "string" ? words : "");
     delete kept.journal;
     if (journal.length > 0) kept.journal = journal;
     try {
@@ -231,3 +249,47 @@ export function restoreLife(
     throw error;
   }
 }
+
+/** The longest file import reads, in characters: a whole life is about 70,000, so this is far above any real one. */
+export const IMPORT_MAX_LENGTH = 2_000_000;
+
+/** The file a life is exported to (SAVE-006): the save itself as JSON, so the seed and every log travel with it. */
+export const exportText = (save: SaveFile): string => JSON.stringify(save);
+
+/** A name for the exported file: the seed, with nothing in it a file system would refuse. */
+export function exportFileName({ seed }: Pick<SaveFile, "seed">): string {
+  const safe = seed.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+  return `birthright-${safe || "life"}.json`;
+}
+
+export type ImportResult =
+  { ok: true; save: SaveFile } | { ok: false; reason: "tooBig" | "unreadable" | "unsupported" | "damaged" };
+
+/**
+ * The save in an exported file (SAVE-006), migrated to the current schema like any stored one (`readSave`). Nothing
+ * here throws: a file that is too big, is not JSON, is not a life or comes from a newer game says so. The snapshot is
+ * looked at by `restoreLife`, which the caller runs once it has loaded the country.
+ */
+export function parseImport(text: string, migrations: Migrations = MIGRATIONS, current = SCHEMA_VERSION): ImportResult {
+  if (text.length > IMPORT_MAX_LENGTH) return { ok: false, reason: "tooBig" };
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return { ok: false, reason: "unreadable" };
+  }
+  return readSave(raw, migrations, current);
+}
+
+/**
+ * The save for a restored life, written again the way the file had it: the same versions and times, with the
+ * logs and the snapshot of the life as it now is. Importing stores this, never the file itself, so what is kept has
+ * the current shape and only what a save holds.
+ */
+export const resave = (life: LifeState, save: SaveFile): SaveFile =>
+  toSave(life, {
+    dataVersion: save.dataVersion,
+    contentVersion: save.contentVersion,
+    now: save.updatedAt,
+    createdAt: save.createdAt,
+  });

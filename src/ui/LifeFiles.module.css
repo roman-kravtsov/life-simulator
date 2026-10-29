@@ -1,0 +1,21 @@
+.files {
+  margin: 0.75rem 0 1.5rem;
+}
+
+.files p {
+  margin: 0 0 0.75rem;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* The explanation of a disabled button takes the row under both buttons, so they always sit together. */
+.buttons p {
+  flex-basis: 100%;
+  margin: 0;
+}

@@ -2,12 +2,13 @@
 // name, where and how long it was lived, its epitaph and when it ended. Each can be opened or deleted after a
 // confirmation, and everything the game keeps in the browser can be deleted at once. Wide windows set the cards two
 // across; phones one under another.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PastLifeListing } from "../save";
 import { countryName, formatDay } from "../format";
 import { t } from "../i18n";
 import { DeleteAllData } from "./DeleteAllData";
 import { Button, ConfirmDialog } from "./kit";
+import { ExportPastLife, ImportLife, type SaveText } from "./LifeFiles";
 import { Page } from "./Page";
 import styles from "./PastLivesScreen.module.css";
 import { RingsThumb } from "./RingsThumb";
@@ -28,10 +29,24 @@ interface Props {
   onDelete: GameStore["deletePastLife"];
   /** Resolves true only when everything was deleted. */
   onDeleteAll: GameStore["deleteAllData"];
+  /** Lives as files (SAVE-006). */
+  onExport: GameStore["exportPastLife"];
+  onImport: GameStore["importLife"];
   onBack: () => void;
+  /** Injected in tests; the browser's download otherwise. */
+  save?: SaveText;
 }
 
-function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () => void; onDelete: () => void }) {
+interface LifeProps {
+  life: PastLifeListing;
+  onOpen: () => void;
+  onDelete: () => void;
+  onExport: GameStore["exportPastLife"];
+  onNotice: (text: string) => void;
+  save?: SaveText;
+}
+
+function Life({ life, onOpen, onDelete, onExport, onNotice, save }: LifeProps) {
   return (
     <li className={styles.life}>
       <div className={styles.top}>
@@ -63,12 +78,24 @@ function Life({ life, onOpen, onDelete }: { life: PastLifeListing; onOpen: () =>
         >
           <p>{t("past.deleteConfirm.body")}</p>
         </ConfirmDialog>
+        <ExportPastLife life={life} onExport={onExport} onNotice={onNotice} save={save} />
       </div>
     </li>
   );
 }
 
-export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete, onDeleteAll, onBack }: Props) {
+export function PastLivesScreen({
+  lives,
+  problem,
+  canDeleteAll,
+  onOpen,
+  onDelete,
+  onDeleteAll,
+  onExport,
+  onImport,
+  onBack,
+  save,
+}: Props) {
   // Focus returns to the heading when the list arrives and when a life is deleted, whose button is gone.
   const heading = useFocusOn<HTMLHeadingElement>(lives?.length ?? -1);
   // The one status region, always on the page, says what was deleted (or that it could not be) once the life's own
@@ -77,6 +104,12 @@ export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete
   const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
   const say = (text: string) => setNotice((was) => ({ text, n: (was?.n ?? 0) + 1 }));
   const clear = () => setNotice((was) => (was === null ? was : null));
+  // The buttons that cause a notice can be far below it: it is brought into view (where scrolling is possible at all),
+  // once per notice and not again when the screen renders for another reason.
+  const noticeRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    noticeRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [notice?.n]);
   async function remove(life: PastLifeListing) {
     clear();
     say(t((await onDelete(life.id)) ? "past.deleted" : "past.deleteFailed", { name: life.name }));
@@ -101,7 +134,7 @@ export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete
           )}
           {lives === null && <p className="small">{t("past.loading")}</p>}
           {notice && (
-            <p key={notice.n} className="small">
+            <p key={notice.n} className="small" ref={noticeRef}>
               {notice.text}
             </p>
           )}
@@ -110,10 +143,22 @@ export function PastLivesScreen({ lives, problem, canDeleteAll, onOpen, onDelete
         {lives !== null && lives.length > 0 && (
           <ul role="list" className={styles.list}>
             {lives.map((life) => (
-              <Life key={life.id} life={life} onOpen={() => onOpen(life.id)} onDelete={() => void remove(life)} />
+              <Life
+                key={life.id}
+                life={life}
+                onOpen={() => onOpen(life.id)}
+                onDelete={() => void remove(life)}
+                onExport={onExport}
+                onNotice={say}
+                save={save}
+              />
             ))}
           </ul>
         )}
+        <div className={styles.load}>
+          <p className="small">{t("files.about")}</p>
+          <ImportLife onImport={onImport} onNotice={say} />
+        </div>
         <DeleteAllData canDeleteAll={canDeleteAll} onConfirm={() => void removeAll()} />
         <Button onPress={onBack}>{t("life.backToStart")}</Button>
       </div>

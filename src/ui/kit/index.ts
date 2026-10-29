@@ -2,6 +2,7 @@
 // react-aria-components directly, so the look and the library can change in one place.
 export { Button, type ButtonProps } from "./Button";
 export { ConfirmDialog, Dialog, type ConfirmDialogProps, type DialogProps } from "./Dialog";
+export { FileButton, type FileButtonProps } from "./FileButton";
 export { RadioGroup, type RadioGroupProps, type RadioOption } from "./RadioGroup";
 export { Slider, type SliderProps } from "./Slider";
 export { Stepper, type StepperProps } from "./Stepper";

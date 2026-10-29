@@ -3,6 +3,7 @@ import { t } from "../i18n";
 import { BirthScreen } from "./BirthScreen";
 import { DEFAULT_DISPLAY, displayStore, type Display, type DisplayStore } from "./display";
 import { LifeScreen } from "./LifeScreen";
+import type { SaveText } from "./LifeFiles";
 import { PastLivesScreen } from "./PastLivesScreen";
 import { RevealScreen } from "./RevealScreen";
 import { ScreenBoundary } from "./ScreenBoundary";
@@ -15,7 +16,7 @@ import type { GameStore } from "./store";
 const isDefaultDisplay = (display: Display) =>
   (Object.keys(DEFAULT_DISPLAY) as (keyof Display)[]).every((name) => display[name] === DEFAULT_DISPLAY[name]);
 
-function CurrentScreen({ store, display }: { store: GameStore; display: DisplayStore }) {
+function CurrentScreen({ store, display, save }: { store: GameStore; display: DisplayStore; save?: SaveText }) {
   const {
     screen,
     life,
@@ -107,7 +108,10 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
         onOpen={store.openPastLife}
         onDelete={store.deletePastLife}
         onDeleteAll={store.deleteAllData}
+        onExport={store.exportPastLife}
+        onImport={store.importLife}
         onBack={store.backToStart}
+        save={save}
       />,
     );
   }
@@ -122,8 +126,12 @@ function CurrentScreen({ store, display }: { store: GameStore; display: DisplayS
         // The past lives are unknown here until they have been looked at, so there may be some.
         canDeleteAll={pastLives === null || pastLives.length > 0 || resume !== null || preferencesStored}
         onDeleteAll={store.deleteAllData}
+        canExportCurrent={resume?.kind === "offer"}
+        onExportCurrent={store.exportCurrent}
+        onImport={store.importLife}
         onBack={store.closeSettings}
         display={display}
+        save={save}
       />
     );
   }
@@ -148,9 +156,11 @@ interface AppProps {
   store: GameStore;
   /** The reader's display preferences (UI-009); the page's own unless a test gives its own. */
   display?: DisplayStore;
+  /** Hands a saved life to the player as a file (SAVE-006); the browser's download unless a test gives its own. */
+  save?: SaveText;
 }
 
-export function App({ store, display = displayStore }: AppProps) {
+export function App({ store, display = displayStore, save }: AppProps) {
   // "Delete all local data" removes the stored preferences with everything else; the page then goes back to the
   // defaults too. In one place, for every screen that offers it (past lives, settings).
   const deleted = useSyncExternalStore(store.subscribe, () => store.getSnapshot().deleted);
@@ -163,7 +173,7 @@ export function App({ store, display = displayStore }: AppProps) {
       <a className="skip-link" href="#content">
         {t("app.skipToContent")}
       </a>
-      <CurrentScreen store={store} display={display} />
+      <CurrentScreen store={store} display={display} save={save} />
     </>
   );
 }

@@ -253,9 +253,14 @@ describe("the settings screen (UI-009)", () => {
     const { user } = await openSettings(fake);
     await user.click(screen.getByRole("button", { name: "Delete all local data" }));
     await user.click(screen.getByRole("button", { name: "Delete everything" }));
-    expect(
-      await within(screen.getByRole("status")).findByText(/Your local data could not be deleted/),
-    ).toBeInTheDocument();
+    // The files part has a status region of its own, so the one that says this is found among them.
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((region) => /Your local data could not be deleted/.test(region.textContent ?? "")),
+      ).toBe(true),
+    );
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
     expect(displayStore.getSnapshot().theme).toBe("dark");
   });

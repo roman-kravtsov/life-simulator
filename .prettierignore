@@ -4,3 +4,4 @@ package-lock.json
 docs
 .claude
 public/data
+tests/fixtures/saves

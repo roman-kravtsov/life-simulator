@@ -7,6 +7,7 @@ import { DeleteAllData } from "./DeleteAllData";
 import { displayStore, type DisplayStore } from "./display";
 import { DisplaySettings } from "./DisplaySettings";
 import { Button } from "./kit";
+import { LifeFiles, type SaveText } from "./LifeFiles";
 import { Page } from "./Page";
 import { SettingsPanel } from "./SettingsPanel";
 import styles from "./SettingsScreen.module.css";
@@ -21,9 +22,16 @@ export interface SettingsScreenProps {
   canDeleteAll: boolean;
   /** Resolves true only when everything was deleted; the store then shows the start screen, which says so. */
   onDeleteAll: GameStore["deleteAllData"];
+  /** Lives as files (SAVE-006). */
+  /** Whether a life in progress is stored, to be saved to a file. */
+  canExportCurrent: boolean;
+  onExportCurrent: GameStore["exportCurrent"];
+  onImport: GameStore["importLife"];
   onBack: () => void;
   /** Injected in tests; the page's own display preferences otherwise. */
   display?: DisplayStore;
+  /** Injected in tests; the browser's download otherwise. */
+  save?: SaveText;
 }
 
 export function SettingsScreen({
@@ -31,8 +39,12 @@ export function SettingsScreen({
   onSettings,
   canDeleteAll,
   onDeleteAll,
+  canExportCurrent,
+  onExportCurrent,
+  onImport,
   onBack,
   display = displayStore,
+  save,
 }: SettingsScreenProps) {
   const heading = useFocusOn<HTMLHeadingElement>();
   const storedHeading = useId();
@@ -58,6 +70,12 @@ export function SettingsScreen({
           {t("settingsScreen.stored")}
         </h2>
         <p className="small">{t("settingsScreen.stored.about")}</p>
+        <LifeFiles
+          canExportCurrent={canExportCurrent}
+          onExportCurrent={onExportCurrent}
+          onImport={onImport}
+          save={save}
+        />
         <DeleteAllData canDeleteAll={canDeleteAll} onConfirm={() => void removeAll()} />
         <div role="status">
           {failed > 0 && (

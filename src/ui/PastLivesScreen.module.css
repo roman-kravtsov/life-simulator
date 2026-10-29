@@ -72,3 +72,12 @@
   margin-top: auto;
   padding-top: 0.25rem;
 }
+
+/* Loading a life from a file, under the list: a line on what files are, then the button. */
+.load {
+  margin: 0 0 1.5rem;
+}
+
+.load p {
+  margin: 0 0 0.75rem;
+}

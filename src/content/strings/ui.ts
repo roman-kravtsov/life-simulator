@@ -128,6 +128,42 @@ export const uiStrings: Readonly<Record<string, string>> = {
   "life.restored.both":
     "The saved copy of your life could not be read, so it was rebuilt from its seed. The game has also been updated since the life was saved, so it may play out a little differently from here.",
 
+  // Lives as files: saving one to keep or carry, loading one back (SAVE-006).
+  "files.about":
+    "A life can be saved to a file, to keep it, or to load it in another browser, or in this one after its data has been cleared. A file holds the whole life, including anything you wrote in it. The game sends nothing anywhere: the file goes only where your browser saves downloads.",
+  "files.current.save": "Save the life in progress to a file",
+  "files.current.none": "There is no life in progress to save.",
+  "files.saved": "Saved as {fileName}, in your downloads.",
+  "files.savedPast": "The life of {name} was saved as {fileName}, in your downloads.",
+  "files.saveFailed": "Your browser would not save the file. Downloads may be blocked or turned off.",
+  "files.past.save": "Save to file",
+  "files.past.saveLabel": "Save to file: the life of {name}",
+  "files.load": "Load a life from a file",
+  "files.loaded.current": "You can now continue {name}, {age}, from the start screen.",
+  "files.loaded.past": "{name}'s life, lived to {age}, is in your past lives.",
+  "files.loaded.pastKept":
+    "{name}'s life was already in your past lives, with everything the file has, so nothing changed.",
+  "files.inexact":
+    "It was saved with other data or an older version of the game, so it may play out a little differently from here.",
+  "files.fail.tooBig": "That file is too large to be a saved life.",
+  "files.fail.unreadable": "That file could not be read as a life. It should be the .json file this game saved.",
+  "files.fail.damaged":
+    "That file is not a life this game can read. It may be damaged, or it may not be from this game.",
+  "files.fail.unsupported":
+    "That life was saved by a newer version of the game. Reload the page to get the newest version, then try again.",
+  "files.fail.country":
+    "This game has no data for the country that life was lived in, or the data could not be loaded just now. If it is the data, try again in a moment.",
+  "files.fail.storage": "Your browser would not keep the life. The file is fine: make room and try again.",
+  "files.replace.title": "Replace the life in progress?",
+  "files.replace.body":
+    "You have a life in progress. Loading {name}'s life replaces it, and it cannot be brought back unless you have saved it to a file.",
+  "files.replace.bodyOf":
+    "You have a life in progress: {current}, {age}. Loading {name}'s life replaces it, and it cannot be brought back unless you have saved it to a file.",
+  "files.fail.finished":
+    "That file is an earlier copy of a life that was since lived to its end in this browser. It is in your past lives, so nothing was loaded.",
+  "files.replace.yes": "Replace it",
+  "files.replace.no": "Keep it",
+
   "start.deleted": "All local data in this browser was deleted.",
   "past.deleted": "The life of {name} was deleted.",
   "past.deleteFailed":
