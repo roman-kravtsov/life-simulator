@@ -223,6 +223,12 @@ for (const theme of THEMES) {
       expect(auditedPlan, "the fixed life never showed the plan to audit").toBe(true);
       await expect(another).toBeVisible();
       await expectNoViolations(page, "summary screen");
+      // The share panel's text open, with the notice that a press of Copy leaves (SHARE-001, SHARE-002).
+      const share = page.getByRole("region", { name: "Keep this life" });
+      await share.getByText("The text").click();
+      await share.getByRole("button", { name: "Save the rings as an image" }).click();
+      await expect(share.getByText(/^Saved the picture as birthright-.+\.png/)).toBeVisible();
+      await expectNoViolations(page, "summary screen with the share text open");
 
       // The finished life is kept: after a reload the start screen lists it among the past lives (SAVE-003).
       await page.reload();

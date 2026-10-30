@@ -16,6 +16,7 @@ import { HelpNote } from "./HelpNote";
 import { JournalEntries } from "./Journal";
 import { Button } from "./kit";
 import { Rings } from "./Rings";
+import { SharePanel } from "./SharePanel";
 import type { GameSnapshot, SummaryView } from "./store";
 import styles from "./SummaryScreen.module.css";
 import { useFocusOn } from "./useFocusOn";
@@ -242,6 +243,8 @@ export function SummaryScreen({ view, sources, problem, onEpitaph, onAnother, on
       )}
 
       <Epitaph name={summary.name} epitaph={summary.epitaph} onSave={onEpitaph} />
+
+      <SharePanel summary={summary} />
 
       {/* Said politely when it happens: the archive write finishes after the summary is on screen. */}
       <div aria-live="polite">

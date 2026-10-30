@@ -53,6 +53,7 @@ src/content/        game content as data: strings (en.ts merges strings/systems.
                     reflections.ts (the reflection prompts and what triggers each)
 src/data.ts         loads the baked country files in the browser (fetch), outside the engine
 src/save/           browser storage outside the engine: current.ts (the life in progress, localStorage `birthright:current`), archive.ts (finished lives, IndexedDB via idb), file.ts (a life as a file the player downloads or loads, SAVE-006),
+                    share.ts (copyText to the clipboard, svgToPng through a canvas; SHARE-001, SHARE-002),
                     index.ts (the Persistence interface the store uses, browserPersistence, noPersistence)
 src/i18n.ts         t(key, vars) translator
 src/format.ts       locale-aware numbers, money, percentages and country names (Intl)
@@ -65,6 +66,7 @@ src/ui/             React 19 components and the game store
   hints.ts, Hint.tsx, HintSettings.tsx   first-life hints (UI-015): `hints.ts` keeps which of the three (`plan`, `decision`, `lens`) were seen under `birthright:hints`, outside any save, `Hint.tsx` is the plain note with Got it (no timers or announcements, the caller moves focus), `HintSettings.tsx` brings them back on the settings screen; the life screen shows them, App passes the store and resets it on delete all
   Page.tsx          the shell every screen renders through: the header outside `<main id="content">`, `data-layout` reading or wide; SiteHeader.tsx is the header of every screen but the life screen
   LifeFiles.tsx     saving a life to a file and loading one (SAVE-006), on the settings and past lives screens
+  SharePanel.tsx, share.ts, shareCard.ts   keeping a finished life outside the game (SHARE-001, SHARE-002), on the summary screen: `share.ts` is the pure share text (and the picture's file name), `shareCard.ts` the pure SVG of the share image in the light palette (a test holds `CARD_COLOURS` equal to the tokens), the panel the two buttons and their notice; the pattern marks it shares with `Rings.tsx` live in `ringsLayout.ts`. A death by suicide is never named as the cause in either
   SettingsScreen.tsx, DisplaySettings.tsx, DeleteAllData.tsx   the settings screen (UI-009); display.ts keeps theme, text size and reduced motion on `<html>` (`birthright:theme`, `birthright:text-size`, `birthright:motion`), outside any save
   LifeScreen.tsx    the life screen (UI-004, UI-010), composed of LifeHeader.tsx (sticky header, strip, settings dialog, Continue), Ledger.tsx (the years) with PlanWidget.tsx (the plan tray),
                     Journal.tsx (the reflection prompt, the Notes tab and the notes on the summary), YouColumn.tsx and AroundColumn.tsx (sticky side columns of tabs, styled by SideColumn.module.css; their panels are in LifePanels.tsx, the rings thumbnail is RingsThumb.tsx),
@@ -76,7 +78,7 @@ tests/              Vitest: engine, guard and component tests; tests/fixtures/sa
 .claude/agents/     project subagents (see docs/agents.md)
 .claude/skills/     project skills: vercel-react-best-practices, pre-handoff-review, new-event, milestone-handoff
 .github/            CI, deploy and balance (probe and balance report as an artifact) workflows, dependabot.yml (weekly, grouped npm updates), pull_request_template.md
-e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001); axe.spec.ts runs axe-core over every screen, side tab and dialog in both themes (A11Y-006); files.spec.ts saves a life to a file, empties the browser and loads it back (SAVE-006)
+e2e/                Playwright: full-loop tests at phone and desktop widths; keyboard.spec.ts plays a whole life with the keyboard only (A11Y-001); share.spec.ts copies the text and saves the card of a finished life, and checks the PNG (SHARE-001, SHARE-002); axe.spec.ts runs axe-core over every screen, side tab and dialog in both themes (A11Y-006); files.spec.ts saves a life to a file, empties the browser and loads it back (SAVE-006)
 ```
 
 - **Data flow:** the UI calls store actions, the store calls the engine (`advance`), and the engine returns a new immutable state, which React re-renders. The engine never imports from `src/ui`.

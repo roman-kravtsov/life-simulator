@@ -9,6 +9,7 @@ import { midlifeStrings } from "./events/midlife";
 import { shockStrings } from "./events/shocks";
 import { youthStrings } from "./events/youth";
 import { reflectionStrings } from "./reflection";
+import { shareStrings } from "./share";
 import { summaryStrings } from "./summary";
 import { systemStrings } from "./systems";
 import { uiStrings } from "./ui";
@@ -19,6 +20,7 @@ export const en: Readonly<Record<string, string>> = {
   ...deathStrings,
   ...summaryStrings,
   ...reflectionStrings,
+  ...shareStrings,
   ...earlyStrings,
   ...adolescenceStrings,
   ...youthStrings,
