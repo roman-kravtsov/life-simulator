@@ -8,9 +8,9 @@ import { RING_THEMES, type Ring } from "../engine/rings";
 import type { LifeSummary } from "../engine/summary";
 import { countryName } from "../format";
 import { t } from "../i18n";
-import { shareShares } from "./share";
+import { diedLine, shareShares } from "./share";
 import { layoutRings, PATTERN_TURN, patternMark, patternStroke, patternTile, VIEW_SIZE } from "./ringsLayout";
-import { causeWords, yearsWords } from "./words";
+import { yearsWords } from "./words";
 
 export const CARD_WIDTH = 1200;
 export const CARD_HEIGHT = 1500;
@@ -45,7 +45,7 @@ const TEXT_WIDTH = 1000;
 const LETTER = 0.54;
 /** The tile of the legend's swatches, which are drawn in a 12 unit box (as in the summary screen). */
 const SWATCH_TILE = 2.4;
-const SWATCH = 26;
+const SWATCH = 30;
 
 const escape = (text: string): string =>
   text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]!);
@@ -86,7 +86,7 @@ function legend(themes: readonly Theme[], top: number): string {
   const GAP = 38;
   const items = themes.map((theme) => {
     const label = t(`ring.theme.${theme}`);
-    return { theme, label, width: SWATCH + 10 + Math.ceil(label.length * 24 * LETTER) };
+    return { theme, label, width: SWATCH + 10 + Math.ceil(label.length * 28 * LETTER) };
   });
   const rows: (typeof items)[] = [[]];
   for (const item of items) {
@@ -99,7 +99,7 @@ function legend(themes: readonly Theme[], top: number): string {
     .map((row, index) => {
       const total = row.reduce((sum, entry) => sum + entry.width, 0) + GAP * (row.length - 1);
       let x = (CARD_WIDTH - total) / 2;
-      const y = top + index * 44;
+      const y = top + index * 48;
       return row
         .map(({ theme, label, width }) => {
           const at = x;
@@ -108,7 +108,7 @@ function legend(themes: readonly Theme[], top: number): string {
             `<g data-legend="${theme}">` +
             `<svg x="${at}" y="${y}" width="${SWATCH}" height="${SWATCH}" viewBox="0 0 12 12">` +
             `<rect x="0.5" y="0.5" width="11" height="11" fill="url(#swatch-${theme})" stroke="${CARD_COLOURS.inkSoft}" stroke-width="0.6"/></svg>` +
-            `<text x="${at + SWATCH + 10}" y="${y + 21}" font-family="${UI_FONT}" font-size="24" fill="${CARD_COLOURS.ink}">${escape(label)}</text>` +
+            `<text x="${at + SWATCH + 10}" y="${y + 25}" font-family="${UI_FONT}" font-size="28" fill="${CARD_COLOURS.ink}">${escape(label)}</text>` +
             `</g>`
           );
         })
@@ -122,10 +122,7 @@ export function shareCardSvg(summary: LifeSummary): string {
   const { name, death, rings } = summary;
   const country = countryName(summary.country);
   const subtitle = t("summary.subtitle", { country, born: summary.birthYear, died: death.year });
-  const died =
-    death.cause === "selfHarm"
-      ? t("share.text.diedAt", { age: death.age })
-      : t("summary.died", { age: death.age, cause: causeWords(death.cause) });
+  const died = diedLine(summary);
   const shaped = t("share.card.shaped", shareShares(summary));
   const themes = RING_THEMES.filter((theme) => rings.some((ring) => ring.theme === theme));
   const tile = patternTile(rings.length);
@@ -170,8 +167,11 @@ export function shareCardSvg(summary: LifeSummary): string {
     text(died, 1195, fit(died, 36), { font: STORY_FONT }) +
     text(shaped, 1245, fit(shaped, 30), { fill: CARD_COLOURS.inkSoft }) +
     legend(themes, 1292) +
-    text(`${t("app.title")}: ${t("app.subtitle")}`, 1418, 30, { fill: CARD_COLOURS.inkSoft, weight: 600 }) +
-    text(address, 1456, 26, { fill: CARD_COLOURS.inkSoft }) +
+    text(t("share.card.footer", { title: t("app.title"), subtitle: t("app.subtitle") }), 1418, 32, {
+      fill: CARD_COLOURS.inkSoft,
+      weight: 600,
+    }) +
+    text(address, 1458, 28, { fill: CARD_COLOURS.inkSoft }) +
     `</svg>`
   );
 }

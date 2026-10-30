@@ -11,16 +11,22 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
+/** The image at `address`, once the browser has it: by its load event, as `decode()` of an SVG is not reliable everywhere. */
+const load = (address: string) =>
+  new Promise<HTMLImageElement>((done, fail) => {
+    const image = new Image();
+    image.onload = () => done(image);
+    image.onerror = () => fail(new Error("image"));
+    image.src = address;
+  });
+
 /**
  * A PNG of an SVG document of the given size, drawn on a canvas. Null when the browser cannot load the document as an
  * image or make a PNG of it. A data address, not a blob one, so that no browser counts the canvas as tainted.
  */
 export async function svgToPng(svg: string, width: number, height: number): Promise<Blob | null> {
   try {
-    const image = new Image();
-    image.decoding = "async";
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    await image.decode();
+    const image = await load(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;

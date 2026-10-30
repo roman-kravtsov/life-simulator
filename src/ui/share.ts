@@ -7,8 +7,18 @@ import { countryName, formatPercent } from "../format";
 import { t } from "../i18n";
 import { causeWords, wholePercents, yearsWords } from "./words";
 
-/** A death by suicide is not named as the cause in text that leaves the game, where no help can stand beside it. */
-const UNNAMED_CAUSE = "selfHarm";
+/**
+ * Causes not named in what leaves the game: a death by suicide, where no help can stand beside the words, and one this
+ * version has no words for, which out of context would read as a fault.
+ */
+const UNNAMED_CAUSES: readonly string[] = ["selfHarm", "other"];
+
+/** How the life ended in one line, for the text and the picture: the age, and the cause where it is named. */
+export function diedLine({ death }: LifeSummary): string {
+  const cause = UNNAMED_CAUSES.includes(death.cause) ? null : causeWords(death.cause);
+  if (death.age < 1) return cause === null ? t("share.text.diedInfant") : t("share.text.diedInfantOf", { cause });
+  return cause === null ? t("share.text.diedAt", { age: death.age }) : t("summary.died", { age: death.age, cause });
+}
 
 /** The three shares across the stats, as whole percentages that add up to 100. */
 export function shareShares(summary: LifeSummary) {
@@ -28,13 +38,9 @@ export function shareText(summary: LifeSummary): string {
   const { death, name, sex, seed, epitaph } = summary;
   const { expectancy } = death;
   const country = countryName(summary.country);
-  const died =
-    death.cause === UNNAMED_CAUSE
-      ? t("share.text.diedAt", { age: death.age })
-      : t("summary.died", { age: death.age, cause: causeWords(death.cause) });
   const lines = [
     t("share.text.who", { name, country, born: summary.birthYear, died: death.year }),
-    died,
+    diedLine(summary),
     t(`share.text.expectancy.${expectancy.verdict}`, {
       country,
       someone: t(`summary.someone.${sex}`),

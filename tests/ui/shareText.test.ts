@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SITE_URL } from "../../src/content/site";
 import type { LifeSummary } from "../../src/engine/summary";
 import { shareFileName, shareText } from "../../src/ui/share";
+import { shareCardSvg } from "../../src/ui/shareCard";
 import { makeCountry } from "../fixtures/country";
 import { finishedLife } from "./fakes";
 
@@ -12,11 +13,11 @@ const withChanges = (changes: Partial<LifeSummary> = {}): LifeSummary => ({ ...b
 
 describe("SHARE-001: the share text", () => {
   it("says who, where and when, how long the life was, what shaped it, and where the game is", () => {
-    const text = shareText(withChanges());
+    const text = shareText(withChanges({ death: { ...base.death, cause: "cardiovascular" } }));
     expect(text).toContain(`${base.name}: Testland, ${base.birthYear} to ${base.death.year}.`);
     expect(text).toContain(`Died at ${base.death.age}, of `);
     expect(text).toMatch(/In Testland, a (man|woman) can expect to live about \d+ years?\./);
-    expect(text).toMatch(/What shaped it: \d+% circumstance, \d+% choice and \d+% chance\./);
+    expect(text).toMatch(/What shaped it, as this game reckons it: \d+% circumstance, \d+% choice and \d+% chance\./);
     expect(text).toContain(SITE_URL);
     expect(text).toContain(`Seed: ${base.seed}`);
   });
@@ -56,6 +57,25 @@ describe("SHARE-001: the share text", () => {
     expect(text).toContain("Died at 31.");
     expect(text).not.toMatch(/Died at 31, of/);
     expect(text).not.toMatch(/suicide|self-harm/i);
+  });
+
+  it("keeps the suicide cause out of the text and the picture alike", () => {
+    const summary = withChanges({ death: { ...base.death, cause: "selfHarm", age: 40 } });
+    expect(`${shareText(summary)}${shareCardSvg(summary)}`).not.toMatch(/suicide/i);
+  });
+
+  it("does not name a cause this version has no words for, which would read as a fault out of context", () => {
+    const text = shareText(withChanges({ death: { ...base.death, cause: "other", age: 52 } }));
+    expect(text).toContain("Died at 52.");
+    expect(text).not.toMatch(/not listed/);
+  });
+
+  it("says a death in the first year plainly, not as 'Died at 0'", () => {
+    const named = shareText(withChanges({ death: { ...base.death, cause: "neonatal", age: 0 } }));
+    expect(named).toContain("Died in the first year of life, of ");
+    const unnamed = shareText(withChanges({ death: { ...base.death, cause: "selfHarm", age: 0 } }));
+    expect(unnamed).toContain("Died in the first year of life.");
+    expect(`${named}${unnamed}`).not.toMatch(/Died at 0/);
   });
 
   it("never leaves a placeholder, undefined or NaN in the words, for lives of any kind", () => {

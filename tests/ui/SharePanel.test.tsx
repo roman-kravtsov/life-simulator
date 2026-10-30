@@ -22,12 +22,32 @@ describe("SHARE-001 and SHARE-002: the share panel", () => {
 
   it("shows the text to select when the browser will not copy, and says why", async () => {
     render(<SharePanel summary={summary} copy={() => Promise.resolve(false)} />);
-    const details = screen.getByText("The text").closest("details")!;
+    const details = screen.getByText("Show the text").closest("details")!;
     expect(details.open).toBe(false);
     await userEvent.click(screen.getByRole("button", { name: "Copy as text" }));
     expect(await screen.findByText(/would not copy the text/)).toBeVisible();
     expect(details.open).toBe(true);
     expect(details).toHaveTextContent(summary.name);
+  });
+
+  it("selects the text for a player who cannot drag across it", async () => {
+    render(<SharePanel summary={summary} />);
+    await userEvent.click(screen.getByText("Show the text"));
+    await userEvent.click(screen.getByRole("button", { name: "Select the text" }));
+    expect(window.getSelection()?.toString()).toBe(shareText(summary));
+    expect(await screen.findByText("The text is selected. Copy it with your keyboard.")).toBeVisible();
+  });
+
+  it("makes one picture for two quick presses", async () => {
+    let finish: (blob: Blob) => void = () => undefined;
+    const makeImage = vi.fn(() => new Promise<Blob | null>((done) => (finish = done)));
+    render(<SharePanel summary={summary} makeImage={makeImage} save={() => true} />);
+    const button = screen.getByRole("button", { name: "Save the rings as an image" });
+    await userEvent.click(button);
+    await userEvent.click(button);
+    expect(makeImage).toHaveBeenCalledTimes(1);
+    finish(png);
+    expect(await screen.findByText(/^Saved the picture as/)).toBeVisible();
   });
 
   it("saves the rings as a picture named after the seed, and says where", async () => {
@@ -49,6 +69,16 @@ describe("SHARE-001 and SHARE-002: the share panel", () => {
     render(<SharePanel summary={summary} makeImage={makeImage} save={save} />);
     await userEvent.click(screen.getByRole("button", { name: "Save the rings as an image" }));
     expect(await screen.findByText("Your browser could not make the picture.")).toBeVisible();
+  });
+
+  it("says so, and can try again, when making the picture throws", async () => {
+    const makeImage = vi.fn().mockRejectedValueOnce(new Error("no")).mockResolvedValue(png);
+    render(<SharePanel summary={summary} makeImage={makeImage} save={() => true} />);
+    const button = screen.getByRole("button", { name: "Save the rings as an image" });
+    await userEvent.click(button);
+    expect(await screen.findByText("Your browser could not make the picture.")).toBeVisible();
+    await userEvent.click(button);
+    expect(await screen.findByText(/^Saved the picture as/)).toBeVisible();
   });
 
   it("says that nothing leaves the browser", () => {

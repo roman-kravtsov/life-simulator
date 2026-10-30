@@ -30,7 +30,9 @@ describe("SHARE-002: the share image", () => {
     const doc = parse(shareCardSvg(withChanges()));
     const rings = doc.querySelectorAll("circle[data-ring]");
     expect(rings).toHaveLength(base.rings.length);
-    expect(doc.querySelectorAll("[data-mark]")).toHaveLength(0);
+    // Numbers on the summary's rings are badges (a disc and a number); the card has no discs and no digit-only text.
+    expect([...doc.querySelectorAll("text")].filter((el) => /^\d+$/.test(el.textContent ?? ""))).toHaveLength(0);
+    expect(doc.querySelectorAll("circle:not([data-ring])")).toHaveLength(0);
   });
 
   it("names the person, the place and the years, and gives the shares and where the game is", () => {
@@ -60,6 +62,19 @@ describe("SHARE-002: the share image", () => {
       expect(patterns).toContain(`ring-${theme}`);
       expect(patterns).toContain(`swatch-${theme}`);
     }
+  });
+
+  it("draws each theme in a pattern of its own, so colour is never the only signal", () => {
+    // A life long enough to hold every theme.
+    const themes = RING_THEMES.map((theme, index) => ({ age: index, thickness: 0.6, theme }));
+    const doc = parse(shareCardSvg(withChanges({ rings: themes })));
+    const ring = [...doc.querySelectorAll("pattern")].filter((p) => p.getAttribute("id")!.startsWith("ring-"));
+    expect(ring).toHaveLength(RING_THEMES.length - 1);
+    const signatures = ring.map((p) => p.innerHTML.replace(/ id="[^"]*"/g, ""));
+    expect(new Set(signatures).size).toBe(signatures.length);
+    const swatches = [...doc.querySelectorAll("pattern")].filter((p) => p.getAttribute("id")!.startsWith("swatch-"));
+    expect(swatches).toHaveLength(RING_THEMES.length);
+    expect(new Set(swatches.map((p) => p.innerHTML)).size).toBe(swatches.length);
   });
 
   it("escapes what it is given, so a name with markup in it cannot break the picture or inject into it", () => {

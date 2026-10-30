@@ -55,7 +55,7 @@ test("a finished life is copied as text and saved as a picture of its rings (SHA
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain("Birthright, a free life simulation");
   expect(copied).toContain("https://roman-kravtsov.github.io/life-simulator/");
-  expect(copied).toMatch(/What shaped it: \d+% circumstance, \d+% choice and \d+% chance\./);
+  expect(copied).toMatch(/What shaped it, as this game reckons it: \d+% circumstance, \d+% choice and \d+% chance\./);
   expect(copied.split("\n").length).toBeLessThanOrEqual(10);
 
   const [download] = await Promise.all([

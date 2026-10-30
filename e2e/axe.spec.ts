@@ -225,7 +225,7 @@ for (const theme of THEMES) {
       await expectNoViolations(page, "summary screen");
       // The share panel's text open, with the notice that a press of Copy leaves (SHARE-001, SHARE-002).
       const share = page.getByRole("region", { name: "Keep this life" });
-      await share.getByText("The text").click();
+      await share.getByText("Show the text").click();
       await share.getByRole("button", { name: "Save the rings as an image" }).click();
       await expect(share.getByText(/^Saved the picture as birthright-.+\.png/)).toBeVisible();
       await expectNoViolations(page, "summary screen with the share text open");
