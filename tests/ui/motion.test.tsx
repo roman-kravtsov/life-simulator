@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// UI-013: small transitions (the year settling, a card settling, a ring growing). jsdom does not apply style sheets, so
+// UI-013: small transitions (the year, with its card, settling; a ring growing). jsdom does not apply style sheets, so
 // the markup that the styles hang on is checked here, and the module style sheets are read as text for their rules.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
