@@ -27,34 +27,94 @@ async function beginLife(page: Page) {
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 0");
 }
 
-const thisYear = (page: Page) => page.locator("[data-year]");
+/** Records the names of the animations that start, from the first frame on, so a short one cannot be missed. */
+async function recordAnimations(page: Page) {
+  await page.addInitScript(() => {
+    const started: string[] = [];
+    (window as unknown as { __started: string[] }).__started = started;
+    document.addEventListener("animationstart", (event) => started.push((event as AnimationEvent).animationName), true);
+  });
+}
+const started = (page: Page) => page.evaluate(() => (window as unknown as { __started: string[] }).__started);
+/** Whether an animation of that name has started (the names are the style sheet\'s, with a hash added). */
+const hasStarted = async (page: Page, name: string) => (await started(page)).some((started) => started.includes(name));
+const forget = (page: Page) => page.evaluate(() => (window as unknown as { __started: string[] }).__started.splice(0));
 
-/** Presses Continue; the year moves to age 1 (the first years of a life stop at no decision). */
-async function continueOnce(page: Page) {
+const isNarrow = (page: Page) => (page.viewportSize()?.width ?? 0) < 900;
+
+/** Presses Continue and waits for a later age: a run of quiet years can pass in one go. */
+async function continueOn(page: Page) {
+  const heading = page.getByRole("heading", { level: 1 });
+  const before = (await heading.textContent()) ?? "";
   await page.getByRole("button", { name: "Continue to the next year" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Age 1");
+  await expect(heading).not.toHaveText(before);
 }
 
-test("this year settles into place after Continue, then rests untransformed", async ({ page }) => {
+test("each year settles into place after Continue, once, and then rests untransformed", async ({ page }) => {
+  await recordAnimations(page);
   await beginLife(page);
-  await continueOnce(page);
-  const body = thisYear(page);
-  // The animation is the CSS one, on the transform only, and it ends by itself.
-  await expect
-    .poll(async () => body.evaluate((el) => el.getAnimations().map((a) => (a as CSSAnimation).animationName)))
-    .toEqual(expect.arrayContaining([expect.stringMatching(/settle-(even|odd)/)]));
-  await expect.poll(() => body.evaluate((el) => el.getAnimations().length), { timeout: 5_000 }).toBe(0);
-  expect(await body.evaluate((el) => getComputedStyle(el).transform)).toBe("none");
-  // The heading kept focus: the body was not remounted.
-  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  const body = page.getByRole("heading", { level: 1 }).locator("xpath=..");
+  await expect(body).not.toHaveAttribute("data-settling", "", { timeout: 5_000 });
+  for (let year = 0; year < 3; year++) {
+    await forget(page);
+    await continueOn(page);
+    // The animation is the CSS one, on the transform only, it starts again for each year and it ends by itself.
+    await expect.poll(() => hasStarted(page, "settle")).toBe(true);
+    await expect(body).not.toHaveAttribute("data-settling", "", { timeout: 5_000 });
+    expect(await body.evaluate((el) => el.getAnimations().length)).toBe(0);
+    expect(await body.evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+    // The heading kept focus: the body was not remounted.
+    await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  }
 });
 
-test("nothing moves under reduced motion", async ({ page }) => {
+test("the newest ring of the thumbnail grows when a year is added, and a tab shown again replays nothing", async ({
+  page,
+}) => {
+  await recordAnimations(page);
+  await beginLife(page);
+  const body = page.getByRole("heading", { level: 1 }).locator("xpath=..");
+  await expect(body).not.toHaveAttribute("data-settling", "", { timeout: 5_000 });
+  await forget(page);
+  await continueOn(page);
+  // On a phone the picture is on the You tab, hidden until it is brought up.
+  const tabs = page.getByRole("tablist", { name: "Parts of this screen" });
+  if (isNarrow(page)) await tabs.getByRole("tab", { name: "You", exact: true }).click();
+  await expect.poll(() => hasStarted(page, "grow")).toBe(true);
+  await expect(page.locator("circle[data-newest]")).toHaveCount(0, { timeout: 5_000 });
+  if (isNarrow(page)) {
+    // Away and back: nothing starts again, neither the year nor the ring.
+    // (The year settled while the Story was out of sight, so it does as the Story is first brought back.)
+    await tabs.getByRole("tab", { name: "Story", exact: true }).click();
+    await expect(body).not.toHaveAttribute("data-settling", "", { timeout: 5_000 });
+    await tabs.getByRole("tab", { name: "You", exact: true }).click();
+    await tabs.getByRole("tab", { name: "Story", exact: true }).click();
+    await forget(page);
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+    expect(await started(page)).toEqual([]);
+  }
+});
+
+test("nothing moves under reduced motion, asked by the system", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await beginLife(page);
-  await continueOnce(page);
+  await continueOn(page);
   // No animation exists at all on the life screen (the settling, the ring growing, the kit's transitions), and the
   // year is where it will rest: the rise is a transform, so it never changes the layout either way.
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
-  expect(await thisYear(page).evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+  expect(
+    await page
+      .getByRole("heading", { level: 1 })
+      .locator("xpath=..")
+      .evaluate((el) => getComputedStyle(el).transform),
+  ).toBe("none");
+});
+
+test("nothing moves under reduced motion, asked by the player's setting", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("birthright:motion", "reduced"));
+  await beginLife(page);
+  await continueOn(page);
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
 });

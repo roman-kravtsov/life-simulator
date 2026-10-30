@@ -5,15 +5,6 @@
   border-left: 3px solid var(--ochre);
   border-radius: var(--radius);
   background: var(--paper-raised);
-  /* The card settles into place when it appears (UI-013): a small rise, transform only. It is keyed by the event, so it
-     mounts fresh each time; the heading's focus ring is inside it and moves with it. */
-  animation: settle 400ms ease-out backwards;
-}
-
-@keyframes settle {
-  from {
-    transform: translateY(0.4rem);
-  }
 }
 
 .heading {

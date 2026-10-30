@@ -1,7 +1,7 @@
 // The centre of the life screen (UI-004): a ledger of years. This year is on top, told in full (the caller supplies
 // it: the heading, the story, a decision waiting), and the earlier years follow below it, newest first, each a
 // paragraph beside its age. Earlier years are for reading, not for acting on.
-import { memo, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import type { YearRecord } from "../engine/types";
 import { t } from "../i18n";
 import { HelpNote } from "./HelpNote";
@@ -41,6 +41,10 @@ interface Props {
 }
 
 export function Ledger({ age, children, earlier, tray, narrow }: Props) {
+  // The age whose settling has finished (UI-013). The body wears `data-settling` until then and not after, so it settles
+  // once for each age, whatever the jump (a quiet run passes several years in one go), and a panel hidden and shown again
+  // (the narrow layout's tabs) does not replay it.
+  const [settled, setSettled] = useState<number | null>(null);
   return (
     <div className={`${styles.centre} ${narrow ? styles.flow : ""}`}>
       <div className={styles.part}>
@@ -49,8 +53,15 @@ export function Ledger({ age, children, earlier, tray, narrow }: Props) {
             {age}
             <small>{t("life.now")}</small>
           </span>
-          {/* data-year restarts the settling (UI-013) without remounting the body, which holds focus and the hints. */}
-          <div className={`${styles.body} ${styles.now}`} data-year={age % 2 === 0 ? "even" : "odd"}>
+          {/* Not remounted for a new year: the body holds focus and the hints. */}
+          <div
+            className={`${styles.body} ${styles.now}`}
+            data-settling={settled === age ? undefined : ""}
+            onAnimationEnd={(event) => {
+              // Only its own animation counts; one inside the year (a child's) does not.
+              if (event.target === event.currentTarget) setSettled(age);
+            }}
+          >
             {children}
           </div>
         </div>

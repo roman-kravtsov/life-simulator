@@ -3,7 +3,7 @@
 // the markup that the styles hang on is checked here, and the module style sheets are read as text for their rules.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { YearRecord } from "../../src/engine/types";
 import { Ledger } from "../../src/ui/Ledger";
@@ -11,6 +11,13 @@ import { RingsThumb } from "../../src/ui/RingsThumb";
 
 const rings = (count: number) =>
   Array.from({ length: count }, (_, age) => ({ age, thickness: 0.5, theme: "plain" as const }));
+
+/** React listens for the prefixed name where the DOM has no `animation` style (jsdom), so send the one it listens for. */
+const animationEnd = (element: Element) =>
+  act(() => {
+    for (const type of ["animationend", "webkitAnimationEnd"])
+      element.dispatchEvent(new Event(type, { bubbles: true }));
+  });
 
 const circles = (container: HTMLElement) => [...container.querySelectorAll("circle")];
 
@@ -42,37 +49,53 @@ describe("UI-013: a ring grows in the thumbnail beside the stats", () => {
   });
 });
 
+describe("UI-013: a ring grows once", () => {
+  it("stops marking the ring when its animation ends, and marks the next one when a year is added", () => {
+    const { container, rerender } = render(<RingsThumb rings={rings(4)} grow />);
+    const newest = () => container.querySelector("[data-newest]");
+    animationEnd(newest()!);
+    expect(newest()).toBeNull();
+    // Shown again (a hidden panel un-hidden) or drawn again with the same rings: nothing grows.
+    rerender(<RingsThumb rings={rings(4)} grow />);
+    expect(newest()).toBeNull();
+    rerender(<RingsThumb rings={rings(5)} grow />);
+    expect(circles(container)[0]).toBe(newest());
+  });
+});
+
 describe("UI-013: this year settles", () => {
   const earlier: YearRecord[] = [];
-  const body = (container: HTMLElement) => container.querySelector("[data-year]") as HTMLElement;
+  const body = (container: HTMLElement) => container.querySelector("h1")!.parentElement as HTMLElement;
 
-  it("alternates data-year with the age, on the same element", () => {
-    const { container, rerender } = render(
-      <Ledger age={4} earlier={earlier} tray={null} narrow={false}>
-        <h1 tabIndex={-1}>Age 4</h1>
-      </Ledger>,
+  it("settles once for each age, on the same element, even when several years pass at once", () => {
+    const ledger = (age: number) => (
+      <Ledger age={age} earlier={earlier} tray={null} narrow={false}>
+        <h1 tabIndex={-1}>Age {age}</h1>
+      </Ledger>
     );
+    const { container, rerender } = render(ledger(4));
     const node = body(container);
     const heading = container.querySelector("h1")!;
     heading.focus();
-    expect(node).toHaveAttribute("data-year", "even");
-    rerender(
-      <Ledger age={5} earlier={earlier} tray={null} narrow={false}>
-        <h1 tabIndex={-1}>Age 5</h1>
-      </Ledger>,
-    );
-    expect(body(container)).toBe(node);
-    expect(node).toHaveAttribute("data-year", "odd");
+    expect(node).toHaveAttribute("data-settling");
+    // A child's animation ending is not the body's.
+    animationEnd(heading);
+    expect(node).toHaveAttribute("data-settling");
+    animationEnd(node);
+    expect(node).not.toHaveAttribute("data-settling");
+    // Rendered again at the same age (a tab shown again): at rest.
+    rerender(ledger(4));
+    expect(node).not.toHaveAttribute("data-settling");
+    // 4 to 6, a quiet year passed: it settles again all the same.
+    rerender(ledger(6));
+    expect(node).toHaveAttribute("data-settling");
+    animationEnd(node);
+    rerender(ledger(7));
+    expect(node).toHaveAttribute("data-settling");
     // Not remounted: the heading keeps focus.
+    expect(body(container)).toBe(node);
     expect(container.querySelector("h1")).toBe(heading);
     expect(heading).toHaveFocus();
-    rerender(
-      <Ledger age={6} earlier={earlier} tray={null} narrow={false}>
-        <h1 tabIndex={-1}>Age 6</h1>
-      </Ledger>,
-    );
-    expect(body(container)).toBe(node);
-    expect(node).toHaveAttribute("data-year", "even");
   });
 
   it("marks only this year's body, not the earlier ones", () => {
@@ -82,12 +105,12 @@ describe("UI-013: this year settles", () => {
         <p>Now</p>
       </Ledger>,
     );
-    expect(container.querySelectorAll("[data-year]")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-settling]")).toHaveLength(1);
   });
 });
 
 describe("UI-013: the motion in the style sheets stays small and gentle", () => {
-  const sheets = ["Ledger", "DecisionCardView", "RingsThumb"].map((name) => ({
+  const sheets = ["Ledger", "RingsThumb"].map((name) => ({
     name,
     css: readFileSync(join(__dirname, `../../src/ui/${name}.module.css`), "utf8").replace(/\/\*[\s\S]*?\*\//g, ""),
   }));
