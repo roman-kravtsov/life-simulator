@@ -35,7 +35,7 @@ export function YouColumn({ stats, rings, overview, showUsPrices, onToggleUsPric
   return (
     <aside aria-label={t("life.you.aria")} className={`${styles.column} ${narrow ? styles.flow : styles.sticky}`}>
       <div className={styles.ringRow}>
-        <RingsThumb rings={rings} />
+        <RingsThumb rings={rings} grow />
         <div>
           <h2 className={`eyebrow ${styles.heading}`}>{t("life.you.heading")}</h2>
           <p className={`small ${styles.caption}`}>

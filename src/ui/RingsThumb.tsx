@@ -10,6 +10,8 @@ interface Props {
   rings: readonly RingInput[];
   /** Sets the size where the picture is used; 3.25rem across otherwise. */
   className?: string;
+  /** The newest ring grows from the centre and the older ones ease to their new size when a year is added (UI-013). */
+  grow?: boolean;
 }
 
 /**
@@ -18,7 +20,7 @@ interface Props {
  */
 const lineWidth = (count: number) => Math.min(1, OUTER_RADIUS / Math.max(count, 1) / 3);
 
-export function RingsThumb({ rings, className }: Props) {
+export function RingsThumb({ rings, className, grow = false }: Props) {
   const { shapes } = useMemo(() => layoutRings(rings), [rings]);
   return (
     <svg
@@ -39,6 +41,7 @@ export function RingsThumb({ rings, className }: Props) {
             cy={VIEW_SIZE / 2}
             r={shape.outer}
             className={`${styles.ring} ${styles[`fill-${shape.theme}`]}`}
+            data-newest={grow && shape.ring === shapes.length - 1 ? "" : undefined}
           />
         ))
         .reverse()}

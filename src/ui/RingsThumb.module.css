@@ -9,6 +9,25 @@
 .ring {
   stroke: var(--paper-raised);
   stroke-width: var(--ring-line, 1);
+  /* When a year is added the rings already there ease to their new size (UI-013; browsers without CSS geometry
+     transitions just jump, as before). */
+  transition: r 500ms ease-out;
+}
+
+/* With `grow`, the newest ring, the outermost, grows out from the centre, under the younger rings drawn on top of it. */
+.ring[data-newest] {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: grow 600ms ease-out;
+}
+
+@keyframes grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 .seed {

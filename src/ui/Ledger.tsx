@@ -49,7 +49,10 @@ export function Ledger({ age, children, earlier, tray, narrow }: Props) {
             {age}
             <small>{t("life.now")}</small>
           </span>
-          <div className={styles.body}>{children}</div>
+          {/* data-year restarts the settling (UI-013) without remounting the body, which holds focus and the hints. */}
+          <div className={`${styles.body} ${styles.now}`} data-year={age % 2 === 0 ? "even" : "odd"}>
+            {children}
+          </div>
         </div>
       </div>
       {/* After this year and before the earlier ones, so the plan is next to what it is for and the keyboard reaches it

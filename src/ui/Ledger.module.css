@@ -68,6 +68,30 @@
   min-width: 0;
 }
 
+/* This year settles into place when the age changes (UI-013): a small rise, transform only, so text is never mid-fade.
+   The body stays mounted (the heading holds focus), so a changed animation name is what restarts it. A name's animation
+   cannot start again while the name is the same, hence two identical keyframes taken by turns, by the parity of the age.
+   Backwards fill: the body is left untransformed afterwards. */
+.now[data-year="even"] {
+  animation: settle-even 400ms ease-out backwards;
+}
+
+.now[data-year="odd"] {
+  animation: settle-odd 400ms ease-out backwards;
+}
+
+@keyframes settle-even {
+  from {
+    transform: translateY(0.4rem);
+  }
+}
+
+@keyframes settle-odd {
+  from {
+    transform: translateY(0.4rem);
+  }
+}
+
 .earlier {
   list-style: none;
   margin: 0;
