@@ -68,6 +68,19 @@
   min-width: 0;
 }
 
+/* This year settles into place when its age changes (UI-013): a small rise, transform only, so text is never mid-fade.
+   Ledger.tsx puts data-settling on the body from a new age until the animation ends, so the animation starts again
+   for each age and the body is left untransformed afterwards. The decision card in it settles with it. */
+.now[data-settling] {
+  animation: settle 400ms ease-out;
+}
+
+@keyframes settle {
+  from {
+    transform: translateY(0.4rem);
+  }
+}
+
 .earlier {
   list-style: none;
   margin: 0;
