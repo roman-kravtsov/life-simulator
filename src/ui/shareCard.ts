@@ -1,7 +1,7 @@
 // The share image (SHARE-002): the life's growth rings on a card, as an SVG document in a string. Pure, so it is
 // tested without a browser; src/save/share.ts turns it into a PNG. It stands alone: fixed colours (the light
 // tokens of src/styles.css, whatever theme the player reads in, and a test keeps them equal), system fonts, and
-// every theme drawn in its own pattern as well as its colour. There are no numbered marks, as there is no list of
+// every theme but the plain year drawn in its own pattern as well as its colour. There are no numbered marks, as there is no list of
 // moments beside it.
 import { SITE_URL } from "../content/site";
 import { RING_THEMES, type Ring } from "../engine/rings";
