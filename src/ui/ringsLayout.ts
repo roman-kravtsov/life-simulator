@@ -32,6 +32,37 @@ export const patternTile = (count: number): number => {
 };
 
 /**
+ * The marks drawn over the colour of a ring theme, as paths in one square tile: dots, lines each way, waves. The plain
+ * year is a solid colour and has none. A dot is filled; the rest are strokes.
+ */
+export function patternMark(theme: Exclude<Ring["theme"], "plain">, tile: number): { d: string; dot?: boolean } {
+  const mid = tile / 2;
+  const dot = tile * 0.175;
+  switch (theme) {
+    case "study":
+      return {
+        d: `M${mid - dot} ${mid}a${dot} ${dot} 0 1 0 ${2 * dot} 0a${dot} ${dot} 0 1 0 ${-2 * dot} 0z`,
+        dot: true,
+      };
+    case "work":
+    case "illness":
+      return { d: `M${mid} 0V${tile}` };
+    case "love":
+      return { d: `M${mid} 0V${tile}M0 ${mid}H${tile}` };
+    case "loss":
+      return { d: `M0 ${mid}H${tile}` };
+    case "move":
+      return { d: `M0 ${mid}Q${tile / 4} ${tile * 0.125} ${mid} ${mid}T${tile} ${mid}` };
+  }
+}
+
+/** Work and love are drawn as diagonals: the same lines, turned by this many degrees. */
+export const PATTERN_TURN: Partial<Record<Ring["theme"], number>> = { work: 45, love: 45 };
+
+/** The width of the stroke of a pattern's lines, from the size of its tile. */
+export const patternStroke = (tile: number): number => Math.max(tile * 0.17, 0.22);
+
+/**
  * A ring as the layout needs it: its thickness and theme, with its age and key moment when it has them. The rings in
  * brief that a past life keeps for its thumbnail (UI-008) have only the first two, and lay out the same way.
  */

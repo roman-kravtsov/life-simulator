@@ -1,0 +1,32 @@
+.share {
+  margin: 0 0 1.5rem;
+}
+
+.heading {
+  margin: 1.75rem 0 0.5rem;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.text {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+
+/* The text as it will be copied: its lines kept, and wrapped at the edge so nothing scrolls sideways. */
+.text pre {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

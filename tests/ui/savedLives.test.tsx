@@ -264,6 +264,8 @@ describe("SAVE-003, SAVE-007: the past lives", () => {
     expect(
       screen.getByText(`The seed of this life is older-life. It is what the game used to draw this birth.`),
     ).toBeInTheDocument();
+    // A life from the archive can be kept as text or a picture like one just finished (SHARE-001, SHARE-002).
+    expect(screen.getByRole("region", { name: "Keep this life" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Past lives" }));
     expect(await screen.findAllByRole("listitem")).toHaveLength(2);
   });

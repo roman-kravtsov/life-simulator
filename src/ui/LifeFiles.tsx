@@ -10,13 +10,16 @@ import { IMPORT_MAX_LENGTH, type GameStore, type ImportOutcome } from "./store";
 /** Hands a file to the player; the browser's download unless a test gives its own. */
 export type SaveText = (fileName: string, text: string) => boolean;
 
-/** One notice at a time, each a new node so the same words twice are announced twice; `region` is the status region. */
-export function useNotice(): { region: ReactNode; say: (text: string) => void } {
+/**
+ * One notice at a time, each a new node so the same words twice are announced twice; `region` is the status region,
+ * or a plain polite live region where the screen has no role of status to give (`status` false).
+ */
+export function useNotice(status = true): { region: ReactNode; say: (text: string) => void } {
   const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
   return {
     say: (text) => setNotice((was) => ({ text, n: (was?.n ?? 0) + 1 })),
     region: (
-      <div role="status">
+      <div {...(status ? { role: "status" } : { "aria-live": "polite" })}>
         {notice && (
           <p key={notice.n} className="small">
             {notice.text}

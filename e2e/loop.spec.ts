@@ -415,7 +415,7 @@ test("a whole life ends on the summary screen: passage, rings, numbered moments,
   const field = page.getByRole("textbox", { name: /^A few words for / });
   await field.fill("Kept bees and told the truth.");
   await field.press("Enter");
-  await expect(page.getByText("Kept bees and told the truth.")).toBeVisible();
+  await expect(page.getByText("Kept bees and told the truth.", { exact: true })).toBeVisible();
   await expect(page.locator("blockquote")).toHaveText("Kept bees and told the truth.");
   await expect(page.getByRole("button", { name: "Edit" })).toBeFocused();
   expect(await noHorizontalScroll(page)).toBe(true);

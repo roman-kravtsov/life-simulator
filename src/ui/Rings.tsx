@@ -7,7 +7,16 @@ import { formatNumber, pluralKey } from "../format";
 import { t } from "../i18n";
 import type { Ring } from "../engine/rings";
 import styles from "./Rings.module.css";
-import { layoutRings, MARK_RADIUS, patternTile, VIEW_SIZE, type RingMark } from "./ringsLayout";
+import {
+  layoutRings,
+  MARK_RADIUS,
+  PATTERN_TURN,
+  patternMark,
+  patternStroke,
+  patternTile,
+  VIEW_SIZE,
+  type RingMark,
+} from "./ringsLayout";
 import { RING_THEMES } from "./store";
 import { ringFeltKey } from "./words";
 
@@ -16,37 +25,9 @@ type Theme = Ring["theme"];
 /** The tile of the legend's swatches, which are drawn in a 12 unit box. */
 const SWATCH_TILE = 2.4;
 
-/**
- * The marks drawn over the colour, as paths in one tile: dots, lines each way, waves. The plain year is a
- * solid colour and has none. Dots are filled; the rest are strokes.
- */
-function markOf(theme: Exclude<Theme, "plain">, tile: number): { d: string; dot?: boolean } {
-  const mid = tile / 2;
-  const dot = tile * 0.175;
-  switch (theme) {
-    case "study":
-      return {
-        d: `M${mid - dot} ${mid}a${dot} ${dot} 0 1 0 ${2 * dot} 0a${dot} ${dot} 0 1 0 ${-2 * dot} 0z`,
-        dot: true,
-      };
-    case "work":
-    case "illness":
-      return { d: `M${mid} 0V${tile}` };
-    case "love":
-      return { d: `M${mid} 0V${tile}M0 ${mid}H${tile}` };
-    case "loss":
-      return { d: `M0 ${mid}H${tile}` };
-    case "move":
-      return { d: `M0 ${mid}Q${tile / 4} ${tile * 0.125} ${mid} ${mid}T${tile} ${mid}` };
-  }
-}
-
-/** Work and love are drawn as diagonals: the same lines, turned. */
-const TURNED: Partial<Record<Theme, number>> = { work: 45, love: 45 };
-
 function Pattern({ id, theme, tile }: { id: string; theme: Theme; tile: number }) {
-  const turn = TURNED[theme];
-  const mark = theme === "plain" ? null : markOf(theme, tile);
+  const turn = PATTERN_TURN[theme];
+  const mark = theme === "plain" ? null : patternMark(theme, tile);
   return (
     <pattern
       id={id}
@@ -60,7 +41,7 @@ function Pattern({ id, theme, tile }: { id: string; theme: Theme; tile: number }
         <path
           d={mark.d}
           className={mark.dot ? styles.markFill : styles.markLine}
-          {...(mark.dot ? {} : { strokeWidth: Math.max(tile * 0.17, 0.22) })}
+          {...(mark.dot ? {} : { strokeWidth: patternStroke(tile) })}
         />
       )}
     </pattern>
