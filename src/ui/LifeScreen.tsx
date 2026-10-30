@@ -6,7 +6,7 @@
 // The story comes first in the page, then the two columns, so a screen reader and the keyboard meet the year before the
 // reference material; the columns are placed side by side with CSS grid. Everything here only displays what the store
 // derives from the life.
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { DecisionCard } from "../engine/decisions";
 import type { CountryIndex, Country } from "../engine/world/types";
 import type { LifeState, Plan, Settings } from "../engine/types";
@@ -15,6 +15,8 @@ import { t } from "../i18n";
 import { AroundColumn } from "./AroundColumn";
 import { DecisionCardView } from "./DecisionCardView";
 import { EventLine } from "./EventLine";
+import { Hint } from "./Hint";
+import { hintStore, type HintId, type HintStore } from "./hints";
 import { JournalLine, NotesPanel } from "./Journal";
 import { TabPanel, Tabs } from "./kit";
 import { Ledger } from "./Ledger";
@@ -66,6 +68,8 @@ export interface LifeScreenProps {
   onJournal: (text: string, prompt?: string) => void;
   onSettings: (changes: Partial<Settings>) => void;
   onBack: () => void;
+  /** What the player has already been told (UI-015); the page's own unless a test gives its own. */
+  hints?: HintStore;
 }
 
 type View = "story" | "you" | "around";
@@ -97,8 +101,18 @@ export function LifeScreen({
   onJournal,
   onSettings,
   onBack,
+  hints = hintStore,
 }: LifeScreenProps) {
   const { person } = life;
+  const seen = useSyncExternalStore(hints.subscribe, hints.getSnapshot);
+  // The plan hint stands in the story, by the tray. A decision shows its own hints on its card: the odds lens one only
+  // where some choice has odds to show.
+  const planHint = !card && plan !== null && !seen.includes("plan");
+  const cardHints: HintId[] = card
+    ? (["decision", "lens"] as const).filter(
+        (id) => !seen.includes(id) && (id === "decision" || card.choices.some((choice) => choice.lens.length > 0)),
+      )
+    : [];
   const narrow = useNarrow();
   const pauseId = useId();
   // While a decision waits its card takes focus instead.
@@ -158,6 +172,8 @@ export function LifeScreen({
   };
   const sendPlan = () => {
     saveDrafts();
+    // The year moves on with the plan as it stands, so the hint about it has been read or left.
+    if (planHint) hints.see("plan");
     // The new year is told in the story, so that is where the narrow layout goes back to.
     setView("story");
     onContinue(plan && draft ? planToSend(plan, draft) : undefined);
@@ -165,6 +181,7 @@ export function LifeScreen({
   // Answering a decision moves the year on as Continue does, so what is typed is kept first.
   const choose = (choiceId: string) => {
     saveDrafts();
+    hints.see(...cardHints);
     onChoose(choiceId);
   };
   const leave = () => {
@@ -233,6 +250,16 @@ export function LifeScreen({
           </>
         )}
       </div>
+      {planHint && (
+        <Hint
+          keys={["hint.plan"]}
+          onDismiss={() => {
+            hints.see("plan");
+            // The note is leaving the page, so focus goes to the year's heading, without a jump up the page.
+            heading.current?.focus({ preventScroll: true });
+          }}
+        />
+      )}
       {/* After the year and outside the live region: an offer, never a demand, and Continue does not wait for it. */}
       {reflection && (
         <section aria-labelledby={pauseId} className={styles.pause}>
@@ -250,7 +277,16 @@ export function LifeScreen({
           />
         </section>
       )}
-      {card && <DecisionCardView key={card.eventId} card={card} sources={sources} onChoose={choose} />}
+      {card && (
+        <DecisionCardView
+          key={card.eventId}
+          card={card}
+          sources={sources}
+          onChoose={choose}
+          hints={cardHints.map((id) => `hint.${id}`)}
+          onHintDismiss={() => hints.see(...cardHints)}
+        />
+      )}
     </Ledger>
   );
   const youColumn = (

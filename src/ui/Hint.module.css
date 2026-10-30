@@ -1,0 +1,19 @@
+/* Quieter than a decision card or an event: a ruled box on the raised paper, in the interface face. */
+.hint {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  font-family: var(--font-ui);
+}
+
+.label {
+  margin: 0 0 0.25rem;
+}
+
+.line {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}

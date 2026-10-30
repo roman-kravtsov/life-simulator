@@ -1,13 +1,14 @@
 // The decision card (UI-006, DEC-001, DEC-002, DEC-005, UI-012). The year stops here until the player
 // answers. Each choice shows what it costs and the odds lens in words; a locked choice stays in view
 // with the reason in text, tied to the button for screen readers. Focus moves to the heading when the
-// card appears.
+// card appears. The first time one is met it carries a hint (UI-015).
 import { useId, useState } from "react";
 import type { ChoiceView, DecisionCard } from "../engine/decisions";
 import type { CountryIndex } from "../engine/world/types";
 import { formatMoney } from "../format";
 import { t } from "../i18n";
 import { HelpNote } from "./HelpNote";
+import { Hint } from "./Hint";
 import { Button } from "./kit";
 import styles from "./DecisionCardView.module.css";
 import { useFocusOn } from "./useFocusOn";
@@ -64,9 +65,13 @@ interface Props {
   card: DecisionCard;
   sources: CountryIndex["sources"];
   onChoose: (choiceId: string) => void;
+  /** The string keys of the hints to show on this card, if any (UI-015). */
+  hints?: readonly string[];
+  /** The hint has been put away. */
+  onHintDismiss?: () => void;
 }
 
-export function DecisionCardView({ card, sources, onChoose }: Props) {
+export function DecisionCardView({ card, sources, onChoose, hints = [], onHintDismiss }: Props) {
   const heading = useFocusOn<HTMLHeadingElement>(card.eventId);
   const choicesId = useId();
   const textId = useId();
@@ -88,6 +93,16 @@ export function DecisionCardView({ card, sources, onChoose }: Props) {
       </p>
       {card.dataNote && <p className={styles.dataNote}>{dataNoteLine(card.dataNote, sources)}</p>}
       {card.helpTopic && <HelpNote topic={card.helpTopic} />}
+      {hints.length > 0 && (
+        <Hint
+          keys={hints}
+          onDismiss={() => {
+            onHintDismiss?.();
+            // The note is leaving the page, so focus goes to the heading of the card it was on.
+            heading.current?.focus({ preventScroll: true });
+          }}
+        />
+      )}
       <ul aria-label={t("decision.choices")} className={styles.choices}>
         {card.choices.map((choice) => (
           <Choice
