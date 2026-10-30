@@ -99,6 +99,7 @@ Read these docs before starting work:
 - `docs/features.md`: **the source of truth.** Every change traces back to a feature ID (SIM-001, UI-004, ...).
 - `docs/roadmap.md`: the original milestone map of all features (M1 to M7 are history; `ROADMAP.md` regroups what is left). `docs/mvp.md`: what the MVP includes and how it is built.
 - `docs/agents.md`: the project subagents, where they came from and the rules for them.
+- `docs/money-engine.md`: the money engine design check (TD-001, a proposal until Roman accepts it): sources, macro path, display across decades, hyperinflation, build steps. Read it before touching `src/engine/money.ts`.
 - `docs/design.md`: data model, engine rules and stack. `docs/analysis.md`: reference analysis and data sources with licences.
 
 ## How work flows
